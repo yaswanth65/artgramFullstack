@@ -137,7 +137,7 @@ export interface Order {
   products: OrderProduct[];
   totalAmount: number;
   paymentStatus: 'pending' | 'completed' | 'failed';
-  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  orderStatus: 'pending' | 'payment_confirmed' | 'processing' | 'packed' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'cancelled';
   paymentIntentId?: string;
   trackingNumber?: string;
   trackingUpdates?: TrackingUpdate[];
@@ -146,10 +146,11 @@ export interface Order {
 }
 
 export interface TrackingUpdate {
-  id: string;
+  id?: string;
   status: string;
   location: string;
-  timestamp: string;
+  timestamp?: string;
+  createdAt?: string;
   description: string;
 }
 export interface OrderProduct {

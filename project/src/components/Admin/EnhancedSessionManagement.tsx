@@ -426,11 +426,14 @@ const EnhancedSessionManagement: React.FC = () => {
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No sessions found for this date</p>
+                <p className="text-sm mt-2">
+                  Sessions for the next 10 days are automatically created. Click "Add Session" to add more.
+                </p>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="mt-2 text-purple-600 hover:underline"
+                  className="mt-3 text-purple-600 hover:underline"
                 >
-                  Create your first session
+                  Add Session for {formatDate(selectedDate)}
                 </button>
               </div>
             ) : (
@@ -458,9 +461,17 @@ const EnhancedSessionManagement: React.FC = () => {
                             {session.availableSeats}/{session.totalSeats} available
                           </span>
                         </div>
+                        <div className="text-sm text-gray-500">
+                          {session.bookedSeats} booked
+                        </div>
                         {!session.isActive && (
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
                             Inactive
+                          </span>
+                        )}
+                        {session.createdBy === 'system' && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
+                            Auto-created
                           </span>
                         )}
                       </div>
@@ -473,12 +484,14 @@ const EnhancedSessionManagement: React.FC = () => {
                       <button
                         onClick={() => setEditingSession(session)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                        title="Edit session"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => session._id && deleteSession(session._id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded"
+                        title="Delete session"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

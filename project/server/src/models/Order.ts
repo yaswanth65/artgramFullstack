@@ -33,7 +33,7 @@ export interface IOrder extends mongoose.Document {
   shippingAddress?: IShippingAddress;
   trackingUpdates: ITrackingUpdate[];
   paymentStatus: 'pending' | 'completed' | 'failed';
-  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  orderStatus: 'pending' | 'payment_confirmed' | 'processing' | 'packed' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'cancelled';
   paymentIntentId?: string;
   trackingNumber?: string;
 }
@@ -77,7 +77,7 @@ const OrderSchema = new mongoose.Schema<IOrder>({
   },
   orderStatus: { 
     type: String, 
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], 
+    enum: ['pending', 'payment_confirmed', 'processing', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled'], 
     default: 'pending' 
   },
   paymentIntentId: String,

@@ -92,11 +92,30 @@ const CustomerDashboard: React.FC = () => {
   const getOrderStatusColor = (status: string) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800';
-      case 'shipped': return 'bg-blue-100 text-blue-800';
+      case 'out_for_delivery': return 'bg-blue-100 text-blue-800';
+      case 'in_transit': return 'bg-indigo-100 text-indigo-800';
+      case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'packed': return 'bg-cyan-100 text-cyan-800';
       case 'processing': return 'bg-yellow-100 text-yellow-800';
+      case 'payment_confirmed': return 'bg-emerald-100 text-emerald-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getOrderStatusLabel = (status: string) => {
+    const statusLabels: { [key: string]: string } = {
+      'pending': 'Pending',
+      'payment_confirmed': 'Payment Confirmed',
+      'processing': 'Processing',
+      'packed': 'Packed',
+      'shipped': 'Shipped',
+      'in_transit': 'In Transit',
+      'out_for_delivery': 'Out for Delivery',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled'
+    };
+    return statusLabels[status] || status;
   };
 
   const getPaymentStatusColor = (status: string) => {
@@ -303,7 +322,7 @@ const CustomerDashboard: React.FC = () => {
                             {order.paymentStatus}
                           </span>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getOrderStatusColor(order.orderStatus)}`}>
-                            {order.orderStatus}
+                            {getOrderStatusLabel(order.orderStatus)}
                           </span>
                         </div>
                       </div>
@@ -338,28 +357,72 @@ const CustomerDashboard: React.FC = () => {
                         )}
                       </div>
                       
+                      {/* Enhanced Order Status Timeline */}
+                      {order.orderStatus !== 'pending' && (
+                        <div className="mb-4 bg-gray-50 p-3 rounded-lg">
+                          <h4 className="font-medium text-gray-800 mb-3 text-sm">Order Progress</h4>
+                          <div className="space-y-2">
+                            {/* Status Progress Indicator */}
+                            <div className="flex items-center space-x-2 text-xs">
+                              {['payment_confirmed', 'processing', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'].map((status, index) => {
+                                const statusLabels = {
+                                  'payment_confirmed': 'Payment Confirmed',
+                                  'processing': 'Processing',
+                                  'packed': 'Packed',
+                                  'shipped': 'Shipped',
+                                  'in_transit': 'In Transit',
+                                  'out_for_delivery': 'Out for Delivery',
+                                  'delivered': 'Delivered'
+                                };
+                                
+                                const statusOrder = ['pending', 'payment_confirmed', 'processing', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
+                                const currentIndex = statusOrder.indexOf(order.orderStatus);
+                                const isCompleted = index <= currentIndex - 1; // -1 because we skip 'pending'
+                                const isCurrent = status === order.orderStatus;
+                                
+                                return (
+                                  <div key={status} className="flex items-center">
+                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                      isCompleted || isCurrent ? 'bg-green-500' : 'bg-gray-300'
+                                    }`}></div>
+                                    <span className={`ml-2 ${
+                                      isCompleted || isCurrent ? 'text-green-700 font-medium' : 'text-gray-500'
+                                    }`}>
+                                      {statusLabels[status as keyof typeof statusLabels]}
+                                    </span>
+                                    {index < 6 && <div className={`w-4 h-0.5 mx-1 ${
+                                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
+                                    }`}></div>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Product Tracking Timeline */}
                       {order.trackingUpdates && order.trackingUpdates.length > 0 && (
                         <div className="mb-4 bg-gray-50 p-3 rounded-lg">
                           <h4 className="font-medium text-gray-800 mb-2 text-sm">Tracking Updates</h4>
                           <div className="space-y-2 max-h-32 overflow-y-auto">
-                            {order.trackingUpdates.map(update => (
-                              <div key={update.id} className="flex justify-between items-start text-xs">
+                            {order.trackingUpdates.map((update, index) => (
+                              <div key={update.id || index} className="flex justify-between items-start text-xs">
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2">
                                     <div className={`w-2 h-2 rounded-full ${
-                                      update.status === 'delivered' ? 'bg-green-500' :
-                                      update.status === 'shipped' ? 'bg-blue-500' :
-                                      update.status === 'processing' ? 'bg-yellow-500' :
+                                      update.status === 'delivered' || update.status === 'Delivered' ? 'bg-green-500' :
+                                      update.status === 'shipped' || update.status === 'Shipped' || update.status === 'out_for_delivery' || update.status === 'Out for Delivery' ? 'bg-blue-500' :
+                                      update.status === 'processing' || update.status === 'Processing' || update.status === 'packed' || update.status === 'Packed' ? 'bg-yellow-500' :
                                       'bg-gray-500'
                                     }`}></div>
-                                    <span className="font-medium">{update.status}</span>
+                                    <span className="font-medium">{getOrderStatusLabel(update.status) || update.status}</span>
                                   </div>
                                   <p className="text-gray-600 ml-4">{update.description}</p>
                                   <p className="text-gray-500 ml-4">{update.location}</p>
                                 </div>
                                 <span className="text-gray-500 ml-2">
-                                  {new Date(update.timestamp).toLocaleDateString()}
+                                  {new Date(update.createdAt || update.timestamp).toLocaleDateString()}
                                 </span>
                               </div>
                             ))}
@@ -399,17 +462,22 @@ const CustomerDashboard: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-lg">
             <h3 className="text-lg font-bold text-gray-900 mb-3">Order Tracking - #{trackOrder.id.slice(-8)}</h3>
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {(trackOrder.trackingUpdates || []).map(u => (
-                <div key={u.id} className="flex justify-between items-start">
+              {(trackOrder.trackingUpdates || []).map((u, index) => (
+                <div key={u.id || index} className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${u.status === 'delivered' ? 'bg-green-500' : u.status === 'shipped' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
-                      <span className="font-medium">{u.status}</span>
+                      <div className={`w-2 h-2 rounded-full ${
+                        u.status === 'delivered' || u.status === 'Delivered' ? 'bg-green-500' : 
+                        u.status === 'shipped' || u.status === 'Shipped' || u.status === 'out_for_delivery' || u.status === 'Out for Delivery' ? 'bg-blue-500' : 
+                        u.status === 'processing' || u.status === 'Processing' || u.status === 'packed' || u.status === 'Packed' ? 'bg-yellow-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <span className="font-medium">{getOrderStatusLabel(u.status) || u.status}</span>
                     </div>
                     <p className="text-sm text-gray-600 ml-4">{u.description}</p>
                     <p className="text-xs text-gray-500 ml-4">{u.location}</p>
                   </div>
-                  <div className="text-xs text-gray-500">{new Date(u.timestamp).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">{new Date(u.createdAt || u.timestamp).toLocaleString()}</div>
                 </div>
               ))}
               {(!trackOrder.trackingUpdates || trackOrder.trackingUpdates.length === 0) && (
