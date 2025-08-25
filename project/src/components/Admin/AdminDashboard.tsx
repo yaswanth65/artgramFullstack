@@ -7,6 +7,7 @@ import BranchManagement from './BranchManagement';
 import ManagerManagement from './ManagerManagement';
 import ProductManagement from './ProductManagement';
 import SessionManagement from './SessionManagement';
+import EnhancedSessionManagement from './EnhancedSessionManagement';
 import PaymentTracking from './PaymentTracking';
 import { 
   Users,
@@ -717,7 +718,7 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'analytics' && <SalesAnalytics />}
           {activeTab === 'products' && <ProductManagement />}
-          {activeTab === 'sessions' && <SessionManagement />}
+          {activeTab === 'sessions' && <EnhancedSessionManagement />}
           {activeTab === 'payments' && <PaymentTracking />}
           {activeTab === 'cms' && renderCMSManagement()}
           {activeTab === 'branches' && <BranchManagement />}

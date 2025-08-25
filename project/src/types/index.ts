@@ -49,23 +49,64 @@ export interface Event {
 
 export interface Booking {
   id: string;
-  eventId: string;
+  // Legacy fields for backward compatibility
+  eventId?: string;
+  sessionDate?: string;
+  
+  // New session-based fields
+  sessionId?: string;
+  activity?: 'slime' | 'tufting';
+  
+  // Core booking info
   customerId: string;
   // store customer details snapshot for manager access
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
-  // optional session date/time for admin-managed slots
+  
+  // Session details
   date?: string;
   time?: string;
   branchId: string;
   seats: number;
   totalAmount: number;
-  paymentStatus: 'pending' | 'completed' | 'failed';
+  
+  // Payment info
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   paymentIntentId?: string;
+  
+  // QR and verification
   qrCode: string;
   isVerified: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  
+  // Additional info
+  packageType?: string; // 'base', 'premium', etc.
+  specialRequests?: string;
+  status?: 'active' | 'cancelled' | 'completed';
+  
   createdAt: string;
+}
+
+export interface Session {
+  id: string;
+  branchId: string;
+  date: string; // YYYY-MM-DD format
+  activity: 'slime' | 'tufting';
+  time: string; // HH:MM format
+  label?: string; // Display label like "10:00 AM"
+  totalSeats: number;
+  bookedSeats: number;
+  availableSeats: number;
+  type: string; // e.g., "Slime Play", "Slime Making", "Small Tufting", etc.
+  ageGroup: string; // e.g., "3+", "8+", "All", "15+"
+  price?: number; // Base price (can be overridden by packages)
+  isActive: boolean;
+  createdBy?: string; // Admin/Manager who created this session
+  notes?: string; // Additional notes for the session
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Product {

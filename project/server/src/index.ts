@@ -9,6 +9,7 @@ import branchRoutes from './routes/branches';
 import orderRoutes from './routes/orders';
 import bookingRoutes from './routes/bookings';
 import productRoutes from './routes/products';
+import sessionRoutes from './routes/sessions';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/sessions', sessionRoutes);
 
 const PORT = process.env.PORT || 5000;
 

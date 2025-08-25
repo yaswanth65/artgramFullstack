@@ -585,22 +585,31 @@ const TuftingActivityPage = () => {
                         const branch = getBranchById(booking.location);
                         const order = await createRazorpayOrder(amount);
                         await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
-                          await createBooking({
-                              eventId: `tuft-${Date.now()}`,
+                          const bookingPayload: any = {
                               customerId: user.id,
                               customerName: user.name,
                               customerEmail: user.email || '',
                               customerPhone: booking.customerPhone || '',
-                                branchId: booking.location,
-                                date: booking.date,
-                                time: booking.time,
+                              branchId: booking.location,
+                              date: booking.date,
+                              time: booking.time,
                               seats: Number(booking.quantity),
                               totalAmount: amount,
                               paymentStatus: 'completed',
                               paymentIntentId: response.razorpay_payment_id,
-                              qrCode: `QR-${Date.now()}`,
-                              isVerified: false
-                          });
+                              activity: 'tufting',
+                              packageType: booking.session?.id || 'standard'
+                          };
+                          
+                          // Try to find session ID if available (for new API integration)
+                          // This would require updating tufting slots fetching as well
+                          
+                          // Fallback to legacy eventId for now
+                          if (!bookingPayload.sessionId) {
+                            bookingPayload.eventId = `tuft-${Date.now()}`;
+                          }
+                          
+                          await createBooking(bookingPayload);
                           alert('Tufting booked! Check your dashboard.');
                           navigate('/dashboard');
                         }, prefill: { name: user.name, email: user.email || '', contact: '' }, theme: { color: '#9b59b6' }, modal: { ondismiss: () => {} } });

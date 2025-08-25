@@ -25,3 +25,19 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     res.status(401).json({ message: 'Token failed' });
   }
 };
+
+export const adminOnly = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Admin access required' });
+  }
+};
+
+export const adminOrBranchManager = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'branch_manager')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Admin or branch manager access required' });
+  }
+};

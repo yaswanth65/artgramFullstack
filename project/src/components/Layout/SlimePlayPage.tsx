@@ -40,6 +40,7 @@ export default function SlimePlayPage() {
       age: "3+ years",
       available: 12,
       total: 15,
+      sessionId: undefined, // Will be populated from API
     },
     {
       time: "11:30",
@@ -49,6 +50,7 @@ export default function SlimePlayPage() {
       age: "8+ years",
       available: 8,
       total: 15,
+      sessionId: undefined,
     },
     {
       time: "1:00",
@@ -58,6 +60,7 @@ export default function SlimePlayPage() {
       age: "3+ years",
       available: 4,
       total: 15,
+      sessionId: undefined,
     },
     {
       time: "2:30",
@@ -67,6 +70,7 @@ export default function SlimePlayPage() {
       age: "3+ years",
       available: 15,
       total: 15,
+      sessionId: undefined,
     },
     {
       time: "4:00",
@@ -76,6 +80,7 @@ export default function SlimePlayPage() {
       age: "8+ years",
       available: 3,
       total: 15,
+      sessionId: undefined,
     },
     {
       time: "5:30",
@@ -85,6 +90,7 @@ export default function SlimePlayPage() {
       age: "3+ years",
       available: 0,
       total: 15,
+      sessionId: undefined,
     },
   ]);
   const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
@@ -94,24 +100,74 @@ export default function SlimePlayPage() {
   // Map booking location codes to branch ids used in DataContext (stable ref)
   const branchMapRef = useRef<Record<string, string>>({ downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore' });
 
-  // Load dynamic slots from DataContext when location or date changes
+  // Load dynamic slots from backend API when location or date changes
   useEffect(() => {
     if (!bookingData.location || !bookingData.date) return;
-  const branchId = branchMapRef.current[bookingData.location];
-    const saved = getSlotsForDate(branchId, bookingData.date);
-    if (saved && saved.slime && Array.isArray(saved.slime)) {
-      setTimeSlots(saved.slime.map(s => ({
-        time: s.time,
-        label: s.label || s.time,
-        status: s.available <= 0 ? 'sold-out' : (s.available <= Math.max(1, Math.round(s.total * 0.25)) ? 'filling-fast' : 'available'),
-        type: s.type,
-        age: s.age,
-        available: s.available,
-        total: s.total,
-  // ignore admin slot price; price comes from plan selection
-  // price: s.price
-      })));
-    }
+    
+    const fetchSessions = async () => {
+      try {
+        const branchId = branchMapRef.current[bookingData.location];
+        const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+        
+        // Get next 10 days sessions for this branch
+        const response = await fetch(`${apiBase}/sessions/next-10-days/${branchId}?activity=slime`);
+        
+        if (response.ok) {
+          const sessions = await response.json();
+          
+          // Filter sessions for the selected date
+          const sessionsForDate = sessions.filter((s: any) => s.date === bookingData.date && s.isActive);
+          
+          // Convert to the format expected by the frontend
+          const slots = sessionsForDate.map((s: any) => ({
+            time: s.time,
+            label: s.label || s.time,
+            status: s.availableSeats <= 0 ? 'sold-out' : 
+                   (s.availableSeats <= Math.max(1, Math.round(s.totalSeats * 0.25)) ? 'filling-fast' : 'available'),
+            type: s.type,
+            age: s.ageGroup,
+            available: s.availableSeats,
+            total: s.totalSeats,
+            sessionId: s._id // Store session ID for booking
+          }));
+          
+          setTimeSlots(slots);
+        } else {
+          console.error('Failed to fetch sessions');
+          // Fallback to DataContext
+          const saved = getSlotsForDate(branchId, bookingData.date);
+          if (saved && saved.slime && Array.isArray(saved.slime)) {
+            setTimeSlots(saved.slime.map(s => ({
+              time: s.time,
+              label: s.label || s.time,
+              status: s.available <= 0 ? 'sold-out' : (s.available <= Math.max(1, Math.round(s.total * 0.25)) ? 'filling-fast' : 'available'),
+              type: s.type,
+              age: s.age,
+              available: s.available,
+              total: s.total,
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        // Fallback to DataContext
+        const branchId = branchMapRef.current[bookingData.location];
+        const saved = getSlotsForDate(branchId, bookingData.date);
+        if (saved && saved.slime && Array.isArray(saved.slime)) {
+          setTimeSlots(saved.slime.map(s => ({
+            time: s.time,
+            label: s.label || s.time,
+            status: s.available <= 0 ? 'sold-out' : (s.available <= Math.max(1, Math.round(s.total * 0.25)) ? 'filling-fast' : 'available'),
+            type: s.type,
+            age: s.age,
+            available: s.available,
+            total: s.total,
+          })));
+        }
+      }
+    };
+    
+    fetchSessions();
   }, [bookingData.location, bookingData.date, getSlotsForDate, slotsVersion]);
 
   // Handle initial user interaction to enable audio
@@ -207,10 +263,13 @@ export default function SlimePlayPage() {
   const branch = getBranchById(branchId);
   const order = await createRazorpayOrder(total);
   await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Slime Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
-        // on success create booking (store customer snapshot; manager will verify QR)
-  const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
-        await createBooking({
-          eventId: `slot-${Date.now()}`,
+        // on success create booking using new session-based API
+        const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
+        
+        // Find the selected session
+        const selectedSlot = timeSlots.find(slot => slot.time === bookingData.time);
+        
+        const bookingPayload: any = {
           customerId: user.id,
           customerName: user.name,
           customerEmail: (user as User).email || '',
@@ -222,9 +281,19 @@ export default function SlimePlayPage() {
           totalAmount: total,
           paymentStatus: 'completed',
           paymentIntentId: response.razorpay_payment_id,
-          qrCode: `QR-${Date.now()}`,
-          isVerified: false
-        });
+          packageType: bookingData.session, // 'basic' or 'complete'
+          activity: 'slime'
+        };
+        
+        // If we have a session ID from the new API, use it
+        if (selectedSlot && selectedSlot.sessionId) {
+          bookingPayload.sessionId = selectedSlot.sessionId;
+        } else {
+          // Fallback to legacy eventId for compatibility
+          bookingPayload.eventId = `slot-${Date.now()}`;
+        }
+        
+        await createBooking(bookingPayload);
         alert('Booking successful! Check your dashboard for details.');
         navigate('/dashboard');
   }, prefill: { name: user.name, email: (user as User).email || '' , contact: '' }, theme: { color: '#3399cc' }, modal: { ondismiss: () => {} } });
