@@ -1,19 +1,32 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useData } from '../../contexts/DataContext';
+import { User } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { createRazorpayOrder, initiatePayment } from '../../utils/razorpay';
 
 export default function SlimePlayPage() {
   const location = useLocation();
-  const videoRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [muted, setMuted] = useState(true);
   const [userInteracted, setUserInteracted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [bookingData, setBookingData] = useState({
+  type BookingData = {
+    location: string | null;
+    date: string | null;
+    session: string;
+  price: number;
+    time: string | null;
+    quantity: number;
+  };
+
+  const [bookingData, setBookingData] = useState<BookingData>({
     location: null,
     date: null,
     session: "complete",
-    price: 850,
+  price: 0,
     time: null,
     quantity: 1,
   });
@@ -74,6 +87,32 @@ export default function SlimePlayPage() {
       total: 15,
     },
   ]);
+  const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Map booking location codes to branch ids used in DataContext (stable ref)
+  const branchMapRef = useRef<Record<string, string>>({ downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore' });
+
+  // Load dynamic slots from DataContext when location or date changes
+  useEffect(() => {
+    if (!bookingData.location || !bookingData.date) return;
+  const branchId = branchMapRef.current[bookingData.location];
+    const saved = getSlotsForDate(branchId, bookingData.date);
+    if (saved && saved.slime && Array.isArray(saved.slime)) {
+      setTimeSlots(saved.slime.map(s => ({
+        time: s.time,
+        label: s.label || s.time,
+        status: s.available <= 0 ? 'sold-out' : (s.available <= Math.max(1, Math.round(s.total * 0.25)) ? 'filling-fast' : 'available'),
+        type: s.type,
+        age: s.age,
+        available: s.available,
+        total: s.total,
+  // ignore admin slot price; price comes from plan selection
+  // price: s.price
+      })));
+    }
+  }, [bookingData.location, bookingData.date, getSlotsForDate, slotsVersion]);
 
   // Handle initial user interaction to enable audio
   const handleUserInteraction = () => {
@@ -88,13 +127,12 @@ export default function SlimePlayPage() {
 
   // Handle scroll to mute
   useEffect(() => {
-    let scrollTimer;
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
     const handleScroll = () => {
       if (videoRef.current && userInteracted) {
         videoRef.current.muted = true;
         setMuted(true);
-        
-        clearTimeout(scrollTimer);
+        if (scrollTimer) clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
           // Don't auto-unmute after scrolling
         }, 1000);
@@ -104,7 +142,7 @@ export default function SlimePlayPage() {
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimer);
+      if (scrollTimer) clearTimeout(scrollTimer);
     };
   }, [userInteracted]);
 
@@ -120,33 +158,112 @@ export default function SlimePlayPage() {
   }, [location.hash, location.pathname]);
 
   // Booking flow functions
-  const nextStep = (step) => setCurrentStep(step);
-  const prevStep = (step) => setCurrentStep(step);
-  const selectLocation = (location) => setBookingData(prev => ({ ...prev, location }));
-  const selectDate = (date) => setBookingData(prev => ({ ...prev, date }));
-  const selectSession = (session, price) => setBookingData(prev => ({ ...prev, session, price: parseInt(price) }));
-  const selectTime = (time) => setBookingData(prev => ({ ...prev, time }));
-  const setQuantity = (qty) => setBookingData(prev => ({ ...prev, quantity: parseInt(qty) }));
+  const nextStep = (step: number) => setCurrentStep(step);
+  const prevStep = (step: number) => setCurrentStep(step);
+  const selectLocation = (location: string) => setBookingData(prev => ({ ...prev, location }));
+  const selectDate = (date: string) => {
+    if (!user) {
+      // Redirect to login and preserve return path
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    setBookingData(prev => ({ ...prev, date }));
+  };
+  // Slime plans (customer chooses a plan and price is taken from here)
+  const plans = [
+    { id: 'base', label: 'Base Package', price: 750 },
+    { id: 'premium', label: 'Premium Experience', price: 850 }
+  ];
+  const selectSession = (session: string, planId: string) => {
+    // planId may be a plan id ('base'|'premium') or a numeric price string like '750' or '850'
+    let price = 0;
+    const plan = plans.find(p => p.id === planId);
+    if (plan) {
+      price = plan.price;
+    } else if (!isNaN(Number(planId))) {
+      price = Number(planId);
+    }
+    setBookingData(prev => ({ ...prev, session, price }));
+  };
+  const selectTime = (time: string) => setBookingData(prev => ({ ...prev, time }));
+  const setQuantity = (qty: number) => setBookingData(prev => ({ ...prev, quantity: Number(qty) }));
 
-  const confirmBooking = () => {
-    alert(`Booking confirmed for ${bookingData.quantity} ticket(s)! You will receive a confirmation call within 2 hours.`);
+  const confirmBooking = async () => {
+    if (!user) {
+      // redirect to login and return here after login
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+
+    if (!bookingData.location || !bookingData.date || !bookingData.time) {
+      alert('Please select location, date and time before proceeding.');
+      return;
+    }
+
+    const total = getTotalPriceSafe();
+    try {
+  // create order (server-side is recommended). Use branch-specific publishable key when initiating payment.
+  const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
+  const branch = getBranchById(branchId);
+  const order = await createRazorpayOrder(total);
+  await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Slime Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
+        // on success create booking (store customer snapshot; manager will verify QR)
+  const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
+        await createBooking({
+          eventId: `slot-${Date.now()}`,
+          customerId: user.id,
+          customerName: user.name,
+          customerEmail: (user as User).email || '',
+          customerPhone: '',
+          branchId: branchId || 'hyderabad',
+          date: bookingData.date || undefined,
+          time: bookingData.time || undefined,
+          seats: bookingData.quantity,
+          totalAmount: total,
+          paymentStatus: 'completed',
+          paymentIntentId: response.razorpay_payment_id,
+          qrCode: `QR-${Date.now()}`,
+          isVerified: false
+        });
+        alert('Booking successful! Check your dashboard for details.');
+        navigate('/dashboard');
+  }, prefill: { name: user.name, email: (user as User).email || '' , contact: '' }, theme: { color: '#3399cc' }, modal: { ondismiss: () => {} } });
+    } catch (e) {
+      console.error('Payment/booking failed', e);
+      alert('Payment failed. Please try again.');
+    }
   };
 
-  const formatDate = (dateStr) => {
+  const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "Not selected";
     return new Date(dateStr).toDateString();
   };
 
-  const getLocationName = (location) => {
-    const locationNames = {
+  type LocationKey = 'downtown' | 'mall' | 'park';
+  const getLocationName = (location: LocationKey | string | null) => {
+    const locationNames: Record<LocationKey, string> = {
       downtown: "Hyderabad",
       mall: "Vijayawada",
       park: "Bangalore",
     };
-    return locationNames[location] || "Not selected";
+    if (!location) return 'Not selected';
+    return (locationNames as Record<string, string>)[location] || "Not selected";
   };
 
-  const getTotalPrice = () => bookingData.price * bookingData.quantity;
+  // If bookingData.price wasn't set for some reason, infer price from selected session
+  const getPlanPrice = () => {
+    if (bookingData.price && bookingData.price > 0) return bookingData.price;
+    // Map internal session keys to plan ids used above
+    const sessionToPlanId: Record<string, string> = {
+      complete: 'premium',
+      basic: 'base'
+    };
+    const planId = sessionToPlanId[bookingData.session] || 'base';
+    const plan = plans.find(p => p.id === planId);
+    return plan ? plan.price : 0;
+  };
+
+  const getTotalPriceSafe = () => getPlanPrice() * bookingData.quantity;
 
   return (
     <div 
@@ -300,7 +417,7 @@ export default function SlimePlayPage() {
       </div>
       <a
         href="#booking"
-        onClick={() => selectSession("basic", "750")}
+        onClick={() => selectSession("basic", 'base')}
         className="bg-green-400 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-full font-semibold hover:bg-blue-500 transition-colors"
       >
         Choose Base Package
@@ -630,7 +747,7 @@ export default function SlimePlayPage() {
                         </ul>
                       </div>
                       <div className="text-3xl font-bold text-green-500 mt-4 pt-4 border-t border-gray-200">
-                        Total: Rs {getTotalPrice()}/-
+                        Total: Rs {getTotalPriceSafe()}/-
                       </div>
                     </div>
                   </div>

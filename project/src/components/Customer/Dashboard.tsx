@@ -1,11 +1,14 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
-import { Calendar, ShoppingBag, Download, QrCode, Package, CheckCircle, Eye, Truck } from 'lucide-react';
+import { Calendar, ShoppingBag, Download, QrCode, Package, Eye, Truck } from 'lucide-react';
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { bookings, orders, events, products, branches } = useData();
+  const { bookings, orders, events, branches } = useData();
+
+  const [trackOrder, setTrackOrder] = React.useState<null | typeof orders[0]>(null);
 
   const userBookings = bookings.filter(b => b.customerId === user?.id);
   const userOrders = orders.filter(o => o.customerId === user?.id);
@@ -13,6 +16,7 @@ const CustomerDashboard: React.FC = () => {
   // Responsive grid classes
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8";
   const cardClasses = "bg-white rounded-lg shadow-lg p-4 md:p-6";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const downloadTicket = (booking: any) => {
     const event = events.find(e => e.id === booking.eventId);
     const branch = branches.find(b => b.id === booking.branchId);
@@ -30,6 +34,9 @@ const CustomerDashboard: React.FC = () => {
       seats: booking.seats,
       totalAmount: booking.totalAmount,
       customerName: user?.name,
+  customerId: user?.id,
+  customerPhone: user?.phone || '',
+  customerAddress: user?.address || null,
       bookingDate: booking.createdAt,
       status: booking.isVerified ? 'Verified' : 'Pending Verification'
     };
@@ -43,6 +50,7 @@ const CustomerDashboard: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const downloadInvoice = (order: any) => {
     const branch = branches.find(b => b.id === order.branchId);
     
@@ -50,10 +58,14 @@ const CustomerDashboard: React.FC = () => {
       invoiceId: order.id,
       orderDate: order.createdAt,
       customerName: user?.name,
+  customerId: user?.id,
+  customerPhone: user?.phone || '',
+  customerAddress: user?.address || null,
       customerEmail: user?.email,
       branch: branch?.name,
       branchAddress: branch?.address,
-      products: order.products.map((p: any) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  products: order.products.map((p: any) => ({
         name: p.name,
         quantity: p.quantity,
         price: p.price,
@@ -99,9 +111,31 @@ const CustomerDashboard: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2">Welcome back, {user?.name}!</h1>
-          <p className="text-sm md:text-base text-gray-600">Manage your bookings, orders, and account settings</p>
+        <div className="mb-6 md:mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2">Welcome back, {user?.name}!</h1>
+            <p className="text-sm md:text-base text-gray-600">Manage your bookings, orders, and account settings</p>
+          </div>
+          <div>
+            <Link to="/profile" className="inline-flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-md shadow-sm text-sm">Edit Profile</Link>
+          </div>
+        </div>
+
+        {/* Customer Info Card */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Your Information</h3>
+              <div className="mt-2 text-sm text-gray-700">
+                <div><span className="font-medium">Name:</span> {user?.name}</div>
+                <div><span className="font-medium">Customer ID:</span> {user?.id}</div>
+                <div><span className="font-medium">Email:</span> {user?.email}</div>
+                <div><span className="font-medium">Phone:</span> {user?.phone || '—'}</div>
+                <div><span className="font-medium">Address:</span> {user?.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} - ${user.address.zipCode}` : '—'}</div>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500">This information is included in your bookings and orders for tracking purposes.</div>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -157,11 +191,11 @@ const CustomerDashboard: React.FC = () => {
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">No bookings yet</p>
                 <Link
-                  to="/events" 
+                  to="/activities"
                   className="inline-flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
                 >
                   <Calendar className="h-4 w-4" />
-                  <span>Book a Class</span>
+                  <span>Book a Session</span>
                 </Link>
               </div>
             ) : (
@@ -342,7 +376,7 @@ const CustomerDashboard: React.FC = () => {
                           <span>Invoice</span>
                         </button>
                         {order.trackingNumber && (
-                          <button className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                          <button onClick={() => setTrackOrder(order)} className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
                             <Truck className="h-4 w-4" />
                             <span>Track</span>
                           </button>
@@ -360,6 +394,34 @@ const CustomerDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      {trackOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Order Tracking - #{trackOrder.id.slice(-8)}</h3>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {(trackOrder.trackingUpdates || []).map(u => (
+                <div key={u.id} className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${u.status === 'delivered' ? 'bg-green-500' : u.status === 'shipped' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                      <span className="font-medium">{u.status}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 ml-4">{u.description}</p>
+                    <p className="text-xs text-gray-500 ml-4">{u.location}</p>
+                  </div>
+                  <div className="text-xs text-gray-500">{new Date(u.timestamp).toLocaleString()}</div>
+                </div>
+              ))}
+              {(!trackOrder.trackingUpdates || trackOrder.trackingUpdates.length === 0) && (
+                <div className="text-gray-600">No tracking updates yet.</div>
+              )}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setTrackOrder(null)} className="px-4 py-2 bg-gray-200 rounded-md">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

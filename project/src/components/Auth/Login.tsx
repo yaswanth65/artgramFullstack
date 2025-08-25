@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Palette, Mail, Lock, AlertCircle } from 'lucide-react';
 import { sendPasswordReset, generateResetToken } from '../../utils/emailService';
 
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [resetMessage, setResetMessage] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +23,11 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/');
-    } catch (err) {
+  await login(email, password);
+  // Redirect back to where the user came from (if present) or to home
+  const from = (location.state as { from?: string } | null)?.from || '/';
+  navigate(from);
+    } catch {
       setError('Invalid credentials');
     } finally {
       setLoading(false);
@@ -59,7 +62,7 @@ const Login: React.FC = () => {
       } else {
         setResetMessage('Failed to send reset email. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setResetMessage('An error occurred. Please try again.');
     } finally {
       setResetLoading(false);
@@ -126,6 +129,10 @@ const Login: React.FC = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        <div className="mt-4 text-center text-sm">
+          No account?{' '}
+          <a href="/signup" className="text-blue-600 hover:underline">Create a new account</a>
+        </div>
 
         <div className="mt-6 text-center">
           <button
@@ -140,7 +147,7 @@ const Login: React.FC = () => {
           <p className="text-sm text-gray-600 mb-2">Demo Credentials:</p>
           <div className="text-xs text-gray-500 space-y-1">
             <p>Admin: admin@craftfactory.com / password</p>
-            <p>Manager: pune@craftfactory.com / password</p>
+            <p>Manager: hyderabad@craftfactory.com / password</p>
             <p>Customer: customer@example.com / password</p>
           </div>
         </div>

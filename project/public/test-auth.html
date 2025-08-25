@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Auth Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .result {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Authentication Test</h1>
+    <button onclick="runTest()">Run Test</button>
+    <button onclick="clearResults()">Clear</button>
+    <div id="result"></div>
+
+    <script>
+      function clearResults() {
+        document.getElementById("result").innerHTML = "";
+      }
+
+      function addResult(type, message, data = null) {
+        const resultDiv = document.getElementById("result");
+        const div = document.createElement("div");
+        div.className = `result ${type}`;
+        let content = `<strong>${message}</strong>`;
+        if (data) {
+          content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+        div.innerHTML = content;
+        resultDiv.appendChild(div);
+      }
+
+      const runTest = async () => {
+        clearResults();
+
+        try {
+          addResult("info", "Testing backend health...");
+
+          // Test health endpoint first
+          const healthResponse = await fetch(
+            "http://localhost:5001/api/health"
+          );
+          const healthData = await healthResponse.json();
+
+          if (healthResponse.ok) {
+            addResult("success", "Backend health check passed", healthData);
+          } else {
+            addResult("error", "Backend health check failed", healthData);
+            return;
+          }
+
+          addResult("info", "Testing user registration...");
+
+          // Test registration
+          const testEmail = `test${Date.now()}@example.com`;
+          const registerResponse = await fetch(
+            "http://localhost:5001/api/auth/register",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: "Test User",
+                email: testEmail,
+                password: "password123",
+              }),
+            }
+          );
+
+          const registerResult = await registerResponse.json();
+
+          if (registerResponse.ok) {
+            addResult("success", "Registration successful!", {
+              status: registerResponse.status,
+              user: registerResult.user,
+              hasToken: !!registerResult.token,
+            });
+
+            addResult("info", "Testing login with registered user...");
+
+            // Test login with the registered user
+            const loginResponse = await fetch(
+              "http://localhost:5001/api/auth/login",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: testEmail,
+                  password: "password123",
+                }),
+              }
+            );
+
+            const loginResult = await loginResponse.json();
+
+            if (loginResponse.ok) {
+              addResult("success", "Login successful!", {
+                status: loginResponse.status,
+                user: loginResult.user,
+                hasToken: !!loginResult.token,
+              });
+            } else {
+              addResult("error", "Login failed", {
+                status: loginResponse.status,
+                error: loginResult,
+              });
+            }
+          } else {
+            addResult("error", "Registration failed", {
+              status: registerResponse.status,
+              error: registerResult,
+            });
+          }
+
+          // Test demo user login
+          addResult("info", "Testing demo user login...");
+          const demoLoginResponse = await fetch(
+            "http://localhost:5001/api/auth/login",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: "admin@craftfactory.com",
+                password: "password",
+              }),
+            }
+          );
+
+          const demoLoginResult = await demoLoginResponse.json();
+
+          if (demoLoginResponse.ok) {
+            addResult("success", "Demo user login successful!", {
+              user: demoLoginResult.user,
+            });
+          } else {
+            addResult("error", "Demo user login failed", {
+              status: demoLoginResponse.status,
+              error: demoLoginResult,
+            });
+          }
+        } catch (error) {
+          addResult("error", "Network or JavaScript error", {
+            message: error.message,
+            stack: error.stack,
+          });
+        }
+      };
+
+      // Auto-run test when page loads
+      window.onload = () => {
+        setTimeout(runTest, 1000);
+      };
+    </script>
+  </body>
+</html>

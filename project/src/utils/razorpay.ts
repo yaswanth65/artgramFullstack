@@ -27,7 +27,8 @@ export interface RazorpayResponse {
 
 declare global {
   interface Window {
-    Razorpay: any;
+    // Keep typing flexible; we'll cast to any when invoking
+    Razorpay: unknown;
   }
 }
 
@@ -51,19 +52,23 @@ export const createRazorpayOrder = async (amount: number, currency: string = 'IN
     status: 'created'
   };
 };
-
-export const initiatePayment = async (options: Omit<RazorpayOptions, 'key'>) => {
+export const initiatePayment = async (options: Omit<RazorpayOptions, 'key'> & { key?: string }) => {
   const isLoaded = await loadRazorpayScript();
   
   if (!isLoaded) {
     throw new Error('Razorpay SDK failed to load');
   }
-
   const razorpayOptions: RazorpayOptions = {
-    key: 'rzp_test_1234567890', // Replace with your actual Razorpay key
+    key: options.key || 'rzp_test_1234567890', // fallback test key
     ...options
   };
 
-  const razorpay = new window.Razorpay(razorpayOptions);
+  // If you need to pass merchant account id or notes for server-side transfers,
+  // create the order on the server using the branch's Razorpay account and include
+  // the appropriate account id/transfer instructions. Client-side we can only
+  // switch publishable keys to simulate directing payments to different accounts.
+  type RazorpayCtorType = new (opts: Record<string, unknown>) => { open: () => void };
+  const RazorpayCtor = (window.Razorpay as unknown) as RazorpayCtorType;
+  const razorpay = new RazorpayCtor(razorpayOptions as unknown as Record<string, unknown>);
   razorpay.open();
 };

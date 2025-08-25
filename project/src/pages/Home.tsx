@@ -8,12 +8,10 @@ import Studios from '../components/Home/Studios';
 const Home: React.FC = () => {
   return (
     <div>
-      <Carousel />
-      <Hero />
-      <Features />
       
-      <Testimonials />
-      <Studios />
+  
+      <Hero />
+    
    
     </div>
   );

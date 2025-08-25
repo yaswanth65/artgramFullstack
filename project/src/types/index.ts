@@ -2,6 +2,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  // optional contact/profile fields
+  phone?: string;
+  address?: Address;
   role: 'admin' | 'branch_manager' | 'customer';
   branchId?: string;
   temporaryPassword?: string;
@@ -17,6 +20,12 @@ export interface Branch {
   phone: string;
   email: string;
   stripeAccountId: string;
+  // optional Razorpay publishable key (client-side) and account id (server-side)
+  razorpayKey?: string;
+  razorpayAccountId?: string;
+  // which activities this branch runs
+  supportsSlime?: boolean;
+  supportsTufting?: boolean;
   managerId: string;
   isActive: boolean;
   createdAt: string;
@@ -42,6 +51,13 @@ export interface Booking {
   id: string;
   eventId: string;
   customerId: string;
+  // store customer details snapshot for manager access
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  // optional session date/time for admin-managed slots
+  date?: string;
+  time?: string;
   branchId: string;
   seats: number;
   totalAmount: number;
@@ -63,11 +79,18 @@ export interface Product {
   stock: number;
   materials: string[];
   isActive: boolean;
+  // optional UI/product metadata
+  badge?: string;
+  originalPrice?: number;
   createdAt: string;
 }
 
 export interface Order {
   id: string;
+  // store customer snapshot for admin access
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   customerId: string;
   branchId: string;
   products: OrderProduct[];
@@ -105,7 +128,7 @@ export interface Address {
 
 export interface CMSContent {
   id: string;
-  type: 'carousel' | 'hero' | 'about' | 'services' | 'testimonials' | 'contact';
+  type: 'carousel' | 'hero' | 'about' | 'services' | 'testimonials' | 'contact' | 'gallery' | 'studios' | 'events';
   title: string;
   content: string;
   images: string[];

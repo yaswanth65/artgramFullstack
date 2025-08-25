@@ -1,27 +1,24 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   QrCode, 
   Package, 
   TrendingUp, 
-  Users, 
   Calendar,
   DollarSign,
   Eye,
-  Edit,
   Truck,
   CheckCircle,
-  Clock,
-  MapPin
+  
 } from 'lucide-react';
+import type { Order } from '../../types';
 
 const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { 
     orders, 
     events, 
-    products, 
     bookings, 
     branches,
     updateOrderStatus,
@@ -29,23 +26,23 @@ const ManagerDashboard: React.FC = () => {
   } = useData();
   
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingUpdate, setTrackingUpdate] = useState({
     status: '',
     location: '',
     description: ''
   });
 
-  // Get manager's branch
-  const managerBranch = branches.find(branch => 
-    branch.managers?.some(manager => manager.email === user?.email)
-  );
+  // Get manager's branch (Branch.managerId is the manager user id)
+  const managerBranch = branches.find(branch => (
+    branch.managerId === user?.id || branch.id === user?.branchId
+  ));
 
   // Filter data for manager's branch
   const branchOrders = orders.filter(order => order.branchId === managerBranch?.id);
   const branchBookings = bookings.filter(booking => booking.branchId === managerBranch?.id);
   const branchEvents = events.filter(event => event.branchId === managerBranch?.id);
-  const branchProducts = products.filter(product => product.branchId === managerBranch?.id);
+  
 
   // Calculate analytics
   const totalRevenue = branchOrders.reduce((sum, order) => sum + order.totalAmount, 0);
@@ -60,8 +57,7 @@ const ManagerDashboard: React.FC = () => {
     if (trackingUpdate.status && trackingUpdate.location) {
       addTrackingUpdate(orderId, {
         ...trackingUpdate,
-        timestamp: new Date().toISOString(),
-        updatedBy: user?.name || 'Manager'
+        timestamp: new Date().toISOString()
       });
       setTrackingUpdate({ status: '', location: '', description: '' });
       setSelectedOrder(null);
@@ -151,9 +147,14 @@ const ManagerDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     #{order.id.slice(0, 8)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    Customer #{order.customerId.slice(0, 6)}
-                  </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0,6)}`}</div>
+                      <div className="text-xs text-gray-600">{order.customerEmail || '—'}</div>
+                      <div className="text-xs text-gray-600">{order.customerPhone || '—'}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {order.shippingAddress ? `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.zipCode}` : '—'}
+                      </div>
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     ₹{order.totalAmount.toFixed(2)}
                   </td>
@@ -179,6 +180,28 @@ const ManagerDashboard: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Customer Details (branch scoped) */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Customer Details</h3>
+        <div className="space-y-3">
+          {[
+            ...branchOrders.map(o => ({ id: o.customerId, name: o.customerName, email: o.customerEmail, phone: o.customerPhone })),
+            ...branchBookings.map(b => ({ id: b.customerId, name: b.customerName, email: b.customerEmail, phone: b.customerPhone }))
+          ]
+            .filter((v, i, arr) => v.id && arr.findIndex(x => x.id === v.id) === i)
+            .slice(0, 8)
+            .map(c => (
+              <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{c.name || `Customer #${c.id?.slice(0,6)}`}</p>
+                  <p className="text-xs text-gray-600">{c.email || '—'}</p>
+                </div>
+                <div className="text-sm text-gray-600">{c.phone || '—'}</div>
+              </div>
+            ))}
         </div>
       </div>
     </div>

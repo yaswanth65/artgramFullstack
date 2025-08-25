@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Authentication Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .test {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      .info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Authentication System Test</h1>
+    <div id="results"></div>
+
+    <button onclick="runTests()">Run All Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <script>
+      const API_BASE = "http://localhost:5000/api";
+      const results = document.getElementById("results");
+
+      function addResult(title, success, message, data = null) {
+        const div = document.createElement("div");
+        div.className = `test ${success ? "success" : "error"}`;
+
+        let content = `<h3>${
+          success ? "✅" : "❌"
+        } ${title}</h3><p>${message}</p>`;
+        if (data) {
+          content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+        div.innerHTML = content;
+        results.appendChild(div);
+      }
+
+      function addInfo(title, message) {
+        const div = document.createElement("div");
+        div.className = "test info";
+        div.innerHTML = `<h3>ℹ️ ${title}</h3><p>${message}</p>`;
+        results.appendChild(div);
+      }
+
+      function clearResults() {
+        results.innerHTML = "";
+      }
+
+      async function testHealthCheck() {
+        try {
+          const response = await fetch(`${API_BASE}/health`);
+          const data = await response.json();
+
+          if (response.ok && data.ok) {
+            addResult(
+              "Health Check",
+              true,
+              "Backend server is running and responsive",
+              data
+            );
+            return true;
+          } else {
+            addResult("Health Check", false, "Health check failed", data);
+            return false;
+          }
+        } catch (error) {
+          addResult(
+            "Health Check",
+            false,
+            `Cannot connect to backend: ${error.message}`
+          );
+          return false;
+        }
+      }
+
+      async function testRegistration() {
+        const testUser = {
+          name: "Test User " + Date.now(),
+          email: `test${Date.now()}@example.com`,
+          password: "password123",
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(testUser),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            addResult(
+              "User Registration",
+              true,
+              "New user registered successfully",
+              {
+                user: data.user,
+                hasToken: !!data.token,
+              }
+            );
+            return {
+              user: data.user,
+              token: data.token,
+              email: testUser.email,
+              password: testUser.password,
+            };
+          } else {
+            addResult(
+              "User Registration",
+              false,
+              `Registration failed: ${data.message}`,
+              data
+            );
+            return null;
+          }
+        } catch (error) {
+          addResult(
+            "User Registration",
+            false,
+            `Registration error: ${error.message}`
+          );
+          return null;
+        }
+      }
+
+      async function testLogin(email, password, description = "User Login") {
+        try {
+          const response = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            addResult(description, true, `Login successful for ${email}`, {
+              user: data.user,
+              hasToken: !!data.token,
+            });
+            return { user: data.user, token: data.token };
+          } else {
+            addResult(
+              description,
+              false,
+              `Login failed for ${email}: ${data.message}`,
+              data
+            );
+            return null;
+          }
+        } catch (error) {
+          addResult(
+            description,
+            false,
+            `Login error for ${email}: ${error.message}`
+          );
+          return null;
+        }
+      }
+
+      async function testProtectedRoute(token) {
+        try {
+          const response = await fetch(`${API_BASE}/auth/profile`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ name: "Updated Test User" }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            addResult(
+              "Protected Route",
+              true,
+              "Profile update successful with valid token",
+              data
+            );
+            return true;
+          } else {
+            addResult(
+              "Protected Route",
+              false,
+              `Protected route failed: ${data.message}`,
+              data
+            );
+            return false;
+          }
+        } catch (error) {
+          addResult(
+            "Protected Route",
+            false,
+            `Protected route error: ${error.message}`
+          );
+          return false;
+        }
+      }
+
+      async function testInvalidLogin() {
+        try {
+          const response = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: "nonexistent@example.com",
+              password: "wrongpassword",
+            }),
+          });
+
+          const data = await response.json();
+
+          if (
+            !response.ok &&
+            (response.status === 401 || response.status === 400)
+          ) {
+            addResult(
+              "Invalid Credentials Test",
+              true,
+              "Invalid login correctly rejected",
+              { status: response.status, message: data.message }
+            );
+            return true;
+          } else {
+            addResult(
+              "Invalid Credentials Test",
+              false,
+              "Invalid login was incorrectly accepted",
+              data
+            );
+            return false;
+          }
+        } catch (error) {
+          addResult(
+            "Invalid Credentials Test",
+            false,
+            `Invalid login test error: ${error.message}`
+          );
+          return false;
+        }
+      }
+
+      async function runTests() {
+        clearResults();
+        addInfo(
+          "Starting Tests",
+          "Running comprehensive authentication tests..."
+        );
+
+        // Test 1: Health Check
+        const healthOk = await testHealthCheck();
+        if (!healthOk) {
+          addInfo("Test Stopped", "Cannot proceed without backend connection");
+          return;
+        }
+
+        // Test 2: User Registration
+        const registrationResult = await testRegistration();
+
+        if (registrationResult) {
+          // Test 3: Login with registered user
+          const loginResult = await testLogin(
+            registrationResult.email,
+            registrationResult.password,
+            "Login with Registered User"
+          );
+
+          if (loginResult) {
+            // Test 4: Protected route
+            await testProtectedRoute(loginResult.token);
+          }
+        }
+
+        // Test 5: Invalid login
+        await testInvalidLogin();
+
+        // Test 6: Demo users
+        addInfo("Demo Users Test", "Testing predefined demo users...");
+        const demoUsers = [
+          {
+            email: "admin@craftfactory.com",
+            password: "password",
+            role: "Admin",
+          },
+          {
+            email: "hyderabad@craftfactory.com",
+            password: "password",
+            role: "Branch Manager",
+          },
+          {
+            email: "customer@example.com",
+            password: "password",
+            role: "Customer",
+          },
+        ];
+
+        for (const demoUser of demoUsers) {
+          await testLogin(
+            demoUser.email,
+            demoUser.password,
+            `Demo ${demoUser.role} Login`
+          );
+        }
+
+        addInfo(
+          "Tests Complete",
+          "All authentication tests have been executed. Check results above."
+        );
+      }
+
+      // Auto-run tests when page loads
+      window.onload = () => {
+        setTimeout(runTests, 500);
+      };
+    </script>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Palette, Phone, Mail, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
@@ -8,8 +9,12 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <Palette className="h-8 w-8 text-orange-500" />
-              <span className="text-xl font-bold">Craft Factory</span>
+               <img
+      src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755159745/ARTGRAM_LOGO_zdhftc.png"
+      alt="ArtGram Logo"
+      className="h-20 w-auto pt-3"
+    />
+              <span className="text-xl font-bold">Artgram</span>
             </div>
             <p className="text-gray-400">
               Inspiring creativity through hands-on crafting experiences and premium supplies.
@@ -19,25 +24,21 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-orange-500 transition-colors">Home</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition-colors">Classes</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition-colors">Store</a></li>
-              <li><a href="#" className="hover:text-orange-500 transition-colors">About</a></li>
+              <li><a href="#" className="hover:text-orange-500 transition-colors">About us</a></li>
+              <li><a href="#" className="hover:text-orange-500 transition-colors">Shop DIY kits</a></li>
+              <li><a href="#" className="hover:text-orange-500 transition-colors">Events</a></li>
+              <li><a href="#" className="hover:text-orange-500 transition-colors">Contact us</a></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">Branches</h3>
-            <div className="space-y-4 text-gray-400">
-              <div>
-                <h4 className="font-medium text-white">Pune</h4>
-                <p className="text-sm">123 MG Road, Pune</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-white">Mumbai</h4>
-                <p className="text-sm">456 Marine Drive, Mumbai</p>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold mb-4">Company</h3>
+            <ul className="space-y-2 text-gray-400">
+                <li><Link to="/privacy-policy" className="hover:text-orange-500 transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-and-conditions" className="hover:text-orange-500 transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/shipping-policy" className="hover:text-orange-500 transition-colors">Shipping Policy</Link></li>
+                <li><Link to="/refund-policy" className="hover:text-orange-500 transition-colors">Refund Policy</Link></li>
+            </ul>
           </div>
 
           <div>
@@ -45,22 +46,21 @@ const Footer: React.FC = () => {
             <div className="space-y-2 text-gray-400">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" />
-                <span>+91 98765 43210</span>
+                <span>+91 96868 46100</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>info@craftfactory.com</span>
+                <span>artgram.yourhobbylobby@gmail.com</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4" />
-                <span>Multiple locations</span>
-              </div>
+              
             </div>
           </div>
+          
+           
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Craft Factory. All rights reserved.</p>
+          <p>&copy; 2025 Artgram. All rights reserved.</p>
         </div>
       </div>
     </footer>

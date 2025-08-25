@@ -77,6 +77,9 @@ const Studios: React.FC = () => {
         </div>
       </div>
     </section>
+
+
+
   );
 };
 

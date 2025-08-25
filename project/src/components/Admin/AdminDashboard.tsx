@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { CMSContent } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import SalesAnalytics from './SalesAnalytics';
@@ -8,7 +9,8 @@ import ProductManagement from './ProductManagement';
 import SessionManagement from './SessionManagement';
 import PaymentTracking from './PaymentTracking';
 import { 
-  Users, 
+  Users,
+  Edit,
   MapPin, 
   Calendar, 
   Package, 
@@ -17,11 +19,9 @@ import {
   BarChart3,
   CreditCard,
   Plus,
-  Edit,
   Trash2,
   Save,
   X,
-  Image as ImageIcon,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -31,31 +31,21 @@ const AdminDashboard: React.FC = () => {
   const { 
     branches, 
     events, 
-    products, 
     orders, 
     bookings, 
-    managers,
     cmsContent,
     updateCMSContent,
     addCMSContent,
     deleteCMSContent,
-    addManager,
-    updateManager,
-    deleteManager,
-    addEvent,
-    updateEvent,
-    deleteEvent,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addBranch,
-    updateBranch,
-    deleteBranch
+  addTrackingUpdate
   } = useData();
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [editingContent, setEditingContent] = useState<any>(null);
-  const [newContent, setNewContent] = useState({
+  const [filterBranch, setFilterBranch] = useState<string>('all');
+  const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<null | { id: string; orderId: string }>(null);
+  const [adminTrackingUpdate, setAdminTrackingUpdate] = useState({ status: '', location: '', description: '' });
+  const [editingContent, setEditingContent] = useState<null | CMSContent>(null);
+  const [newContent, setNewContent] = useState<Omit<CMSContent, 'id' | 'updatedAt'>>({
     type: 'carousel',
     title: '',
     content: '',
@@ -67,7 +57,6 @@ const AdminDashboard: React.FC = () => {
   // Analytics calculations
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const totalBookings = bookings.length;
-  const totalCustomers = new Set(bookings.map(b => b.customerId)).size;
 
   const contentTypes = [
     { value: 'carousel', label: 'Carousel Slide', color: 'bg-purple-100 text-purple-800' },
@@ -83,7 +72,6 @@ const AdminDashboard: React.FC = () => {
 
   const handleSaveContent = async () => {
     if (editingContent) {
-      // Filter out empty image URLs
       const filteredImages = editingContent.images.filter((img: string) => img.trim() !== '');
       await updateCMSContent({ ...editingContent, images: filteredImages });
       setEditingContent(null);
@@ -93,7 +81,7 @@ const AdminDashboard: React.FC = () => {
   const handleAddContent = async () => {
     if (newContent.title && newContent.content) {
       // Filter out empty image URLs
-      const filteredImages = newContent.images.filter(img => img.trim() !== '');
+      const filteredImages = newContent.images.filter((img: string) => img.trim() !== '');
       await addCMSContent({ ...newContent, images: filteredImages });
       setNewContent({
         type: 'carousel',
@@ -128,7 +116,7 @@ const AdminDashboard: React.FC = () => {
 
   const removeImageField = (index: number, isEditing = false) => {
     if (isEditing && editingContent) {
-      const newImages = editingContent.images.filter((_: any, i: number) => i !== index);
+  const newImages = editingContent.images.filter((_: string, i: number) => i !== index);
       setEditingContent({
         ...editingContent,
         images: newImages.length > 0 ? newImages : ['']
@@ -229,6 +217,7 @@ const AdminDashboard: React.FC = () => {
                   </span>
                 </div>
               );
+
             })}
           </div>
         </div>
@@ -242,6 +231,11 @@ const AdminDashboard: React.FC = () => {
                   <p className="font-medium text-gray-900">Order #{order.id.slice(-6)}</p>
                   <p className="text-sm text-gray-600">₹{order.totalAmount}</p>
                 </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs text-gray-600">{order.customerName || `Customer #${order.customerId.slice(0,6)}`}</span>
+                  <span className="text-xs text-gray-600">{order.customerEmail || '—'}</span>
+                  <span className="text-xs text-gray-600">{order.customerPhone || '—'}</span>
+                </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   order.orderStatus === 'delivered' ? 'bg-green-100 text-green-800' :
                   order.orderStatus === 'shipped' ? 'bg-blue-100 text-blue-800' :
@@ -249,13 +243,99 @@ const AdminDashboard: React.FC = () => {
                 }`}>
                   {order.orderStatus}
                 </span>
+                <div className="ml-3">
+                  <button
+                    onClick={() => setSelectedOrderForTracking({ id: order.id, orderId: order.id })}
+                    className="text-sm text-indigo-600 hover:text-indigo-900 ml-2"
+                  >
+                    Track
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Customer Details - All branches with branch filter */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-800">Customer Details</h3>
+          <select
+            onChange={(e) => setFilterBranch(e.target.value)}
+            className="text-sm border-gray-300 rounded-md"
+            value={filterBranch}
+          >
+            <option value="all">All Branches</option>
+            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-3">
+          {[
+            ...orders.map(o => ({ id: o.customerId, name: o.customerName, email: o.customerEmail, phone: o.customerPhone, branchId: o.branchId })),
+            ...bookings.map(b => ({ id: b.customerId, name: b.customerName, email: b.customerEmail, phone: b.customerPhone, branchId: b.branchId }))
+          ]
+            .filter((v, i, arr) => v.id && arr.findIndex(x => x.id === v.id) === i)
+            .filter(v => filterBranch === 'all' ? true : v.branchId === filterBranch)
+            .slice(0, 20)
+            .map(c => (
+              <div key={c.id + (c.branchId||'')} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{c.name || `Customer #${c.id?.slice(0,6)}`}</p>
+                  <p className="text-xs text-gray-600">{c.email || '—'}</p>
+                </div>
+                <div className="text-sm text-gray-600">{c.phone || '—'}</div>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
+
+  // Admin: Tracking modal
+  const renderAdminTrackingModal = () => (
+    selectedOrderForTracking ? (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Add Tracking Update - Order #{selectedOrderForTracking.orderId.slice(0,8)}</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select value={adminTrackingUpdate.status} onChange={(e) => setAdminTrackingUpdate({...adminTrackingUpdate, status: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2">
+                <option value="">Select Status</option>
+                <option value="Order Confirmed">Order Confirmed</option>
+                <option value="Processing">Processing</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Out for Delivery">Out for Delivery</option>
+                <option value="Delivered">Delivered</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input type="text" value={adminTrackingUpdate.location} onChange={(e) => setAdminTrackingUpdate({...adminTrackingUpdate, location: e.target.value})} className="w-full border border-gray-300 rounded-md px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea value={adminTrackingUpdate.description} onChange={(e) => setAdminTrackingUpdate({...adminTrackingUpdate, description: e.target.value})} rows={3} className="w-full border border-gray-300 rounded-md px-3 py-2" />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-3 mt-4">
+            <button onClick={() => setSelectedOrderForTracking(null)} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+            <button onClick={() => handleAdminAddTracking(selectedOrderForTracking.orderId)} className="px-4 py-2 bg-indigo-600 text-white rounded-md">Add Update</button>
+          </div>
+        </div>
+      </div>
+    ) : null
+  );
+
+  // Admin: handle adding tracking updates
+  const handleAdminAddTracking = async (orderId: string) => {
+    if (adminTrackingUpdate.status && adminTrackingUpdate.location) {
+      await addTrackingUpdate(orderId, { ...adminTrackingUpdate, timestamp: new Date().toISOString() });
+      setAdminTrackingUpdate({ status: '', location: '', description: '' });
+      setSelectedOrderForTracking(null);
+    }
+  };
 
   const renderCMSManagement = () => (
     <div className="space-y-6">
@@ -357,7 +437,7 @@ const AdminDashboard: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
                 <select
                   value={newContent.type}
-                  onChange={(e) => setNewContent({ ...newContent, type: e.target.value })}
+                  onChange={(e) => setNewContent({ ...newContent, type: e.target.value as CMSContent['type'] })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {contentTypes.map(type => (
@@ -473,7 +553,7 @@ const AdminDashboard: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
                 <select
                   value={editingContent.type}
-                  onChange={(e) => setEditingContent({ ...editingContent, type: e.target.value })}
+                  onChange={(e) => setEditingContent({ ...editingContent, type: e.target.value as CMSContent['type'] })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {contentTypes.map(type => (
@@ -643,6 +723,7 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'branches' && <BranchManagement />}
           {activeTab === 'managers' && <ManagerManagement />}
         </div>
+  {renderAdminTrackingModal()}
       </div>
     </div>
   );

@@ -69,7 +69,7 @@ A comprehensive management system for craft and art studios with multiple branch
 - **Password:** password
 
 ### Branch Manager Access
-- **Email:** pune@craftfactory.com
+- **Email:** hyderabad@craftfactory.com
 - **Password:** password
 
 ### Customer Access

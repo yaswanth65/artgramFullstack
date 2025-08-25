@@ -1,31 +1,27 @@
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  MapPin,
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  X,
-  Eye,
-  EyeOff,
-  AlertTriangle
-} from 'lucide-react';
+import type { Event } from '../../types';
+import { Plus, X, Save } from 'lucide-react';
 
 const SessionManagement: React.FC = () => {
-  const { 
-    events, 
-    branches,
-    addEvent, 
-    updateEvent, 
-    deleteEvent 
-  } = useData();
+  const { branches, addEvent, updateEvent, selectedBranch, setSelectedBranch, updateSlotsForDate, getSlotsForDate, getBranchAvailability, updateBranchAvailability, verifyQRCode } = useData();
+
+  // Types for slots and activity state
+  type Slot = {
+    time: string;
+    label: string;
+    available: number;
+    total: number;
+    type: string;
+    age: string;
+    // price removed: admin does not set price; it's defined by customer's selected plan
+    price?: number;
+  };
+
+  type ActivitySlots = Record<string, { slime: Slot[]; tufting: Slot[] }>;
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -39,13 +35,113 @@ const SessionManagement: React.FC = () => {
     isActive: true
   });
 
-  // Calculate if event is within one week
-  const isWithinOneWeek = (eventDate: string) => {
-    const today = new Date();
-    const eventDateObj = new Date(eventDate);
-    const diffTime = eventDateObj.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7 && diffDays >= 0;
+  // 9-day calendar view for Slime and Tufting sessions
+  const today = new Date();
+  const nineDays = Array.from({ length: 9 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    return d;
+  });
+
+  // Example: session slots state (should be fetched/synced with backend in real app)
+  const [activitySlots, setActivitySlots] = useState<ActivitySlots>(() => {
+    // Example structure: { 'YYYY-MM-DD': { slime: [slotObj], tufting: [slotObj] } }
+    const slots: ActivitySlots = {};
+    nineDays.forEach(date => {
+      const key = date.toISOString().split('T')[0];
+      slots[key] = {
+        slime: [
+          { time: '10:00', label: '10:00 AM', available: 12, total: 15, type: 'Slime Play', age: '3+' },
+          { time: '11:30', label: '11:30 AM', available: 8, total: 15, type: 'Slime Making', age: '8+' },
+        ],
+        tufting: [
+          { time: '12:00', label: '12:00 PM', available: 5, total: 8, type: 'Small', age: 'All' },
+          { time: '15:00', label: '3:00 PM', available: 2, total: 8, type: 'Medium', age: 'All' },
+        ]
+      };
+    });
+    return slots;
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<'slime' | 'tufting'>('slime');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Admin UI state
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(selectedBranch || (branches.length ? branches[0].id : ''));
+  const [selectedDate, setSelectedDate] = useState<string>(nineDays[0].toISOString().split('T')[0]);
+  const [preview, setPreview] = useState(false);
+
+  // Load saved slots for branch+date if present
+  React.useEffect(() => {
+    const saved = getSlotsForDate(selectedBranchId, selectedDate);
+    if (saved) {
+      setActivitySlots(prev => ({ ...prev, [selectedDate]: saved }));
+    }
+  }, [selectedBranchId, selectedDate, getSlotsForDate]);
+
+  // Prefill activitySlots for all nineDays from DataContext when branch changes
+  React.useEffect(() => {
+    const fill: ActivitySlots = { ...activitySlots };
+    nineDays.forEach(date => {
+      const key = date.toISOString().split('T')[0];
+      const saved = getSlotsForDate(selectedBranchId, key);
+      if (saved) {
+        fill[key] = saved;
+      } else if (!fill[key]) {
+        // keep existing default if present
+        fill[key] = activitySlots[key] || { slime: [], tufting: [] };
+      }
+    });
+    setActivitySlots(fill);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranchId]);
+
+  // branch availability state (allowMonday)
+  const [allowMonday, setAllowMonday] = React.useState<boolean>(() => {
+    const av = getBranchAvailability(selectedBranchId);
+    return av ? av.allowMonday : false;
+  });
+
+  React.useEffect(() => {
+    const av = getBranchAvailability(selectedBranchId);
+    setAllowMonday(av ? av.allowMonday : false);
+  }, [selectedBranchId, getBranchAvailability]);
+
+  // Handler to update slot details
+  const updateSlot = (dateKey: string, activity: 'slime' | 'tufting', slotIdx: number, field: keyof Slot, value: string | number) => {
+    setActivitySlots((prev: ActivitySlots) => {
+      const updated: ActivitySlots = { ...prev };
+      updated[dateKey] = { ...updated[dateKey] };
+      updated[dateKey][activity] = updated[dateKey][activity].map((slot: Slot, idx: number) =>
+        idx === slotIdx ? { ...slot, [field]: value } as Slot : slot
+      );
+      return updated;
+    });
+  };
+
+  // Handler to add a new slot
+  const addSlot = (dateKey: string, activity: 'slime' | 'tufting') => {
+    setActivitySlots((prev: ActivitySlots) => {
+      const updated: ActivitySlots = { ...prev };
+      updated[dateKey] = { ...updated[dateKey] };
+      updated[dateKey][activity] = [
+  ...updated[dateKey][activity],
+  { time: '', label: '', available: 0, total: 0, type: '', age: '' }
+      ];
+      return updated;
+    });
+  };
+
+  // Handler to remove a slot
+  const removeSlot = (dateKey: string, activity: 'slime' | 'tufting', slotIdx: number) => {
+    setActivitySlots((prev: ActivitySlots) => {
+      const updated: ActivitySlots = { ...prev };
+      updated[dateKey] = { ...updated[dateKey] };
+      updated[dateKey][activity] = updated[dateKey][activity].filter((_, idx: number) => idx !== slotIdx);
+      return updated;
+    });
   };
 
   const handleAddEvent = async () => {
@@ -86,16 +182,7 @@ const SessionManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteEvent = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
-      await deleteEvent(id);
-    }
-  };
-
-  const getBranchName = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
-    return branch ? branch.name : 'Unknown Branch';
-  };
+  // Deletion and branch name helpers are available via DataContext as needed.
 
   const addMaterialField = (isEditing = false) => {
     if (isEditing && editingEvent) {
@@ -113,7 +200,7 @@ const SessionManagement: React.FC = () => {
 
   const removeMaterialField = (index: number, isEditing = false) => {
     if (isEditing && editingEvent) {
-      const newMaterials = editingEvent.materials.filter((_: any, i: number) => i !== index);
+      const newMaterials = editingEvent.materials.filter((_: string, i: number) => i !== index);
       setEditingEvent({
         ...editingEvent,
         materials: newMaterials.length > 0 ? newMaterials : ['']
@@ -168,139 +255,160 @@ const SessionManagement: React.FC = () => {
         </button>
       </div>
 
-      {/* Sessions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map(event => {
-          const branch = branches.find(b => b.id === event.branchId);
-          const availableSeats = event.maxSeats - event.bookedSeats;
-          const isUpcoming = new Date(event.date) > new Date();
-          const withinOneWeek = isWithinOneWeek(event.date);
-          
-          return (
-            <div key={event.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className={`p-4 text-white ${
-                isUpcoming ? 'bg-gradient-to-r from-purple-500 to-blue-600' : 'bg-gradient-to-r from-gray-500 to-gray-600'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-bold">{event.title}</h4>
-                  <div className="flex items-center space-x-1">
-                    {event.isActive ? (
-                      <Eye className="h-4 w-4 text-green-300" />
-                    ) : (
-                      <EyeOff className="h-4 w-4 text-red-300" />
-                    )}
-                    {withinOneWeek && (
-                      <AlertTriangle className="h-4 w-4 text-yellow-300" />
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm opacity-90">{event.description}</p>
-              </div>
 
-              <div className="p-4 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    {new Date(event.date).toLocaleDateString()}
-                  </span>
-                  {!isUpcoming && (
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Past</span>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">{event.time} ({event.duration} min)</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    {availableSeats} / {event.maxSeats} seats available
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">{getBranchName(event.branchId)}</span>
-                </div>
-
-                {/* Materials */}
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <h5 className="font-semibold text-gray-800 mb-2 text-sm">Materials:</h5>
-                  <div className="flex flex-wrap gap-1">
-                    {event.materials.slice(0, 3).map((material, index) => (
-                      <span key={index} className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
-                        {material}
-                      </span>
+          // Branch selector + 9-Day Date Picker + Preview
+          <div className="mb-8 bg-white rounded-2xl p-6 shadow">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-600">Manage Branch:</label>
+                  <select value={selectedBranchId} onChange={(e) => { setSelectedBranchId(e.target.value); setSelectedBranch(e.target.value); }} className="border rounded px-3 py-2">
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
-                    {event.materials.length > 3 && (
-                      <span className="text-gray-500 text-xs">+{event.materials.length - 3} more</span>
-                    )}
-                  </div>
+                  </select>
                 </div>
-
-                {/* Booking Progress */}
-                <div>
-                  <div className="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>Bookings</span>
-                    <span>{event.bookedSeats}/{event.maxSeats}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        availableSeats > 5 ? 'bg-green-500' :
-                        availableSeats > 2 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${(event.bookedSeats / event.maxSeats) * 100}%` }}
-                    ></div>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-600">Allow Monday Sessions:</label>
+                  <input type="checkbox" checked={allowMonday} onChange={async (e) => {
+                    const val = e.target.checked;
+                    setAllowMonday(val);
+                    try {
+                      await updateBranchAvailability(selectedBranchId, { allowMonday: val });
+                    } catch (err) {
+                      console.error('Failed to update branch availability', err);
+                    }
+                  }} className="w-4 h-4" />
                 </div>
-
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl font-bold text-purple-600">₹{event.price}</span>
-                    {withinOneWeek && (
-                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
-                        Soon
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      event.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {event.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => setEditingEvent(event)}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                        disabled={withinOneWeek}
-                        title={withinOneWeek ? 'Cannot edit sessions within one week' : 'Edit session'}
-                      >
-                        <Edit className={`h-4 w-4 ${withinOneWeek ? 'opacity-50' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
-                        disabled={withinOneWeek || event.bookedSeats > 0}
-                        title={
-                          withinOneWeek ? 'Cannot delete sessions within one week' :
-                          event.bookedSeats > 0 ? 'Cannot delete sessions with bookings' :
-                          'Delete session'
-                        }
-                      >
-                        <Trash2 className={`h-4 w-4 ${(withinOneWeek || event.bookedSeats > 0) ? 'opacity-50' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-600">Preview as customer</label>
+                <input type="checkbox" checked={preview} onChange={(e) => setPreview(e.target.checked)} className="w-4 h-4" />
               </div>
             </div>
-          );
-        })}
+
+            <div className="overflow-x-auto">
+              <div className="flex gap-4 min-w-[720px]">
+                {nineDays.map((date) => {
+                  const value = date.toISOString().split('T')[0];
+                  const isMonday = date.getDay() === 1 && !allowMonday;
+                  const selected = selectedDate === value;
+                  return (
+                    <div key={value} onClick={() => !isMonday && setSelectedDate(value)} className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all min-w-24 ${isMonday ? 'bg-gray-100 opacity-60 cursor-not-allowed' : selected ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'hover:border-green-400 hover:bg-green-50'}`}>
+                      <div className="text-sm font-semibold">{date.toLocaleDateString(undefined, { weekday: 'short' })}</div>
+                      <div className="text-xl font-bold my-1">{date.getDate()}</div>
+                      <div className="text-xs">{date.toLocaleDateString(undefined, { month: 'short' })}</div>
+                      {isMonday && <div className="text-xs text-red-500 mt-1">No Sessions</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+      {/* Slots for selected date (editable) */}
+      <div className="mb-10">
+        <h4 className="text-2xl font-bold text-red-600 mb-4 text-center">Manage Slots for {new Date(selectedDate).toLocaleDateString()}</h4>
+
+        {/* Activity selector */}
+        <div className="flex justify-center gap-3 mb-4">
+          <button onClick={() => setSelectedActivity('slime')} className={`px-4 py-2 rounded ${selectedActivity === 'slime' ? 'bg-green-600 text-white' : 'bg-white border'}`}>
+            Slime
+          </button>
+          <button
+            onClick={() => setSelectedActivity('tufting')}
+            className={`px-4 py-2 rounded ${selectedActivity === 'tufting' ? 'bg-purple-600 text-white' : 'bg-white border'}`}
+            disabled={(() => {
+              const branch = branches.find(b => b.id === selectedBranchId);
+              return branch ? branch.supportsTufting === false : false;
+            })()}
+          >
+            Tufting
+          </button>
+        </div>
+
+        {/* If tufting not supported show hint */}
+        {selectedActivity === 'tufting' && (() => {
+          const branch = branches.find(b => b.id === selectedBranchId);
+          if (branch && branch.supportsTufting === false) {
+            return <div className="text-center text-sm text-red-600 mb-4">Tufting is not available for the selected branch ({branch.name}).</div>;
+          }
+          return null;
+        })()}
+
+        <div className="grid grid-cols-1 gap-6">
+          {/* Single activity editor */}
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <div className="font-semibold text-lg">{selectedActivity === 'slime' ? 'Slime Sessions' : 'Tufting Sessions'}</div>
+              <button onClick={() => addSlot(selectedDate, selectedActivity)} className="text-sm text-green-600">+ Add Slot</button>
+            </div>
+            <div className="space-y-3">
+              {(() => {
+                const day = activitySlots[selectedDate];
+                const slots = day ? (selectedActivity === 'slime' ? day.slime : day.tufting) : [];
+                return slots.map((slot: Slot, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-md p-2">
+                    <input type="time" value={slot.time} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'time', e.target.value)} className="w-24 border rounded px-1 py-0.5 text-sm" />
+                    <input type="text" value={slot.label} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'label', e.target.value)} className="w-28 border rounded px-2 py-1 text-sm" placeholder="Label" />
+                    <input type="number" value={slot.available} min={0} max={slot.total} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'available', Number(e.target.value))} className="w-14 border rounded px-1 py-0.5 text-sm" />
+                    <input type="number" value={slot.total} min={1} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'total', Number(e.target.value))} className="w-14 border rounded px-1 py-0.5 text-sm" />
+                    <input type="text" value={slot.type} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'type', e.target.value)} className="w-20 border rounded px-1 py-0.5 text-sm" placeholder="Type" />
+                    <input type="text" value={slot.age} onChange={(e) => updateSlot(selectedDate, selectedActivity, idx, 'age', e.target.value)} className="w-12 border rounded px-1 py-0.5 text-sm" placeholder="Age" />
+                    <button onClick={() => removeSlot(selectedDate, selectedActivity, idx)} className="text-red-500">✕</button>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button onClick={async () => {
+            setIsSaving(true);
+            try {
+              // preserve the other activity when saving only one
+              const existing = getSlotsForDate(selectedBranchId, selectedDate) || { slime: [], tufting: [] };
+              const toSave = {
+                slime: selectedActivity === 'slime' ? activitySlots[selectedDate].slime : (existing.slime || activitySlots[selectedDate].slime),
+                tufting: selectedActivity === 'tufting' ? activitySlots[selectedDate].tufting : (existing.tufting || activitySlots[selectedDate].tufting)
+              };
+              await updateSlotsForDate(selectedBranchId, selectedDate, toSave);
+              console.log('Saved slots for', selectedBranchId, selectedDate, 'activity', selectedActivity);
+              setToastMessage('Slots saved');
+              setShowToast(true);
+              setTimeout(() => setShowToast(false), 3000);
+            } catch (e) {
+              console.error('Failed to save slots', e);
+            } finally {
+              setIsSaving(false);
+            }
+          }} className="bg-purple-600 text-white px-4 py-2 rounded-md flex items-center gap-2">
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </div>
+
+      {/* Toast / Snackbar */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-2 rounded shadow-lg z-50 flex items-center gap-3">
+          <div className="font-medium">{toastMessage}</div>
+          <button onClick={() => setShowToast(false)} className="text-gray-300 hover:text-white">✕</button>
+        </div>
+      )}
+
+        {/* Manager QR Verification Panel */}
+        <div className="bg-white rounded-xl p-4 shadow-sm mt-6">
+          <h4 className="text-lg font-semibold mb-2">Manager: Verify Booking QR</h4>
+          <div className="flex gap-2 items-center">
+            <input id="qr-input" placeholder="Enter QR code" className="border rounded px-3 py-2 w-64" />
+            <button onClick={async () => {
+              const el = document.getElementById('qr-input') as HTMLInputElement | null;
+              if (!el || !el.value) return alert('Enter QR code');
+              const ok = await verifyQRCode(el.value.trim());
+              if (ok) alert('Booking verified'); else alert('QRCode not found or already verified');
+            }} className="bg-green-600 text-white px-3 py-2 rounded">Verify</button>
+          </div>
+          <div className="mt-3 text-sm text-gray-600">You can paste the customer's QR from their ticket to verify entry.</div>
+        </div>
 
       {/* Add Session Modal */}
       {showAddModal && (
@@ -404,15 +512,7 @@ const SessionManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
-                  <input
-                    type="number"
-                    value={newEvent.price}
-                    onChange={(e) => setNewEvent({ ...newEvent, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    min="0"
-                    step="50"
-                  />
+                  <div className="text-sm text-gray-600">Price is determined by the customer's selected plan and is not set here.</div>
                 </div>
               </div>
 
@@ -597,15 +697,7 @@ const SessionManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
-                  <input
-                    type="number"
-                    value={editingEvent.price}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    min="0"
-                    step="50"
-                  />
+                  <div className="text-sm text-gray-600">Price is determined by the customer's selected plan and is not set here.</div>
                 </div>
               </div>
 

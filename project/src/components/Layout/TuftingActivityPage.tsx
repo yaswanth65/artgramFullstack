@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useData } from '../../contexts/DataContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { createRazorpayOrder, initiatePayment } from '../../utils/razorpay';
 
 
 
@@ -19,9 +22,23 @@ const TuftingActivityPage = () => {
   // The booking process now starts with the location step.
   const [step, setStep] = useState("location");
   // State for storing available dates
-  const [dates, setDates] = useState([]);
+  const [dates, setDates] = useState<Date[]>([]);
+  // Types
+  type TuftingSlot = { time: string; label?: string; available?: number; total?: number; status?: string; price?: number; type?: string; age?: string };
+  type BookingSession = { id: string; price: number; label: string } | null;
+  type BookingData = {
+    date: string;
+    location: string;
+    session: BookingSession;
+    time: string;
+    quantity: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+  };
+
   // State for storing all booking details
-  const [booking, setBooking] = useState({
+  const [booking, setBooking] = useState<BookingData>({
     date: "",
     location: "",
     session: null,
@@ -34,9 +51,15 @@ const TuftingActivityPage = () => {
   // State for the image carousel
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const location = useLocation();
-  const videoRef = useRef(null);
+  const navigate = useNavigate();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [muted, setMuted] = useState(true);
   const [userInteracted, setUserInteracted] = useState(false);
+
+  const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
+  const { branches } = useData();
+  const { user } = useAuth();
+  const [tuftingSlots, setTuftingSlots] = useState<TuftingSlot[]>([]);
 
   const handleUserInteraction = () => {
     if (!userInteracted) {
@@ -49,17 +72,17 @@ const TuftingActivityPage = () => {
   };
 
   useEffect(() => {
-    let scrollTimer;
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
     const handleScroll = () => {
       if (videoRef.current && userInteracted) {
-        videoRef.current.muted = true;
+        if (videoRef.current) videoRef.current.muted = true;
         setMuted(true);
-        clearTimeout(scrollTimer);
+        if (scrollTimer) clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {}, 1000);
       }
     };
     window.addEventListener('scroll', handleScroll);
-    return () => { window.removeEventListener('scroll', handleScroll); clearTimeout(scrollTimer); };
+    return () => { window.removeEventListener('scroll', handleScroll); if (scrollTimer) clearTimeout(scrollTimer); };
   }, [userInteracted]);
 
   useEffect(() => {
@@ -76,12 +99,12 @@ const TuftingActivityPage = () => {
   useEffect(() => {
     const today = new Date();
     const arr = [];
-    for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 9; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       arr.push(d);
     }
-    setDates(arr);
+    setDates(arr as Date[]);
   }, []);
 
   // Effect for the auto-playing image carousel
@@ -109,17 +132,28 @@ const TuftingActivityPage = () => {
   );
 
   // Handler for input changes to keep state updated
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setBooking((prev) => ({ ...prev, [id]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target as HTMLInputElement | HTMLSelectElement;
+    setBooking((prev) => ({ ...prev, [id]: value } as BookingData));
   };
+
+  // Load tufting slots when booking.location or booking.date changes
+  useEffect(() => {
+    if (!booking.location || !booking.date) return;
+    const branchMap: Record<string, string> = { downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore', hyderabad: 'hyderabad', bangalore: 'bangalore', vijayawada: 'vijayawada' };
+    const branchId = branchMap[booking.location] || booking.location;
+    const saved = getSlotsForDate(branchId, booking.date);
+    if (saved && Array.isArray(saved.tufting)) {
+      setTuftingSlots(saved.tufting as TuftingSlot[]);
+    }
+  }, [booking.location, booking.date, getSlotsForDate, slotsVersion]);
 
   // Check if all required fields for the final step are filled
   const canProceedToBook =
     booking.customerName && booking.customerPhone && booking.customerEmail && booking.quantity;
 
   return (
-    <div>
+  <div onClick={handleUserInteraction}>
       {/* Hero Section with Video Background */}
        <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
   <div className="absolute inset-0 z-10">
@@ -275,14 +309,14 @@ const TuftingActivityPage = () => {
           <h2 className="text-3xl font-bold text-center mb-10 text-rose-600">
             🖼️ Tufting Gallery - Customer Creations
           </h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {galleryImages.map((src) => (
               <div key={src} className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                 <img
                   src={src}
                   alt="Tufting creation by a student"
                   className="w-full h-[250px] object-cover"
-                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x250/f9699c/white?text=Art' }}
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => { const t = e.currentTarget as HTMLImageElement; t.onerror = null; t.src = 'https://placehold.co/400x250/f9699c/white?text=Art' }}
                 />
               </div>
             ))}
@@ -311,16 +345,22 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.date)}
             >
               <div className="flex flex-wrap gap-2">
-                {dates.map((d, i) => {
+                  {dates.map((d, i) => {
                   const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
                   const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                   const label = i === 0 ? "TODAY" : i === 1 ? "TOM" : dayNames[d.getDay()];
                   const iso = d.toISOString().split("T")[0];
                   const selected = booking.date === iso;
-                  return (
+                    return (
                     <button
                       key={iso}
-                      onClick={() => setBooking((b) => ({ ...b, date: iso }))}
+                      onClick={() => {
+                        if (!user) {
+                          navigate('/login', { state: { from: window.location.pathname } });
+                          return;
+                        }
+                        setBooking((b) => ({ ...b, date: iso }));
+                      }}
                       className={`min-w-[100px] text-center rounded-lg border-2 px-4 py-3 transition-all ${
                         selected
                           ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5"
@@ -346,11 +386,7 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.location)}
             >
               <div className="flex flex-wrap gap-3">
-                {[
-                  { id: "hyderabad", name: "🏛️ Hyderabad", detail: "HITEC City Studio" },
-                  { id: "bangalore", name: "🌟 Bangalore", detail: "Brigade Gateway" },
-                 
-                ].map((l) => {
+                {branches.filter(b => b.supportsTufting !== false).map((b) => ({ id: b.id, name: b.name.includes('Vijayawada') ? '🏬 Vijayawada' : b.name, detail: b.location })) .map((l) => {
                   const selected = booking.location === l.id;
                   return (
                     <button
@@ -418,13 +454,13 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.time)}
             >
               <div className="flex flex-wrap gap-2">
-                {[
+                {(tuftingSlots && tuftingSlots.length > 0 ? tuftingSlots.map((slot) => ({ t: slot.time, label: slot.label || slot.time, cls: slot.available === 0 ? 'sold-out' : 'available' })) : [
                   { t: "09:00", label: "9:00 AM", cls: "available" },
                   { t: "11:30", label: "11:30 AM", cls: "available" },
                   { t: "14:00", label: "2:00 PM", cls: "available" },
                   { t: "16:30", label: "4:30 PM", cls: "available" },
                   { t: "19:00", label: "7:00 PM", cls: "filling-fast" },
-                ].map((slot) => {
+                ]).map((slot) => {
                   const selected = booking.time === slot.t;
                   return (
                     <div
@@ -535,11 +571,42 @@ const TuftingActivityPage = () => {
                         ? 'bg-yellow-400 text-slate-800 hover:-translate-y-0.5'
                         : 'bg-gray-400 text-gray-700 cursor-not-allowed'
                     }`}
-                    onClick={() => {
-                      if (canProceedToBook) {
-                        alert("🧶 Tufting session booked successfully! We will contact you within 2 hours to confirm your creative adventure.");
-                      } else {
-                        alert("Please fill in all required fields.");
+                    onClick={async () => {
+                      if (!canProceedToBook) {
+                        alert('Please fill in all required fields.');
+                        return;
+                      }
+                      if (!user) {
+                        navigate('/login', { state: { from: window.location.pathname } });
+                        return;
+                      }
+                      const amount = booking.session ? booking.session.price * Number(booking.quantity) : 0;
+                      try {
+                        const branch = getBranchById(booking.location);
+                        const order = await createRazorpayOrder(amount);
+                        await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
+                          await createBooking({
+                              eventId: `tuft-${Date.now()}`,
+                              customerId: user.id,
+                              customerName: user.name,
+                              customerEmail: user.email || '',
+                              customerPhone: booking.customerPhone || '',
+                                branchId: booking.location,
+                                date: booking.date,
+                                time: booking.time,
+                              seats: Number(booking.quantity),
+                              totalAmount: amount,
+                              paymentStatus: 'completed',
+                              paymentIntentId: response.razorpay_payment_id,
+                              qrCode: `QR-${Date.now()}`,
+                              isVerified: false
+                          });
+                          alert('Tufting booked! Check your dashboard.');
+                          navigate('/dashboard');
+                        }, prefill: { name: user.name, email: user.email || '', contact: '' }, theme: { color: '#9b59b6' }, modal: { ondismiss: () => {} } });
+                      } catch (err) {
+                        console.error('Payment failed', err);
+                        alert('Payment failed. Try again.');
                       }
                     }}
                     disabled={!canProceedToBook}
@@ -556,7 +623,17 @@ const TuftingActivityPage = () => {
   );
 };
 
-const TuftStep = ({ title, color, isVisible, onBack, onNext, canNext, children }) => {
+type TuftStepProps = {
+  title: string;
+  color: string;
+  isVisible: boolean;
+  onBack?: () => void;
+  onNext?: () => void;
+  canNext?: boolean;
+  children: React.ReactNode;
+};
+
+const TuftStep: React.FC<TuftStepProps> = ({ title, color, isVisible, onBack, onNext, canNext, children }) => {
   if (!isVisible) return null;
   return (
     <div className="mb-6 bg-white rounded-2xl p-5 shadow">
