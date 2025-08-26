@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import Session from '../models/Session';
+import mongoose from 'mongoose';
 import Booking from '../models/Booking';
 import { protect, adminOrBranchManager } from '../middleware/auth';
 
@@ -9,16 +10,22 @@ const router = express.Router();
 // Get sessions for a specific branch and date range
 router.get('/', asyncHandler(async (req, res) => {
   const { branchId, startDate, endDate, activity } = req.query;
-  
+
   const filter: any = {};
-  if (branchId) filter.branchId = branchId;
+  if (branchId) {
+    try {
+      filter.branchId = new mongoose.Types.ObjectId(String(branchId));
+    } catch {
+      filter.branchId = branchId; // fallback
+    }
+  }
   if (startDate && endDate) {
     filter.date = { $gte: startDate, $lte: endDate };
   } else if (startDate) {
     filter.date = { $gte: startDate };
   }
   if (activity) filter.activity = activity;
-  
+
   const sessions = await Session.find(filter).sort({ date: 1, time: 1 });
   res.json(sessions);
 }));
@@ -27,7 +34,7 @@ router.get('/', asyncHandler(async (req, res) => {
 router.get('/next-10-days/:branchId', asyncHandler(async (req, res) => {
   const { branchId } = req.params;
   const { activity } = req.query;
-  
+
   // Generate next 10 days
   const dates = [];
   for (let i = 0; i < 10; i++) {
@@ -35,24 +42,27 @@ router.get('/next-10-days/:branchId', asyncHandler(async (req, res) => {
     date.setDate(date.getDate() + i);
     dates.push(date.toISOString().split('T')[0]);
   }
-  
+
   // Check which dates already have sessions
+  const branchFilter = (() => {
+    try { return new mongoose.Types.ObjectId(String(branchId)); } catch { return branchId; }
+  })();
   const existingSessions = await Session.find({
-    branchId,
+    branchId: branchFilter,
     date: { $in: dates },
     ...(activity && { activity })
   });
-  
+
   const existingDates = new Set(existingSessions.map(s => s.date));
   const missingDates = dates.filter(date => !existingDates.has(date));
-  
+
   // Create default sessions for missing dates
   const defaultSessions = [];
   for (const date of missingDates) {
     // Skip Mondays for certain branches (this should come from branch settings)
     const dayOfWeek = new Date(date).getDay();
     const isMonday = dayOfWeek === 1;
-    
+
     // Create default slime sessions
     if (!activity || activity === 'slime') {
       defaultSessions.push(
@@ -100,7 +110,7 @@ router.get('/next-10-days/:branchId', asyncHandler(async (req, res) => {
         }
       );
     }
-    
+
     // Create default tufting sessions (only for branches that support it)
     if ((!activity || activity === 'tufting') && branchId !== 'vijayawada') {
       defaultSessions.push(
@@ -135,19 +145,19 @@ router.get('/next-10-days/:branchId', asyncHandler(async (req, res) => {
       );
     }
   }
-  
+
   // Insert the new sessions
   if (defaultSessions.length > 0) {
     await Session.insertMany(defaultSessions);
   }
-  
+
   // Return all sessions for the next 10 days
   const allSessions = await Session.find({
-    branchId,
+    branchId: branchFilter,
     date: { $in: dates },
     ...(activity && { activity })
   }).sort({ date: 1, time: 1 });
-  
+
   res.json(allSessions);
 }));
 
@@ -167,7 +177,7 @@ router.post('/', protect, adminOrBranchManager, asyncHandler(async (req, res) =>
     createdBy: req.user._id,
     availableSeats: req.body.totalSeats - (req.body.bookedSeats || 0)
   };
-  
+
   const session = await Session.create(sessionData);
   res.status(201).json(session);
 }));
@@ -178,13 +188,13 @@ router.put('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res) 
   if (!session) {
     return res.status(404).json({ message: 'Session not found' });
   }
-  
+
   // Update fields
   Object.assign(session, req.body);
-  
+
   // Recalculate available seats
   session.availableSeats = Math.max(0, session.totalSeats - session.bookedSeats);
-  
+
   await session.save();
   res.json(session);
 }));
@@ -192,26 +202,26 @@ router.put('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res) 
 // Update session seat count (for booking/cancellation)
 router.patch('/:id/seats', protect, asyncHandler(async (req, res) => {
   const { seatsChange } = req.body; // positive for booking, negative for cancellation
-  
+
   const session = await Session.findById(req.params.id);
   if (!session) {
     return res.status(404).json({ message: 'Session not found' });
   }
-  
+
   const newBookedSeats = session.bookedSeats + seatsChange;
-  
+
   // Check if we have enough seats
   if (newBookedSeats > session.totalSeats) {
     return res.status(400).json({ message: 'Not enough seats available' });
   }
-  
+
   if (newBookedSeats < 0) {
     return res.status(400).json({ message: 'Invalid seat count' });
   }
-  
+
   session.bookedSeats = newBookedSeats;
   session.availableSeats = session.totalSeats - session.bookedSeats;
-  
+
   await session.save();
   res.json(session);
 }));
@@ -222,15 +232,15 @@ router.delete('/:id', protect, adminOrBranchManager, asyncHandler(async (req, re
   if (!session) {
     return res.status(404).json({ message: 'Session not found' });
   }
-  
+
   // Check if there are any bookings for this session
   const bookingsCount = await Booking.countDocuments({ sessionId: session._id, status: 'active' });
   if (bookingsCount > 0) {
-    return res.status(400).json({ 
-      message: `Cannot delete session with ${bookingsCount} active bookings. Cancel bookings first.` 
+    return res.status(400).json({
+      message: `Cannot delete session with ${bookingsCount} active bookings. Cancel bookings first.`
     });
   }
-  
+
   await Session.findByIdAndDelete(req.params.id);
   res.json({ message: 'Session deleted successfully' });
 }));
@@ -238,10 +248,10 @@ router.delete('/:id', protect, adminOrBranchManager, asyncHandler(async (req, re
 // Bulk update sessions for a date (Admin/Manager only)
 router.post('/bulk-update', protect, adminOrBranchManager, asyncHandler(async (req, res) => {
   const { branchId, date, sessions } = req.body;
-  
+
   // Delete existing sessions for this date and branch
   await Session.deleteMany({ branchId, date });
-  
+
   // Create new sessions
   const sessionData = sessions.map((s: any) => ({
     ...s,
@@ -250,7 +260,7 @@ router.post('/bulk-update', protect, adminOrBranchManager, asyncHandler(async (r
     createdBy: req.user._id,
     availableSeats: s.totalSeats - (s.bookedSeats || 0)
   }));
-  
+
   const createdSessions = await Session.insertMany(sessionData);
   res.json(createdSessions);
 }));

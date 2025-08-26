@@ -585,6 +585,77 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
+  // Periodically refresh orders and bookings from backend so status changes propagate
+  useEffect(() => {
+    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    let timer: number | null = null;
+    const fetchOrdersAndBookings = async () => {
+      const token = localStorage.getItem('token');
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      try {
+        const [oRes, bRes] = await Promise.all([
+          fetch(`${apiBase}/orders`, { headers: { 'Content-Type': 'application/json', ...authHeaders } }),
+          fetch(`${apiBase}/bookings`, { headers: { 'Content-Type': 'application/json', ...authHeaders } })
+        ]);
+        if (oRes.ok) {
+          const data = await oRes.json();
+          const mapped: Order[] = data.map((o: any) => ({
+            id: o._id,
+            products: (o.products || []).map((it: any) => ({ productId: it.productId || it._id, name: it.name, quantity: it.quantity, price: it.price })),
+            totalAmount: o.totalAmount,
+            branchId: typeof o.branchId === 'object' ? o.branchId._id : o.branchId,
+            customerId: typeof o.customerId === 'object' ? o.customerId._id : o.customerId,
+            customerName: o.customerName,
+            customerEmail: o.customerEmail,
+            customerPhone: o.customerPhone,
+            shippingAddress: o.shippingAddress,
+            paymentStatus: o.paymentStatus,
+            orderStatus: o.orderStatus,
+            trackingNumber: o.trackingNumber,
+            trackingUpdates: (o.trackingUpdates || []).map((u: any) => ({ id: u._id || undefined, status: u.status, location: u.location, description: u.description, createdAt: u.createdAt })),
+            createdAt: o.createdAt
+          }));
+          setOrders(mapped);
+          try { localStorage.setItem('orders', JSON.stringify(mapped)); } catch { }
+        }
+        if (bRes.ok) {
+          const data = await bRes.json();
+          const mapped: Booking[] = data.map((b: any) => ({
+            id: b._id,
+            eventId: b.eventId,
+            sessionId: typeof b.sessionId === 'object' ? b.sessionId._id : b.sessionId,
+            activity: b.activity,
+            branchId: typeof b.branchId === 'object' ? b.branchId._id : b.branchId,
+            customerId: typeof b.customerId === 'object' ? b.customerId._id : b.customerId,
+            customerName: b.customerName,
+            customerEmail: b.customerEmail,
+            customerPhone: b.customerPhone,
+            date: b.date || b.sessionDate,
+            time: b.time,
+            seats: b.seats,
+            totalAmount: b.totalAmount || 0,
+            paymentStatus: b.paymentStatus,
+            qrCode: b.qrCode || b.qrCodeData,
+            isVerified: !!b.isVerified,
+            verifiedAt: b.verifiedAt,
+            status: b.status,
+            createdAt: b.createdAt
+          }));
+          setBookings(mapped);
+          try { localStorage.setItem('bookings', JSON.stringify(mapped)); } catch { }
+        }
+      } catch {
+        // ignore network errors for polling
+      }
+    };
+    // Start polling if logged in
+    if (localStorage.getItem('token')) {
+      fetchOrdersAndBookings();
+      timer = window.setInterval(fetchOrdersAndBookings, 15000);
+    }
+    return () => { if (timer) window.clearInterval(timer); };
+  }, []);
+
   const addBranch = async (branchData: Omit<Branch, 'id' | 'createdAt'>) => {
     const newBranch: Branch = {
       ...branchData,
