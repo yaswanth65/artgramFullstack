@@ -8,29 +8,67 @@ const router = express.Router();
 
 router.get('/', protect, asyncHandler(async (req, res) => {
   const user = req.user;
-  const { branchId } = req.query;
-  
-  if (user.role === 'admin') {
-    const filter = branchId ? { branchId } : {};
-    const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
-    res.json(orders);
-    return;
-  }
-  
-  if (user.role === 'manager' || user.role === 'branch_manager') {
-    // Manager can only see orders from their branch
-    const managerBranchId = user.branchId || branchId;
-    if (!managerBranchId) {
-      res.status(400).json({ message: 'Branch ID required for manager' });
-      return;
+  const queryBranchId = req.query.branchId as string;
+
+  console.log('=== GET /api/orders DEBUG ===');
+  console.log('User ID:', user._id);
+  console.log('User Role:', user.role);
+  console.log('User branchId (raw):', user.branchId);
+  console.log('Query branchId:', queryBranchId);
+
+  // Extract branchId from user (handle populated vs string)
+  let userBranchId: string | undefined;
+  if (user.branchId) {
+    if (typeof user.branchId === 'string') {
+      userBranchId = user.branchId;
+    } else if (user.branchId._id) {
+      userBranchId = user.branchId._id.toString();
+    } else {
+      userBranchId = user.branchId.toString();
     }
-    const orders = await Order.find({ branchId: managerBranchId }).sort({ createdAt: -1 }).lean();
-    res.json(orders);
-    return;
   }
-  
-  // Customer can only see their own orders
-  const orders = await Order.find({ customerId: user._id }).sort({ createdAt: -1 }).lean();
+
+  console.log('Normalized user branchId:', userBranchId);
+
+  if (user.role === 'admin') {
+    // Admin sees all orders, or filtered by queryBranchId
+    const filter = queryBranchId ? { branchId: queryBranchId } : {};
+    console.log('Admin filter:', filter);
+    const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
+    console.log('Found orders:', orders.length);
+    return res.json(orders);
+  }
+
+  if (user.role === 'manager' || user.role === 'branch_manager') {
+    // Manager sees orders for their branch or queryBranchId (if they match)
+    let targetBranchId = queryBranchId || userBranchId;
+    
+    // Security: if user has branchId, they can only see their own branch
+    if (userBranchId && queryBranchId && queryBranchId !== userBranchId) {
+      console.log('Security: Manager trying to access different branch');
+      return res.status(403).json({ message: 'Cannot access other branch orders' });
+    }
+    
+    if (!targetBranchId) {
+      console.log('No target branchId for manager');
+      return res.status(400).json({ message: 'Branch ID required for manager' });
+    }
+
+    console.log('Manager target branchId:', targetBranchId);
+    const orders = await Order.find({ branchId: targetBranchId }).sort({ createdAt: -1 }).lean();
+    console.log('Found orders for manager:', orders.length);
+    
+    if (orders.length > 0) {
+      console.log('Sample order branchIds:', orders.slice(0, 3).map(o => o.branchId));
+    }
+    
+    return res.json(orders);
+  }
+
+  // Customer sees only their own orders
+  console.log('Customer filter: customerId =', user._id);
+  const orders = await Order.find({ customerId: user._id.toString() }).sort({ createdAt: -1 }).lean();
+  console.log('Found customer orders:', orders.length);
   res.json(orders);
 }));
 

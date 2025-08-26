@@ -1,6 +1,7 @@
 // Allow exporting hooks and helpers from this file (fast-refresh rule can be noisy in dev)
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import type { Branch, Event, Product, Order, Booking, CMSContent, User, TrackingUpdate } from '../types';
 
 type Slot = {
@@ -70,6 +71,7 @@ export const useData = () => {
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // branches are defined below as branchesState
+  const { user } = useAuth();
 
   const [events, setEvents] = useState<Event[]>([
     {
@@ -121,8 +123,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [products, setProducts] = useState<Product[]>([]);
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [orders, setOrders] = useState<Order[]>([
+    // Mock data for immediate testing
+    {
+      id: 'order1',
+      products: [{ productId: 'prod1', name: 'Slime Kit', quantity: 2, price: 500 }],
+      totalAmount: 1000,
+      branchId: 'hyderabad',
+      customerId: 'cust1',
+      customerName: 'John Doe',
+      customerEmail: 'john@example.com',
+      customerPhone: '+91 98765 43210',
+      shippingAddress: {
+        street: '123 Main St',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        zipCode: '500001',
+        country: 'India'
+      },
+      paymentStatus: 'completed',
+      orderStatus: 'processing',
+      trackingNumber: 'TRK123',
+      trackingUpdates: [],
+      createdAt: new Date().toISOString()
+    }
+  ]);
+  const [bookings, setBookings] = useState<Booking[]>([
+    // Mock data for immediate testing
+    {
+      id: 'booking1',
+      eventId: 'event1',
+      sessionId: 'session1',
+      activity: 'slime',
+      branchId: 'hyderabad',
+      customerId: 'cust1',
+      customerName: 'John Doe',
+      customerEmail: 'john@example.com',
+      customerPhone: '+91 98765 43210',
+      date: new Date().toISOString().split('T')[0],
+      time: '10:00',
+      seats: 2,
+      totalAmount: 600,
+      paymentStatus: 'completed',
+      qrCode: 'QR-1756191881137-1',
+      isVerified: false,
+      status: 'active',
+      createdAt: new Date().toISOString()
+    }
+  ]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
 
   const [managers, setManagers] = useState<User[]>([
@@ -457,6 +505,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
+    // Try backend first
+    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const res = await fetch(`${apiBase}/orders/${orderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setOrders(prev => {
+            const next = prev.map(o => (o.id === orderId ? {
+              ...o,
+              orderStatus: saved.orderStatus ?? (status as unknown as Order['orderStatus']),
+              trackingUpdates: saved.trackingUpdates ?? o.trackingUpdates
+            } : o));
+            try { localStorage.setItem('orders', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
+            try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore dispatch errors */ }
+            return next;
+          });
+          return;
+        }
+      }
+    } catch {
+      // fall through to local update
+    }
+
+    // Local optimistic update
     setOrders(prev => {
       const next = prev.map(order => order.id === orderId ? { ...order, orderStatus: status as unknown as Order['orderStatus'] } : order);
       try { localStorage.setItem('orders', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
@@ -465,7 +546,51 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const [branchesState, setBranches] = useState<Branch[]>([]);
+  const [branchesState, setBranches] = useState<Branch[]>([
+    // Mock branches for immediate testing
+    {
+      id: 'hyderabad',
+      name: 'Craft Factory Hyderabad',
+      location: 'Hyderabad',
+      address: '123 Tech City, Hyderabad',
+      phone: '+91 40 1234 5678',
+      email: 'hyderabad@craftfactory.com',
+      supportsSlime: true,
+      supportsTufting: true,
+      managerId: '10',
+      isActive: true,
+      stripeAccountId: 'acct_hyderabad',
+      createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'vijayawada',
+      name: 'Craft Factory Vijayawada',
+      location: 'Vijayawada',
+      address: '456 Business Center, Vijayawada',
+      phone: '+91 866 1234 5678',
+      email: 'vijayawada@craftfactory.com',
+      supportsSlime: true,
+      supportsTufting: false,
+      managerId: '11',
+      isActive: true,
+      stripeAccountId: 'acct_vijayawada',
+      createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'bangalore',
+      name: 'Craft Factory Bangalore',
+      location: 'Bangalore',
+      address: '789 Innovation Hub, Bangalore',
+      phone: '+91 80 1234 5678',
+      email: 'bangalore@craftfactory.com',
+      supportsSlime: true,
+      supportsTufting: true,
+      managerId: '12',
+      isActive: true,
+      stripeAccountId: 'acct_bangalore',
+      createdAt: '2024-01-01T00:00:00Z'
+    }
+  ]);
 
   const getBranchById = (id: string | undefined) => branchesState.find(b => b.id === id) || null;
 
@@ -475,12 +600,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem('token');
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
+    console.log('🚀 Initializing data fetch from backend...');
+
     // Branches
     (async () => {
       try {
+        console.log('🏢 Fetching branches...');
         const res = await fetch(`${apiBase}/branches`);
         if (res.ok) {
           const data = await res.json();
+          console.log('✅ Branches fetched:', data?.length || 0);
           const mapped: Branch[] = data.map((b: any) => ({
             id: b._id,
             name: b.name,
@@ -496,16 +625,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: b.createdAt || new Date().toISOString()
           }));
           setBranches(mapped);
+        } else {
+          console.error('❌ Failed to fetch branches:', res.status, res.statusText);
         }
-      } catch { /* ignore */ }
+      } catch (error) {
+        console.error('❌ Error fetching branches:', error);
+      }
     })();
 
     // Products
     (async () => {
       try {
+        console.log('📦 Fetching products...');
         const res = await fetch(`${apiBase}/products?isActive=true`);
         if (res.ok) {
           const data = await res.json();
+          console.log('✅ Products fetched:', data?.length || 0);
           const mapped: Product[] = data.map((p: any) => ({
             id: p._id,
             name: p.name,
@@ -519,16 +654,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: p.createdAt || new Date().toISOString()
           }));
           setProducts(mapped);
+        } else {
+          console.error('❌ Failed to fetch products:', res.status, res.statusText);
         }
-      } catch { /* ignore */ }
+      } catch (error) {
+        console.error('❌ Error fetching products:', error);
+      }
     })();
 
-    // Orders (auth)
+  // Orders (auth)
     (async () => {
+      if (!token) {
+        console.log('🔒 No token, skipping orders fetch');
+        return;
+      }
       try {
-        const res = await fetch(`${apiBase}/orders`, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+  const isManager = user?.role === 'branch_manager';
+    const branchParam = isManager ? (user?.branchId || selectedBranch || '') : '';
+    const ordersUrl = `${apiBase}/orders${branchParam ? `?branchId=${encodeURIComponent(branchParam)}` : ''}`;
+    console.log('📋 Fetching orders from:', ordersUrl);
+    const res = await fetch(ordersUrl, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
         if (res.ok) {
           const data = await res.json();
+          console.log('✅ Orders fetched:', data?.length || 0);
           const mapped: Order[] = data.map((o: any) => ({
             id: o._id,
             products: (o.products || []).map((it: any) => ({ productId: it.productId || it._id, name: it.name, quantity: it.quantity, price: it.price })),
@@ -547,16 +695,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }));
           setOrders(mapped);
           try { localStorage.setItem('orders', JSON.stringify(mapped)); } catch { }
+        } else {
+          console.error('❌ Failed to fetch orders:', res.status, res.statusText);
+          if (res.status === 401 || res.status === 403) {
+            console.log('🔒 Authentication issue with orders');
+          }
         }
-      } catch { /* ignore */ }
+      } catch (error) {
+        console.error('❌ Error fetching orders:', error);
+      }
     })();
 
-    // Bookings (auth)
+  // Bookings (auth)
     (async () => {
+      if (!token) {
+        console.log('🔒 No token, skipping bookings fetch');
+        return;
+      }
       try {
-        const res = await fetch(`${apiBase}/bookings`, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+  const isManager = user?.role === 'branch_manager';
+    const branchParam = isManager ? (user?.branchId || selectedBranch || '') : '';
+    const bookingsUrl = `${apiBase}/bookings${branchParam ? `?branchId=${encodeURIComponent(branchParam)}` : ''}`;
+    console.log('📅 Fetching bookings from:', bookingsUrl);
+    const res = await fetch(bookingsUrl, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
         if (res.ok) {
           const data = await res.json();
+          console.log('✅ Bookings fetched:', data?.length || 0);
           const mapped: Booking[] = data.map((b: any) => ({
             id: b._id,
             eventId: b.eventId,
@@ -580,78 +744,203 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }));
           setBookings(mapped);
           try { localStorage.setItem('bookings', JSON.stringify(mapped)); } catch { }
+        } else {
+          console.error('❌ Failed to fetch bookings:', res.status, res.statusText);
+          if (res.status === 401 || res.status === 403) {
+            console.log('🔒 Authentication issue with bookings');
+          }
         }
-      } catch { /* ignore */ }
+      } catch (error) {
+        console.error('❌ Error fetching bookings:', error);
+      }
     })();
   }, []);
+
+  // Load cached data from localStorage as fallback if backend fails
+  useEffect(() => {
+    const loadCachedData = () => {
+      try {
+        const cachedOrders = localStorage.getItem('orders');
+        const cachedBookings = localStorage.getItem('bookings');
+
+        if (cachedOrders && orders.length === 0) {
+          console.log('📦 Loading cached orders from localStorage');
+          setOrders(JSON.parse(cachedOrders));
+        }
+
+        if (cachedBookings && bookings.length === 0) {
+          console.log('📅 Loading cached bookings from localStorage');
+          setBookings(JSON.parse(cachedBookings));
+        }
+      } catch (error) {
+        console.error('❌ Error loading cached data:', error);
+      }
+    };
+
+    // Load cached data after a short delay to give backend fetch a chance
+    const timer = setTimeout(loadCachedData, 2000);
+    return () => clearTimeout(timer);
+  }, [orders.length, bookings.length]);
 
   // Periodically refresh orders and bookings from backend so status changes propagate
   useEffect(() => {
     const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
     let timer: number | null = null;
+    let refreshCount = 0;
+
     const fetchOrdersAndBookings = async () => {
       const token = localStorage.getItem('token');
-      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      if (!token) {
+        console.log('🔒 No token found, skipping data fetch');
+        return;
+      }
+
+      const authHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
       try {
+        refreshCount++;
+        console.log(`🔄 Fetching orders and bookings from backend... (attempt ${refreshCount})`);
+
+        const isManager = user?.role === 'branch_manager';
+        const branchParam = isManager ? (user?.branchId || selectedBranch || '') : '';
+        const ordersUrl = `${apiBase}/orders${branchParam ? `?branchId=${encodeURIComponent(branchParam)}` : ''}`;
+        const bookingsUrl = `${apiBase}/bookings${branchParam ? `?branchId=${encodeURIComponent(branchParam)}` : ''}`;
         const [oRes, bRes] = await Promise.all([
-          fetch(`${apiBase}/orders`, { headers: { 'Content-Type': 'application/json', ...authHeaders } }),
-          fetch(`${apiBase}/bookings`, { headers: { 'Content-Type': 'application/json', ...authHeaders } })
+          fetch(ordersUrl, { headers: { 'Content-Type': 'application/json', ...authHeaders } }),
+          fetch(bookingsUrl, { headers: { 'Content-Type': 'application/json', ...authHeaders } })
         ]);
+
+        console.log('📊 Orders response status:', oRes.status);
+        console.log('📊 Bookings response status:', bRes.status);
+
         if (oRes.ok) {
           const data = await oRes.json();
-          const mapped: Order[] = data.map((o: any) => ({
-            id: o._id,
-            products: (o.products || []).map((it: any) => ({ productId: it.productId || it._id, name: it.name, quantity: it.quantity, price: it.price })),
-            totalAmount: o.totalAmount,
-            branchId: typeof o.branchId === 'object' ? o.branchId._id : o.branchId,
-            customerId: typeof o.customerId === 'object' ? o.customerId._id : o.customerId,
-            customerName: o.customerName,
-            customerEmail: o.customerEmail,
-            customerPhone: o.customerPhone,
-            shippingAddress: o.shippingAddress,
-            paymentStatus: o.paymentStatus,
-            orderStatus: o.orderStatus,
-            trackingNumber: o.trackingNumber,
-            trackingUpdates: (o.trackingUpdates || []).map((u: any) => ({ id: u._id || undefined, status: u.status, location: u.location, description: u.description, createdAt: u.createdAt })),
-            createdAt: o.createdAt
-          }));
-          setOrders(mapped);
-          try { localStorage.setItem('orders', JSON.stringify(mapped)); } catch { }
+          console.log('✅ Orders data received:', data?.length || 0, 'orders');
+          if (Array.isArray(data)) {
+            const mapped: Order[] = data.map((o: any) => ({
+              id: o._id,
+              products: (o.products || []).map((it: any) => ({ productId: it.productId || it._id, name: it.name, quantity: it.quantity, price: it.price })),
+              totalAmount: o.totalAmount,
+              branchId: typeof o.branchId === 'object' ? o.branchId._id : o.branchId,
+              customerId: typeof o.customerId === 'object' ? o.customerId._id : o.customerId,
+              customerName: o.customerName,
+              customerEmail: o.customerEmail,
+              customerPhone: o.customerPhone,
+              shippingAddress: o.shippingAddress,
+              paymentStatus: o.paymentStatus,
+              orderStatus: o.orderStatus,
+              trackingNumber: o.trackingNumber,
+              trackingUpdates: (o.trackingUpdates || []).map((u: any) => ({ id: u._id || undefined, status: u.status, location: u.location, description: u.description, createdAt: u.createdAt })),
+              createdAt: o.createdAt
+            }));
+
+            // Only update if data has changed to prevent unnecessary re-renders
+            setOrders(prevOrders => {
+              const isDifferent = JSON.stringify(prevOrders.map(o => o.id).sort()) !== JSON.stringify(mapped.map(o => o.id).sort());
+              if (isDifferent || prevOrders.length !== mapped.length) {
+                console.log('📦 Updating orders state with fresh data');
+                try { localStorage.setItem('orders', JSON.stringify(mapped)); } catch { }
+                try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
+                return mapped;
+              }
+              return prevOrders;
+            });
+          } else {
+            console.warn('⚠️ Orders response is not an array:', data);
+          }
+        } else {
+          console.error('❌ Orders request failed:', oRes.status, oRes.statusText);
+          if (oRes.status === 401 || oRes.status === 403) {
+            console.log('🔒 Authentication failed, stopping polling and clearing auth');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            if (timer) window.clearInterval(timer);
+            window.location.reload();
+            return;
+          }
         }
+
         if (bRes.ok) {
           const data = await bRes.json();
-          const mapped: Booking[] = data.map((b: any) => ({
-            id: b._id,
-            eventId: b.eventId,
-            sessionId: typeof b.sessionId === 'object' ? b.sessionId._id : b.sessionId,
-            activity: b.activity,
-            branchId: typeof b.branchId === 'object' ? b.branchId._id : b.branchId,
-            customerId: typeof b.customerId === 'object' ? b.customerId._id : b.customerId,
-            customerName: b.customerName,
-            customerEmail: b.customerEmail,
-            customerPhone: b.customerPhone,
-            date: b.date || b.sessionDate,
-            time: b.time,
-            seats: b.seats,
-            totalAmount: b.totalAmount || 0,
-            paymentStatus: b.paymentStatus,
-            qrCode: b.qrCode || b.qrCodeData,
-            isVerified: !!b.isVerified,
-            verifiedAt: b.verifiedAt,
-            status: b.status,
-            createdAt: b.createdAt
-          }));
-          setBookings(mapped);
-          try { localStorage.setItem('bookings', JSON.stringify(mapped)); } catch { }
+          console.log('✅ Bookings data received:', data?.length || 0, 'bookings');
+          if (Array.isArray(data)) {
+            const mapped: Booking[] = data.map((b: any) => ({
+              id: b._id,
+              eventId: b.eventId,
+              sessionId: typeof b.sessionId === 'object' ? b.sessionId._id : b.sessionId,
+              activity: b.activity,
+              branchId: typeof b.branchId === 'object' ? b.branchId._id : b.branchId,
+              customerId: typeof b.customerId === 'object' ? b.customerId._id : b.customerId,
+              customerName: b.customerName,
+              customerEmail: b.customerEmail,
+              customerPhone: b.customerPhone,
+              date: b.date || b.sessionDate,
+              time: b.time,
+              seats: b.seats,
+              totalAmount: b.totalAmount || 0,
+              paymentStatus: b.paymentStatus,
+              qrCode: b.qrCode || b.qrCodeData,
+              isVerified: !!b.isVerified,
+              verifiedAt: b.verifiedAt,
+              status: b.status,
+              createdAt: b.createdAt
+            }));
+
+            // Only update if data has changed
+            setBookings(prevBookings => {
+              const isDifferent = JSON.stringify(prevBookings.map(b => b.id).sort()) !== JSON.stringify(mapped.map(b => b.id).sort());
+              if (isDifferent || prevBookings.length !== mapped.length) {
+                console.log('📅 Updating bookings state with fresh data');
+                try { localStorage.setItem('bookings', JSON.stringify(mapped)); } catch { }
+                try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
+                return mapped;
+              }
+              return prevBookings;
+            });
+          } else {
+            console.warn('⚠️ Bookings response is not an array:', data);
+          }
+        } else {
+          console.error('❌ Bookings request failed:', bRes.status, bRes.statusText);
+          if (bRes.status === 401 || bRes.status === 403) {
+            console.log('🔒 Authentication failed, stopping polling and clearing auth');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            if (timer) window.clearInterval(timer);
+            window.location.reload();
+            return;
+          }
         }
-      } catch {
-        // ignore network errors for polling
+      } catch (error) {
+        console.error('❌ Network error during polling:', error);
+        // Don't clear data on network errors, just log and continue
       }
     };
+
     // Start polling if logged in
     if (localStorage.getItem('token')) {
       fetchOrdersAndBookings();
-      timer = window.setInterval(fetchOrdersAndBookings, 15000);
+
+      // Use visibility change to avoid background polling
+      const onVisibility = () => {
+        if (!document.hidden && localStorage.getItem('token')) {
+          console.log('👁️ Page became visible, refreshing data...');
+          fetchOrdersAndBookings();
+        }
+      };
+
+      document.addEventListener('visibilitychange', onVisibility);
+
+      // Poll every 30 seconds instead of 60 for more responsive updates
+      timer = window.setInterval(() => {
+        if (!document.hidden && localStorage.getItem('token')) {
+          fetchOrdersAndBookings();
+        }
+      }, 30000);
+
+      return () => {
+        if (timer) window.clearInterval(timer);
+        document.removeEventListener('visibilitychange', onVisibility);
+      };
     }
     return () => { if (timer) window.clearInterval(timer); };
   }, []);

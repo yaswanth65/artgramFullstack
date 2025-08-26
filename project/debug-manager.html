@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager Dashboard Debug</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .debug-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .debug-section h3 {
+        margin-top: 0;
+        color: #333;
+      }
+      .status {
+        padding: 5px 10px;
+        border-radius: 3px;
+        margin: 5px 0;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+      }
+      .btn {
+        padding: 8px 15px;
+        margin: 5px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+      }
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+      pre {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Manager Dashboard Debug Tool</h1>
+
+    <div class="debug-section">
+      <h3>Authentication Status</h3>
+      <div id="auth-status"></div>
+      <button class="btn btn-secondary" onclick="checkAuth()">
+        Check Auth
+      </button>
+      <button class="btn btn-primary" onclick="testLogin()">Test Login</button>
+    </div>
+
+    <div class="debug-section">
+      <h3>API Connection Test</h3>
+      <div id="api-status"></div>
+      <button class="btn btn-secondary" onclick="testAPI()">Test API</button>
+    </div>
+
+    <div class="debug-section">
+      <h3>Data Loading Test</h3>
+      <div id="data-status"></div>
+      <button class="btn btn-secondary" onclick="testDataLoading()">
+        Test Data Loading
+      </button>
+    </div>
+
+    <div class="debug-section">
+      <h3>Console Logs</h3>
+      <div id="console-logs"></div>
+      <button class="btn btn-secondary" onclick="clearLogs()">
+        Clear Logs
+      </button>
+    </div>
+
+    <script>
+      const apiBase = "http://localhost:5001/api";
+      let logs = [];
+
+      // Override console.log to capture logs
+      const originalLog = console.log;
+      console.log = function (...args) {
+        originalLog.apply(console, args);
+        logs.push(args.join(" "));
+        updateLogDisplay();
+      };
+
+      function updateLogDisplay() {
+        const logContainer = document.getElementById("console-logs");
+        logContainer.innerHTML =
+          "<pre>" + logs.slice(-20).join("\n") + "</pre>";
+      }
+
+      function clearLogs() {
+        logs = [];
+        updateLogDisplay();
+      }
+
+      function showStatus(elementId, message, type = "info") {
+        const element = document.getElementById(elementId);
+        element.innerHTML += `<div class="status ${type}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+      }
+
+      function clearStatus(elementId) {
+        document.getElementById(elementId).innerHTML = "";
+      }
+
+      async function checkAuth() {
+        clearStatus("auth-status");
+
+        const token = localStorage.getItem("token");
+        const user = localStorage.getItem("user");
+
+        if (!token) {
+          showStatus("auth-status", "No token found in localStorage", "error");
+          return;
+        }
+
+        showStatus("auth-status", "Token found in localStorage", "success");
+
+        try {
+          // Parse JWT token
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const now = Date.now() / 1000;
+          const timeUntilExpiry = payload.exp - now;
+
+          if (timeUntilExpiry <= 0) {
+            showStatus("auth-status", "Token is expired!", "error");
+          } else if (timeUntilExpiry < 3600) {
+            showStatus(
+              "auth-status",
+              `Token expires in ${Math.floor(timeUntilExpiry / 60)} minutes`,
+              "warning"
+            );
+          } else {
+            showStatus(
+              "auth-status",
+              `Token expires in ${Math.floor(timeUntilExpiry / 3600)} hours`,
+              "success"
+            );
+          }
+
+          showStatus(
+            "auth-status",
+            `User: ${payload.email} (${payload.role})`,
+            "info"
+          );
+        } catch (error) {
+          showStatus(
+            "auth-status",
+            "Failed to parse token: " + error.message,
+            "error"
+          );
+        }
+      }
+
+      async function testLogin() {
+        clearStatus("auth-status");
+        showStatus("auth-status", "Testing login...", "info");
+
+        try {
+          const response = await fetch(`${apiBase}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: "hyderabad@craftfactory.com",
+              password: "password",
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            showStatus("auth-status", "Login successful!", "success");
+            checkAuth();
+          } else {
+            const error = await response.text();
+            showStatus(
+              "auth-status",
+              `Login failed: ${response.status} ${error}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          showStatus("auth-status", "Login error: " + error.message, "error");
+        }
+      }
+
+      async function testAPI() {
+        clearStatus("api-status");
+
+        const endpoints = [
+          { name: "Branches", url: "/branches" },
+          { name: "Products", url: "/products" },
+          { name: "Orders", url: "/orders", auth: true },
+          { name: "Bookings", url: "/bookings", auth: true },
+        ];
+
+        for (const endpoint of endpoints) {
+          try {
+            const headers = { "Content-Type": "application/json" };
+            const token = localStorage.getItem("token");
+
+            if (endpoint.auth && token) {
+              headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            showStatus("api-status", `Testing ${endpoint.name}...`, "info");
+
+            const response = await fetch(`${apiBase}${endpoint.url}`, {
+              headers,
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              showStatus(
+                "api-status",
+                `${endpoint.name}: ✅ ${data.length || 0} items`,
+                "success"
+              );
+            } else {
+              showStatus(
+                "api-status",
+                `${endpoint.name}: ❌ ${response.status} ${response.statusText}`,
+                "error"
+              );
+            }
+          } catch (error) {
+            showStatus(
+              "api-status",
+              `${endpoint.name}: ❌ ${error.message}`,
+              "error"
+            );
+          }
+        }
+      }
+
+      async function testDataLoading() {
+        clearStatus("data-status");
+        showStatus("data-status", "Starting data loading test...", "info");
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          showStatus(
+            "data-status",
+            "No token available for data loading test",
+            "error"
+          );
+          return;
+        }
+
+        const headers = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        };
+
+        // Test multiple times to simulate polling
+        for (let i = 1; i <= 3; i++) {
+          showStatus("data-status", `Test round ${i}/3...`, "info");
+
+          try {
+            const [ordersRes, bookingsRes] = await Promise.all([
+              fetch(`${apiBase}/orders`, { headers }),
+              fetch(`${apiBase}/bookings`, { headers }),
+            ]);
+
+            if (ordersRes.ok && bookingsRes.ok) {
+              const [orders, bookings] = await Promise.all([
+                ordersRes.json(),
+                bookingsRes.json(),
+              ]);
+
+              showStatus(
+                "data-status",
+                `Round ${i}: ✅ ${orders.length} orders, ${bookings.length} bookings`,
+                "success"
+              );
+            } else {
+              showStatus(
+                "data-status",
+                `Round ${i}: ❌ Orders: ${ordersRes.status}, Bookings: ${bookingsRes.status}`,
+                "error"
+              );
+            }
+          } catch (error) {
+            showStatus(
+              "data-status",
+              `Round ${i}: ❌ ${error.message}`,
+              "error"
+            );
+          }
+
+          if (i < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+          }
+        }
+
+        showStatus("data-status", "Data loading test completed", "info");
+      }
+
+      // Auto-check auth on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        checkAuth();
+      });
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { Plus, X, Save, Trash2, Edit2, Users, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, X, Trash2, Edit2, Users, Clock, Calendar, AlertCircle } from 'lucide-react';
 
 interface Session {
   _id?: string;
@@ -82,6 +82,7 @@ const EnhancedSessionManagement: React.FC = () => {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      console.log(`🔄 Fetching sessions for branch ${selectedBranchId}, activity ${selectedActivity}`);
       const response = await fetch(
         `${apiBase}/sessions/next-10-days/${selectedBranchId}?activity=${selectedActivity}`,
         { headers }
@@ -89,13 +90,50 @@ const EnhancedSessionManagement: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Sessions fetched:', data?.length || 0);
         setSessions(data);
+        
+        // Cache sessions data
+        try {
+          localStorage.setItem(`sessions_${selectedBranchId}_${selectedActivity}`, JSON.stringify(data));
+        } catch (error) {
+          console.warn('Failed to cache sessions:', error);
+        }
       } else {
-        showToastMessage('Failed to fetch sessions');
+        console.error('❌ Failed to fetch sessions:', response.status, response.statusText);
+        
+        // Try to load from cache if backend fails
+        try {
+          const cached = localStorage.getItem(`sessions_${selectedBranchId}_${selectedActivity}`);
+          if (cached) {
+            const cachedData = JSON.parse(cached);
+            setSessions(cachedData);
+            showToastMessage('Loaded cached sessions data');
+            console.log('📦 Loaded sessions from cache');
+          } else {
+            showToastMessage('Failed to fetch sessions and no cached data available');
+          }
+        } catch (error) {
+          showToastMessage('Failed to fetch sessions');
+        }
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);
-      showToastMessage('Error fetching sessions');
+      
+      // Try to load from cache on network error
+      try {
+        const cached = localStorage.getItem(`sessions_${selectedBranchId}_${selectedActivity}`);
+        if (cached) {
+          const cachedData = JSON.parse(cached);
+          setSessions(cachedData);
+          showToastMessage('Network error - loaded cached sessions');
+          console.log('📦 Network error, loaded sessions from cache');
+        } else {
+          showToastMessage('Network error and no cached data available');
+        }
+      } catch (cacheError) {
+        showToastMessage('Error fetching sessions');
+      }
     } finally {
       setLoading(false);
     }
@@ -209,6 +247,7 @@ const EnhancedSessionManagement: React.FC = () => {
         showToastMessage('Booking verified successfully');
         setQrCode('');
         fetchNext10DaysSessions(); // Refresh to show updated seat counts
+        console.log('QR verification result:', result);
       } else {
         const error = await response.json();
         showToastMessage(error.message || 'Invalid QR code');
@@ -290,13 +329,25 @@ const EnhancedSessionManagement: React.FC = () => {
           <h3 className="text-2xl font-bold text-gray-800">Enhanced Session Management</h3>
           <p className="text-gray-600">Manage all activity sessions with real-time seat tracking</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add Session</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={fetchNext10DaysSessions}
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+          >
+            <div className={`h-4 w-4 ${loading ? 'animate-spin rounded-full border-2 border-white border-t-transparent' : ''}`}>
+              {!loading && '🔄'}
+            </div>
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Session</span>
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
@@ -417,8 +468,11 @@ const EnhancedSessionManagement: React.FC = () => {
 
         {loading ? (
           <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-            <p className="mt-2 text-gray-600">Loading sessions...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+            <p className="text-gray-600 mb-2">Loading sessions...</p>
+            <p className="text-sm text-gray-500">
+              Fetching {selectedActivity} sessions for {branches.find(b => b.id === selectedBranchId)?.name}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -437,68 +491,73 @@ const EnhancedSessionManagement: React.FC = () => {
                 </button>
               </div>
             ) : (
-              sessionsForDate.map((session) => (
-                <div
-                  key={session._id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center text-gray-600">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span className="font-medium">{session.label || session.time}</span>
+              <>
+                <div className="text-sm text-gray-600 mb-4">
+                  Showing {sessionsForDate.length} session{sessionsForDate.length !== 1 ? 's' : ''} for {formatDate(selectedDate)}
+                </div>
+                {sessionsForDate.map((session) => (
+                  <div
+                    key={session._id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center text-gray-600">
+                            <Clock className="h-4 w-4 mr-1" />
+                            <span className="font-medium">{session.label || session.time}</span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {session.type} • {session.ageGroup}
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 mr-1 text-gray-400" />
+                            <span className={`text-sm font-medium ${
+                              session.availableSeats === 0 ? 'text-red-600' :
+                              session.availableSeats <= 3 ? 'text-amber-600' : 'text-green-600'
+                            }`}>
+                              {session.availableSeats}/{session.totalSeats} available
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {session.bookedSeats} booked
+                          </div>
+                          {!session.isActive && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                              Inactive
+                            </span>
+                          )}
+                          {session.createdBy === 'system' && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
+                              Auto-created
+                            </span>
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {session.type} • {session.ageGroup}
-                        </div>
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-1 text-gray-400" />
-                          <span className={`text-sm font-medium ${
-                            session.availableSeats === 0 ? 'text-red-600' :
-                            session.availableSeats <= 3 ? 'text-amber-600' : 'text-green-600'
-                          }`}>
-                            {session.availableSeats}/{session.totalSeats} available
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {session.bookedSeats} booked
-                        </div>
-                        {!session.isActive && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                            Inactive
-                          </span>
-                        )}
-                        {session.createdBy === 'system' && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
-                            Auto-created
-                          </span>
+                        {session.notes && (
+                          <p className="text-sm text-gray-600 mt-1">{session.notes}</p>
                         )}
                       </div>
-                      {session.notes && (
-                        <p className="text-sm text-gray-600 mt-1">{session.notes}</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setEditingSession(session)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                        title="Edit session"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => session._id && deleteSession(session._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                        title="Delete session"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setEditingSession(session)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                          title="Edit session"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => session._id && deleteSession(session._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete session"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         )}

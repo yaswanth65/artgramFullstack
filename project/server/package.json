@@ -10,7 +10,10 @@
     "build": "tsc -p .",
     "seed": "ts-node src/scripts/seedUsers.ts",
     "seed-all": "ts-node src/scripts/seedData.ts",
-    "seed-sessions": "ts-node src/scripts/seedSessions.ts"
+    "seed-sessions": "ts-node src/scripts/seedSessions.ts",
+    "seed-hyderabad-orders": "ts-node src/scripts/seedHyderabadOrders.ts",
+    "check-hyderabad-data": "ts-node src/scripts/checkHyderabadData.ts",
+    "flush-and-seed-orders": "ts-node src/scripts/flushAndSeedOrders.ts"
   },
   "dependencies": {
     "@types/express-rate-limit": "^5.1.3",

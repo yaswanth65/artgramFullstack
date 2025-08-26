@@ -21,23 +21,23 @@ app.use(helmet());
 
 // CORS configuration - restrict to specific origins in production
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-production-domain.com', 'https://craft-factory.com'] 
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://your-production-domain.com', 'https://craft-factory.com']
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 
-// Rate limiting
+// Rate limiting (relaxed in development to avoid 429 during local polling)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 300 : 2000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/', limiter);
+app.use('/api/', process.env.NODE_ENV === 'production' ? limiter : (req, res, next) => next());
 
 // Auth specific rate limiting
 const authLimiter = rateLimit({
@@ -53,14 +53,14 @@ app.use(morgan('combined'));
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Something went wrong!' 
-      : err.message 
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production'
+      ? 'Something went wrong!'
+      : err.message
   });
 });
 
-app.get('/api/health', (req, res) => res.json({ok: true, timestamp: new Date().toISOString()}));
+app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/orders', orderRoutes);

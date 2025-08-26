@@ -9,22 +9,45 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(opts.headers as any) };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  
+
   const url = `${apiBase}${path}`;
   console.log('🌐 Making API request to:', url);
   console.log('📝 Request options:', { ...opts, headers });
-  
+
   const res = await fetch(url, { ...opts, headers });
   console.log('📡 Response status:', res.status, res.statusText);
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
     console.log('❌ API Error response:', txt);
+
+    // Handle token expiry
+    if (res.status === 401 || res.status === 403) {
+      console.log('🔒 Token expired or invalid, logging out');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      window.location.reload(); // Force reload to reset app state
+    }
+
     throw new Error(txt || res.statusText || 'API error');
   }
   const data = await res.json().catch(() => null);
   console.log('✅ API Success response:', data);
   return data;
+}
+
+// Helper function to check if token is expired
+function isTokenExpired(token: string): boolean {
+  if (!token) return true;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now = Date.now() / 1000;
+    return payload.exp < now;
+  } catch (error) {
+    console.error('Error parsing token:', error);
+    return true;
+  }
 }
 
 interface AuthContextType {
@@ -49,14 +72,36 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [passwordResetTokens, setPasswordResetTokens] = useState<{[key: string]: {email: string, expires: number}}>({});
+  const [passwordResetTokens, setPasswordResetTokens] = useState<{ [key: string]: { email: string, expires: number } }>({});
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
+
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      // Check if token is expired
+      if (isTokenExpired(token)) {
+        console.log('🔒 Token expired, clearing auth data');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+      } else {
+        // Normalize branchId to string if backend populated it as an object
+        try {
+          const parsed = JSON.parse(storedUser);
+          const normalized = {
+            ...parsed,
+            branchId: typeof parsed?.branchId === 'object' ? (parsed?.branchId?._id || parsed?.branchId?.id || '') : parsed?.branchId
+          } as User;
+          // Persist normalization in storage to avoid future mismatches
+          localStorage.setItem('user', JSON.stringify(normalized));
+          setUser(normalized);
+        } catch {
+          setUser(JSON.parse(storedUser));
+        }
+      }
     }
+
     setLoading(false);
   }, []);
 
@@ -70,13 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ Backend login response:', resp);
       const { token, user: u } = resp as any;
       if (token && u) {
+        // Normalize branchId to a plain string to ensure manager-scoped API calls work
+        const normalizedUser: User = {
+          ...(u as User),
+          branchId: typeof (u as any)?.branchId === 'object' ? ((u as any)?.branchId?._id || (u as any)?.branchId?.id || '') : (u as any)?.branchId
+        };
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(u));
-        setUser(u);
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+        setUser(normalizedUser);
         console.log('✅ Login successful, user set:', u);
         return;
       }
-      
+
       // If we get here, backend login failed
       console.log('❌ Backend login failed - no token or user');
       throw new Error('Backend login failed');
@@ -84,14 +134,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('❌ Login error:', err);
       // Only fall back to mock users if backend is completely unavailable (connection error)
       const isConnectionError = err instanceof Error && (
-        err.message.includes('fetch') || 
+        err.message.includes('fetch') ||
         err.message.includes('NetworkError') ||
         err.message.includes('Failed to fetch')
       );
-      
+
       if (isConnectionError) {
         console.warn('Backend unavailable, falling back to mock users');
-        
+
         // Fallback mock login for offline/demo mode
         const mockUsers: User[] = [
           {
@@ -189,14 +239,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // In a real app, this would update the password in the database
       // For demo purposes, we'll just simulate success
       console.log('Password reset successful for:', email);
-      
+
       // Remove used token
       setPasswordResetTokens(prev => {
         const newTokens = { ...prev };
         delete newTokens[token];
         return newTokens;
       });
-      
+
       // Show success notification
       const notification = document.createElement('div');
       notification.style.cssText = `
@@ -213,14 +263,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       `;
       notification.innerHTML = '✅ Password reset successful!';
       document.body.appendChild(notification);
-      
+
       setTimeout(() => {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
         }
       }, 3000);
-      
-  } finally {
+
+    } finally {
       setLoading(false);
     }
   };

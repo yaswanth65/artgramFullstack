@@ -3,6 +3,21 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Calendar, ShoppingBag, Download, QrCode, Package, Eye, Truck } from 'lucide-react';
+// Helper to generate a QR image data URL for booking/order payloads.
+// Use dynamic import so bundlers handle the module and we avoid using `require` at runtime
+async function generateQRCodeDataUrl(text: string): Promise<string> {
+  try {
+    // Dynamically import the qrcode module so this runs in the browser environment
+    const qrcodeModule = await import('qrcode');
+    // Support both ESM and CommonJS interop shapes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toDataURL = (qrcodeModule as any).toDataURL || (qrcodeModule as any).default?.toDataURL;
+    if (typeof toDataURL !== 'function') return '';
+    return await toDataURL(text, { width: 512, margin: 1 });
+  } catch {
+    return '';
+  }
+}
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -17,10 +32,10 @@ const CustomerDashboard: React.FC = () => {
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8";
   const cardClasses = "bg-white rounded-lg shadow-lg p-4 md:p-6";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const downloadTicket = (booking: any) => {
+  const downloadTicket = async (booking: any) => {
     const event = events.find(e => e.id === booking.eventId);
     const branch = branches.find(b => b.id === booking.branchId);
-    
+
     const ticketData = {
       ticketId: booking.id,
       eventTitle: event?.title,
@@ -34,38 +49,38 @@ const CustomerDashboard: React.FC = () => {
       seats: booking.seats,
       totalAmount: booking.totalAmount,
       customerName: user?.name,
-  customerId: user?.id,
-  customerPhone: user?.phone || '',
-  customerAddress: user?.address || null,
+      customerId: user?.id,
+      customerPhone: user?.phone || '',
+      customerAddress: user?.address || null,
       bookingDate: booking.createdAt,
       status: booking.isVerified ? 'Verified' : 'Pending Verification'
     };
-    
-    const blob = new Blob([JSON.stringify(ticketData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+
+    // Generate QR code PNG for this booking payload
+    const qrPayload = JSON.stringify({ type: 'booking', ...ticketData });
+    const dataUrl = await generateQRCodeDataUrl(qrPayload);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `ticket-${booking.id}.json`;
+    a.href = dataUrl;
+    a.download = `booking-qr-${booking.id}.png`;
     a.click();
-    URL.revokeObjectURL(url);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const downloadInvoice = (order: any) => {
+  const downloadInvoice = async (order: any) => {
     const branch = branches.find(b => b.id === order.branchId);
-    
+
     const invoiceData = {
       invoiceId: order.id,
       orderDate: order.createdAt,
       customerName: user?.name,
-  customerId: user?.id,
-  customerPhone: user?.phone || '',
-  customerAddress: user?.address || null,
+      customerId: user?.id,
+      customerPhone: user?.phone || '',
+      customerAddress: user?.address || null,
       customerEmail: user?.email,
       branch: branch?.name,
       branchAddress: branch?.address,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  products: order.products.map((p: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      products: order.products.map((p: any) => ({
         name: p.name,
         quantity: p.quantity,
         price: p.price,
@@ -79,14 +94,14 @@ const CustomerDashboard: React.FC = () => {
       trackingNumber: order.trackingNumber,
       shippingAddress: order.shippingAddress
     };
-    
-    const blob = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+
+    // Generate QR image for order payload
+    const qrPayload = JSON.stringify({ type: 'order', ...invoiceData });
+    const dataUrl = await generateQRCodeDataUrl(qrPayload);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `invoice-${order.id}.json`;
+    a.href = dataUrl;
+    a.download = `order-qr-${order.id}.png`;
     a.click();
-    URL.revokeObjectURL(url);
   };
 
   const getOrderStatusColor = (status: string) => {
@@ -168,7 +183,7 @@ const CustomerDashboard: React.FC = () => {
               <Calendar className="h-6 w-6 md:h-8 md:w-8 text-blue-600" />
             </div>
           </div>
-          
+
           <div className={cardClasses}>
             <div className="flex items-center justify-between">
               <div>
@@ -178,7 +193,7 @@ const CustomerDashboard: React.FC = () => {
               <ShoppingBag className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
             </div>
           </div>
-          
+
           <div className={cardClasses}>
             <div className="flex items-center justify-between">
               <div>
@@ -191,7 +206,7 @@ const CustomerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           {/* Event Bookings */}
           <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
@@ -204,7 +219,7 @@ const CustomerDashboard: React.FC = () => {
                 {userBookings.length} total
               </span>
             </div>
-            
+
             {userBookings.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -233,14 +248,13 @@ const CustomerDashboard: React.FC = () => {
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getPaymentStatusColor(booking.paymentStatus)}`}>
                             {booking.paymentStatus}
                           </span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            booking.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${booking.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
                             {booking.isVerified ? 'Verified' : 'Pending'}
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
                         <div>
                           <span className="font-medium">Date:</span> {event?.date}
@@ -256,12 +270,12 @@ const CustomerDashboard: React.FC = () => {
                         </div>
                         {booking.paymentIntentId && (
                           <div className="col-span-2">
-                            <span className="font-medium">Payment ID:</span> 
+                            <span className="font-medium">Payment ID:</span>
                             <span className="font-mono text-xs ml-1">{booking.paymentIntentId}</span>
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 text-sm text-gray-600">
                           <QrCode className="h-4 w-4" />
@@ -281,7 +295,7 @@ const CustomerDashboard: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Product Orders */}
           <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
             <div className="flex items-center justify-between mb-6">
@@ -293,13 +307,13 @@ const CustomerDashboard: React.FC = () => {
                 {userOrders.length} total
               </span>
             </div>
-            
+
             {userOrders.length === 0 ? (
               <div className="text-center py-8">
                 <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">No orders yet</p>
                 <Link
-                  to="/store" 
+                  to="/store"
                   className="inline-flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
                 >
                   <ShoppingBag className="h-4 w-4" />
@@ -326,7 +340,7 @@ const CustomerDashboard: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="mb-3">
                         <p className="text-xs md:text-sm text-gray-600 mb-1">
                           <span className="font-medium">Items:</span> {order.products.length} products
@@ -336,7 +350,7 @@ const CustomerDashboard: React.FC = () => {
                           {order.products.length > 2 && ` +${order.products.length - 2} more`}
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs md:text-sm text-gray-600 mb-3">
                         <div>
                           <span className="font-medium">Amount:</span> ₹{order.totalAmount}
@@ -346,7 +360,7 @@ const CustomerDashboard: React.FC = () => {
                         </div>
                         {order.paymentIntentId && (
                           <div className="md:col-span-2">
-                            <span className="font-medium">Payment ID:</span> 
+                            <span className="font-medium">Payment ID:</span>
                             <span className="font-mono text-xs ml-1">{order.paymentIntentId}</span>
                           </div>
                         )}
@@ -356,7 +370,7 @@ const CustomerDashboard: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Enhanced Order Status Timeline */}
                       {order.orderStatus !== 'pending' && (
                         <div className="mb-4 bg-gray-50 p-3 rounded-lg">
@@ -374,25 +388,22 @@ const CustomerDashboard: React.FC = () => {
                                   'out_for_delivery': 'Out for Delivery',
                                   'delivered': 'Delivered'
                                 };
-                                
+
                                 const statusOrder = ['pending', 'payment_confirmed', 'processing', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
                                 const currentIndex = statusOrder.indexOf(order.orderStatus);
                                 const isCompleted = index <= currentIndex - 1; // -1 because we skip 'pending'
                                 const isCurrent = status === order.orderStatus;
-                                
+
                                 return (
                                   <div key={status} className="flex items-center">
-                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                                      isCompleted || isCurrent ? 'bg-green-500' : 'bg-gray-300'
-                                    }`}></div>
-                                    <span className={`ml-2 ${
-                                      isCompleted || isCurrent ? 'text-green-700 font-medium' : 'text-gray-500'
-                                    }`}>
+                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isCompleted || isCurrent ? 'bg-green-500' : 'bg-gray-300'
+                                      }`}></div>
+                                    <span className={`ml-2 ${isCompleted || isCurrent ? 'text-green-700 font-medium' : 'text-gray-500'
+                                      }`}>
                                       {statusLabels[status as keyof typeof statusLabels]}
                                     </span>
-                                    {index < 6 && <div className={`w-4 h-0.5 mx-1 ${
-                                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                                    }`}></div>}
+                                    {index < 6 && <div className={`w-4 h-0.5 mx-1 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'
+                                      }`}></div>}
                                   </div>
                                 );
                               })}
@@ -410,26 +421,28 @@ const CustomerDashboard: React.FC = () => {
                               <div key={update.id || index} className="flex justify-between items-start text-xs">
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                      update.status === 'delivered' || update.status === 'Delivered' ? 'bg-green-500' :
+                                    <div className={`w-2 h-2 rounded-full ${update.status === 'delivered' || update.status === 'Delivered' ? 'bg-green-500' :
                                       update.status === 'shipped' || update.status === 'Shipped' || update.status === 'out_for_delivery' || update.status === 'Out for Delivery' ? 'bg-blue-500' :
-                                      update.status === 'processing' || update.status === 'Processing' || update.status === 'packed' || update.status === 'Packed' ? 'bg-yellow-500' :
-                                      'bg-gray-500'
-                                    }`}></div>
+                                        update.status === 'processing' || update.status === 'Processing' || update.status === 'packed' || update.status === 'Packed' ? 'bg-yellow-500' :
+                                          'bg-gray-500'
+                                      }`}></div>
                                     <span className="font-medium">{getOrderStatusLabel(update.status) || update.status}</span>
                                   </div>
                                   <p className="text-gray-600 ml-4">{update.description}</p>
                                   <p className="text-gray-500 ml-4">{update.location}</p>
                                 </div>
                                 <span className="text-gray-500 ml-2">
-                                  {new Date(update.createdAt || update.timestamp).toLocaleDateString()}
+                                  {(() => {
+                                    const ts = update.createdAt || update.timestamp;
+                                    return ts ? new Date(ts as unknown as string).toLocaleDateString() : '';
+                                  })()}
                                 </span>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => downloadInvoice(order)}
@@ -466,18 +479,20 @@ const CustomerDashboard: React.FC = () => {
                 <div key={u.id || index} className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        u.status === 'delivered' || u.status === 'Delivered' ? 'bg-green-500' : 
-                        u.status === 'shipped' || u.status === 'Shipped' || u.status === 'out_for_delivery' || u.status === 'Out for Delivery' ? 'bg-blue-500' : 
-                        u.status === 'processing' || u.status === 'Processing' || u.status === 'packed' || u.status === 'Packed' ? 'bg-yellow-500' :
-                        'bg-gray-500'
-                      }`}></div>
+                      <div className={`w-2 h-2 rounded-full ${u.status === 'delivered' || u.status === 'Delivered' ? 'bg-green-500' :
+                        u.status === 'shipped' || u.status === 'Shipped' || u.status === 'out_for_delivery' || u.status === 'Out for Delivery' ? 'bg-blue-500' :
+                          u.status === 'processing' || u.status === 'Processing' || u.status === 'packed' || u.status === 'Packed' ? 'bg-yellow-500' :
+                            'bg-gray-500'
+                        }`}></div>
                       <span className="font-medium">{getOrderStatusLabel(u.status) || u.status}</span>
                     </div>
                     <p className="text-sm text-gray-600 ml-4">{u.description}</p>
                     <p className="text-xs text-gray-500 ml-4">{u.location}</p>
                   </div>
-                  <div className="text-xs text-gray-500">{new Date(u.createdAt || u.timestamp).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">{(() => {
+                    const ts = u.createdAt || u.timestamp;
+                    return ts ? new Date(ts as unknown as string).toLocaleString() : '';
+                  })()}</div>
                 </div>
               ))}
               {(!trackOrder.trackingUpdates || trackOrder.trackingUpdates.length === 0) && (

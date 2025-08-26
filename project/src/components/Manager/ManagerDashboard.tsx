@@ -11,19 +11,89 @@ import {
   Truck,
   CheckCircle,
   Camera,
-  X,
   AlertCircle
 } from 'lucide-react';
-import type { Order } from '../../types';
+import type { Order, Booking, Branch, Event as CustomEvent } from '../../types';
 
 const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
   const {
-    orders,
-    events,
-    bookings,
-    branches
+    orders: contextOrders,
+    events: contextEvents,
+    bookings: contextBookings,
+    branches: contextBranches,
+    updateOrderStatus: contextUpdateOrderStatus,
+    addTrackingUpdate: contextAddTrackingUpdate
   } = useData();
+
+  // Local state that mirrors context, without mock fallbacks
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
+
+  // Sync with context data and persist locally
+  useEffect(() => {
+    setOrders(contextOrders);
+  }, [contextOrders]);
+
+  useEffect(() => {
+    setBookings(contextBookings);
+  }, [contextBookings]);
+
+  useEffect(() => {
+    if (contextBranches.length > 0) {
+      setBranches(contextBranches);
+    }
+  }, [contextBranches]);
+
+  useEffect(() => {
+    if (contextEvents.length > 0) {
+      setCustomEvents(contextEvents);
+    }
+  }, [contextEvents]);
+
+  // Debug: Track data changes and persist state
+  useEffect(() => {
+    console.log('🔄 ManagerDashboard - Data updated:', {
+      ordersCount: orders.length,
+      bookingsCount: bookings.length,
+      branchesCount: branches.length,
+      eventsCount: customEvents.length,
+      timestamp: new Date().toISOString()
+    });
+  }, [orders.length, bookings.length, branches.length, customEvents.length]);
+
+  // Check token expiry
+  const [tokenWarning, setTokenWarning] = useState(false);
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now = Date.now() / 1000;
+        const timeUntilExpiry = payload.exp - now;
+
+        // Show warning if token expires in less than 1 hour
+        if (timeUntilExpiry < 3600 && timeUntilExpiry > 0) {
+          setTokenWarning(true);
+        } else if (timeUntilExpiry <= 0) {
+          // Token expired, force logout
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error checking token expiry:', error);
+      }
+    };
+
+    checkTokenExpiry();
+    const interval = setInterval(checkTokenExpiry, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -38,19 +108,33 @@ const ManagerDashboard: React.FC = () => {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [scannerActive, setScannerActive] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  // Set initial loading to false and provide immediate data
+  const [isDataLoading, setIsDataLoading] = useState(false);  // Track when data is initially loaded
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsDataLoading(false);
+    }, 3000); // Give data 3 seconds to load
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reset loading state when data arrives
+  useEffect(() => {
+    if (orders.length > 0 || bookings.length > 0) {
+      setIsDataLoading(false);
+    }
+  }, [orders.length, bookings.length]);
 
   // Get API base URL
   const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
 
-  // Get manager's branch (Branch.managerId is the manager user id)
-  const managerBranch = branches.find(branch => (
-    branch.managerId === user?.id || branch.id === user?.branchId
-  ));
+  // Determine manager branchId even if branches haven't loaded yet
+  const effectiveBranchId = user?.branchId || branches.find(b => b.managerId === user?.id)?.id || undefined;
 
-  // Filter data for manager's branch
-  const branchOrders = orders.filter(order => order.branchId === managerBranch?.id);
-  const branchBookings = bookings.filter(booking => booking.branchId === managerBranch?.id);
-  const branchEvents = events.filter(event => event.branchId === managerBranch?.id);
+  // Filter data for manager's branch using effectiveBranchId
+  const branchOrders = effectiveBranchId ? orders.filter(order => order.branchId === effectiveBranchId) : orders;
+  const branchBookings = effectiveBranchId ? bookings.filter(booking => booking.branchId === effectiveBranchId) : bookings;
+  const branchEvents = effectiveBranchId ? customEvents.filter((event: CustomEvent) => event.branchId === effectiveBranchId) : customEvents;
 
   // Calculate analytics
   const totalRevenue = branchOrders.reduce((sum, order) => sum + order.totalAmount, 0);
@@ -63,80 +147,113 @@ const ManagerDashboard: React.FC = () => {
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiBase}/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({ status })
-      });
-
-      if (response.ok) {
-        showToast('Order status updated successfully', 'success');
-        // Refresh the page to update the orders
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        showToast(error.message || 'Failed to update order status', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      showToast('Error updating order status', 'error');
-    }
+    await contextUpdateOrderStatus(orderId, status);
+    showToast('Order status updated', 'success');
   };
 
   const addTrackingUpdate = async (orderId: string, update: any) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiBase}/orders/${orderId}/tracking`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(update)
-      });
-
-      if (response.ok) {
-        showToast('Tracking update added successfully', 'success');
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        showToast(error.message || 'Failed to add tracking update', 'error');
-      }
-    } catch (error) {
-      console.error('Error adding tracking update:', error);
-      showToast('Error adding tracking update', 'error');
-    }
+    await contextAddTrackingUpdate(orderId, update);
+    showToast('Tracking update added', 'success');
   };
 
   const verifyQRCode = async (qrCodeValue: string) => {
     try {
+      console.log('🔍 Verifying QR code:', qrCodeValue);
+
+      // First try to parse if it's a JSON string
+      let codeToVerify = qrCodeValue;
+      try {
+        const parsed = JSON.parse(qrCodeValue);
+        if (parsed.type === 'booking' && parsed.qrCode) {
+          codeToVerify = parsed.qrCode;
+          console.log('📋 Extracted QR code from JSON:', codeToVerify);
+        }
+      } catch {
+        // Not JSON, use as is
+      }
+
+      // Check if this is our test QR code or matches any booking
+      const matchingBooking = bookings.find(booking => booking.qrCode === codeToVerify);
+
+      if (matchingBooking) {
+        // Local verification successful
+        const result = {
+          success: true,
+          booking: {
+            customerName: matchingBooking.customerName,
+            activity: matchingBooking.activity,
+            date: matchingBooking.date,
+            time: matchingBooking.time,
+            seats: matchingBooking.seats,
+            status: matchingBooking.status,
+            verifiedAt: new Date().toISOString()
+          }
+        };
+
+        setQrResult(result);
+        showToast('QR Code verified successfully!', 'success');
+        console.log('✅ QR verification successful:', result);
+
+        // Update booking status locally and persist
+        setBookings(prevBookings => {
+          const updatedBookings = prevBookings.map(booking =>
+            booking.qrCode === codeToVerify
+              ? { ...booking, isVerified: true, verifiedAt: new Date().toISOString(), verifiedBy: user?.name || 'Manager' }
+              : booking
+          );
+
+          // Save to localStorage for persistence
+          try {
+            localStorage.setItem('manager_bookings', JSON.stringify(updatedBookings));
+            console.log('📅 Updated booking verification and cached locally');
+          } catch (error) {
+            console.warn('Failed to cache updated bookings:', error);
+          }
+
+          return updatedBookings;
+        });
+
+        return;
+      }
+
+      // Try backend verification as fallback (bookings route supports verify-qr)
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiBase}/orders/verify-qr`, {
+      const response = await fetch(`${apiBase}/bookings/verify-qr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
-        body: JSON.stringify({ qrCode: qrCodeValue })
+        body: JSON.stringify({ qrCode: codeToVerify })
       });
 
       if (response.ok) {
         const result = await response.json();
         setQrResult(result);
-        showToast('QR Code verified successfully!', 'success');
+        showToast('QR Code verified successfully via backend!', 'success');
+        console.log('✅ Backend QR verification successful:', result);
+
+        // Persist verification into local bookings state using returned booking id or qr
+        setBookings(prevBookings => {
+          const bookingIdFromResult = result?.booking?.id;
+          const updated = prevBookings.map(b =>
+            (bookingIdFromResult ? b.id === bookingIdFromResult : b.qrCode === codeToVerify)
+              ? { ...b, isVerified: true, verifiedAt: result?.booking?.verifiedAt || new Date().toISOString(), verifiedBy: user?.name || 'Manager' }
+              : b
+          );
+          try { localStorage.setItem('bookings', JSON.stringify(updated)); } catch { /* ignore */ }
+          try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore */ }
+          return updated;
+        });
       } else {
         const error = await response.json();
-        showToast(error.message || 'Invalid QR Code', 'error');
+        console.error('❌ QR verification failed:', error);
+        showToast(error.message || 'Invalid QR Code.', 'error');
         setQrResult(null);
       }
     } catch (error) {
       console.error('Error verifying QR code:', error);
-      showToast('Error verifying QR code', 'error');
+      showToast('Error verifying QR code. Try the test QR: QR-1756191881137-1', 'error');
       setQrResult(null);
     }
   };
@@ -149,52 +266,178 @@ const ManagerDashboard: React.FC = () => {
     }
   };
 
-  // Simple camera-based QR scanner using BarcodeDetector if available
+  // Enhanced QR scanner with multiple fallback options
   useEffect(() => {
     let stream: MediaStream | null = null;
     let rafId: number | null = null;
     let detector: any = null;
+
     const start = async () => {
       if (!qrScannerOpen || scannerActive) return;
+
       try {
-        // @ts-ignore: experimental API
-        const Supported = 'BarcodeDetector' in window;
-        if (!Supported) return;
-        // @ts-ignore
-        detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setScannerActive(true);
-          const scan = async () => {
-            try {
-              if (!videoRef.current) return;
-              // @ts-ignore
-              const detections = await detector.detect(videoRef.current);
-              if (detections && detections.length > 0) {
-                const code = detections[0].rawValue || detections[0].rawValue;
-                if (code) {
-                  verifyQRCode(code);
-                }
-              }
-            } catch { }
-            rafId = requestAnimationFrame(scan);
-          };
-          rafId = requestAnimationFrame(scan);
+        console.log('🎥 Starting QR scanner...');
+
+        // Method 1: Try BarcodeDetector API (Chrome/Edge)
+        if ('BarcodeDetector' in window) {
+          console.log('✅ BarcodeDetector available');
+          detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+        } else {
+          console.warn('⚠️ BarcodeDetector not supported');
+          showToast('Camera scanning not supported. Please use manual QR entry or try Chrome/Edge browser.', 'error');
+          // Don't return here, still try to start camera for manual scanning
         }
-      } catch (e) {
-        // Fallback: no-op
+
+        // Request camera access
+        const constraints = {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { min: 320, ideal: 640, max: 1280 },
+            height: { min: 240, ideal: 480, max: 720 }
+          }
+        };
+
+        console.log('📱 Requesting camera access...');
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('✅ Camera stream obtained');
+
+        if (videoRef.current && stream) {
+          videoRef.current.srcObject = stream;
+
+          // Wait for video to be ready
+          await new Promise<void>((resolve, reject) => {
+            if (!videoRef.current) {
+              reject(new Error('Video element not available'));
+              return;
+            }
+
+            const video = videoRef.current;
+
+            const onLoadedMetadata = () => {
+              video.play()
+                .then(() => {
+                  console.log('✅ Video playing');
+                  setScannerActive(true);
+                  resolve();
+                })
+                .catch(reject);
+            };
+
+            const onError = (error: any) => {
+              console.error('Video error:', error);
+              reject(error);
+            };
+
+            video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+            video.addEventListener('error', onError, { once: true });
+
+            // Cleanup listeners
+            setTimeout(() => {
+              video.removeEventListener('loadedmetadata', onLoadedMetadata);
+              video.removeEventListener('error', onError);
+            }, 10000);
+          });
+
+          // Only start scanning if BarcodeDetector is available
+          if (detector) {
+            const scan = async () => {
+              try {
+                if (!videoRef.current || !detector || !scannerActive) return;
+
+                const detections = await detector.detect(videoRef.current);
+
+                if (detections && detections.length > 0) {
+                  const code = detections[0].rawValue;
+                  if (code && code.trim()) {
+                    console.log('📱 QR Code detected:', code);
+
+                    // Process the QR code
+                    let qrCodeToVerify = code.trim();
+
+                    // Try to parse as JSON first
+                    try {
+                      const parsed = JSON.parse(code);
+                      if (parsed.type === 'booking' && parsed.qrCode) {
+                        qrCodeToVerify = parsed.qrCode;
+                      }
+                    } catch {
+                      // If not JSON, use the code directly
+                    }
+
+                    // Verify the QR code
+                    await verifyQRCode(qrCodeToVerify);
+                    setQrScannerOpen(false); // Close scanner after successful scan
+                    return;
+                  }
+                }
+              } catch (error) {
+                console.error('QR scanning error:', error);
+              }
+
+              if (scannerActive) {
+                rafId = requestAnimationFrame(scan);
+              }
+            };
+
+            // Start scanning loop
+            rafId = requestAnimationFrame(scan);
+          } else {
+            // Show message that manual entry is required
+            showToast('Camera started but automatic scanning not supported. Please use manual QR entry.', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Camera initialization failed:', error);
+        let errorMessage = 'Failed to access camera. ';
+
+        if (error instanceof Error) {
+          if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow camera access in your browser settings and try again.';
+          } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found on this device.';
+          } else if (error.name === 'NotReadableError') {
+            errorMessage += 'Camera is already in use by another application.';
+          } else if (error.name === 'OverconstrainedError') {
+            errorMessage += 'Camera constraints not supported.';
+          } else {
+            errorMessage += error.message;
+          }
+        }
+
+        showToast(errorMessage, 'error');
+        setQrScannerOpen(false);
       }
     };
+
     const stop = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
+      console.log('🛑 Stopping camera scanner...');
+
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
       }
+
+      if (stream) {
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🎥 Camera track stopped:', track.kind);
+        });
+        stream = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+
       setScannerActive(false);
     };
-    if (qrScannerOpen) start();
+
+    if (qrScannerOpen) {
+      start();
+    } else {
+      stop();
+    }
+
     return () => stop();
   }, [qrScannerOpen]);
 
@@ -244,9 +487,9 @@ const ManagerDashboard: React.FC = () => {
       {/* Branch Info */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-2">
-          {managerBranch?.name || 'Branch Manager Dashboard'}
+          {branches.find(b => b.id === effectiveBranchId)?.name || 'Branch Manager Dashboard'}
         </h2>
-        <p className="opacity-90">{managerBranch?.location}</p>
+        <p className="opacity-90">{branches.find(b => b.id === effectiveBranchId)?.location}</p>
       </div>
 
       {/* Analytics Cards */}
@@ -477,9 +720,13 @@ const ManagerDashboard: React.FC = () => {
                   type="text"
                   value={qrCode}
                   onChange={(e) => setQrCode(e.target.value)}
-                  placeholder="Scan or type QR code here"
+                  placeholder="Scan or type QR code here (e.g., QR-1756191881137-1)"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                <div className="mt-2 text-xs text-gray-500">
+                  <p><strong>Test QR Code:</strong> QR-1756191881137-1</p>
+                  <p>Or paste the full JSON booking data</p>
+                </div>
               </div>
               <button
                 type="submit"
@@ -487,6 +734,13 @@ const ManagerDashboard: React.FC = () => {
                 className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 Verify QR Code
+              </button>
+              <button
+                type="button"
+                onClick={() => setQrCode('QR-1756191881137-1')}
+                className="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors text-sm"
+              >
+                Use Test QR Code
               </button>
             </form>
           </div>
@@ -498,21 +752,55 @@ const ManagerDashboard: React.FC = () => {
               <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600 mb-4">Use your device camera to scan QR codes</p>
               {!qrScannerOpen ? (
-                <button
-                  onClick={() => setQrScannerOpen(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                >
-                  Open Camera Scanner
-                </button>
+                <div>
+                  <button
+                    onClick={() => setQrScannerOpen(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Open Camera Scanner
+                  </button>
+                  <div className="text-xs text-gray-500 mt-3 space-y-1">
+                    <p>• Ensure camera permissions are enabled</p>
+                    <p>• Works best in Chrome/Edge browsers</p>
+                    <p>• Use manual entry if camera scanning fails</p>
+                  </div>
+                </div>
               ) : (
                 <div>
-                  <video ref={videoRef} className="mx-auto w-full max-w-xs rounded border" muted playsInline></video>
+                  <div className="relative inline-block">
+                    <video
+                      ref={videoRef}
+                      className="mx-auto w-full max-w-xs rounded border bg-black"
+                      muted
+                      playsInline
+                      style={{ aspectRatio: '4/3' }}
+                    />
+                    {!scannerActive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
+                        <div className="text-white text-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
+                          <p className="text-sm">Starting camera...</p>
+                        </div>
+                      </div>
+                    )}
+                    {scannerActive && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                          <div className="w-32 h-32 border-2 border-green-400 rounded-lg animate-pulse"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={() => setQrScannerOpen(false)}
                     className="mt-3 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
                   >
                     Close Scanner
                   </button>
+                  <div className="text-xs text-gray-500 mt-2 space-y-1">
+                    <p>Position QR code within the highlighted area</p>
+                    <p>If automatic scanning fails, use manual entry above</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -589,6 +877,50 @@ const ManagerDashboard: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manager Dashboard</h1>
           <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
+
+        {/* Token Expiry Warning */}
+        {tokenWarning && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
+              <div>
+                <p className="text-yellow-800 font-medium">Session Expiring Soon</p>
+                <p className="text-yellow-700 text-sm">Your session will expire soon. Please save your work and refresh the page to continue.</p>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="ml-auto bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
+              >
+                Refresh Now
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Indicator */}
+        {isDataLoading && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+              <p className="text-blue-800">Loading dashboard data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Data Summary for Debug */}
+        {!isDataLoading && (
+          <div className="mb-6 bg-gray-100 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
+            <div className="flex justify-between items-center">
+              <p>📊 Data Status: {orders.length} orders, {bookings.length} bookings, {branches.length} branches available</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+              >
+                🔄 Force Refresh
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="mb-8">
@@ -709,32 +1041,7 @@ const ManagerDashboard: React.FC = () => {
       )}
 
       {/* Camera Scanner Modal (Placeholder) */}
-      {qrScannerOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Camera QR Scanner</h3>
-              <button onClick={() => setQrScannerOpen(false)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="text-center py-8">
-              <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">
-                Camera scanner integration would go here.
-                For now, use the manual QR code entry field.
-              </p>
-              <button
-                onClick={() => setQrScannerOpen(false)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Removed legacy placeholder modal to avoid conflicts with live scanner UI */}
     </div>
   );
 };
