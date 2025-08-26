@@ -20,7 +20,6 @@ interface DataContextType {
   branches: Branch[];
   events: Event[];
   products: Product[];
-  fetchProductsByBranch: (branchId: string) => Promise<Product[]>;
   orders: Order[];
   bookings: Booking[];
   cmsContent: CMSContent[];
@@ -120,75 +119,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   ]);
 
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Complete Slime Kit',
-      description: 'Everything you need to make slime at home',
-      price: 1200,
-      images: ['https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754651195/DSC07659_zj2pcc.jpg'],
-      category: 'Slime Kits',
-      branchId: 'hyderabad',
-      stock: 25,
-      materials: ['Glue', 'Activator', 'Colors', 'Glitter', 'Mixing bowl'],
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Art Supply Bundle',
-      description: 'Professional art supplies for serious crafters',
-      price: 2500,
-      images: ['https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1755025999/IMG-20250807-WA0003_u999yh.jpg'],
-      category: 'Art Supplies',
-      branchId: 'bangalore',
-      stock: 15,
-      materials: ['Canvas', 'Acrylic paints', 'Brushes', 'Palette', 'Easel'],
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '3',
-      name: 'Kids Craft Starter Pack',
-      description: 'Perfect starter kit for young artists',
-      price: 800,
-      images: ['https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg'],
-      category: 'Kids Supplies',
-      branchId: 'vijayawada',
-      stock: 30,
-      materials: ['Colored paper', 'Safety scissors', 'Glue sticks', 'Crayons'],
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '4',
-      name: 'Premium Paint Set',
-      description: 'High-quality acrylic paints for professional results',
-      price: 1800,
-      images: ['https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg'],
-      category: 'Art Supplies',
-      branchId: 'mumbai',
-      stock: 20,
-      materials: ['Acrylic paints', 'Brushes', 'Palette knife', 'Canvas board'],
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    }
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const raw = localStorage.getItem('orders');
-      if (raw) return JSON.parse(raw) as Order[];
-    } catch { /* ignore */ }
-    return [];
-  });
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    try {
-      const raw = localStorage.getItem('bookings');
-      if (raw) return JSON.parse(raw) as Booking[];
-    } catch { /* ignore */ }
-    return [];
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
 
   const [managers, setManagers] = useState<User[]>([
@@ -238,7 +172,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       title: 'Premium Art Supplies',
       content: 'Shop our curated collection of high-quality art and craft materials',
       images: [
-        
+
         'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1755025999/IMG-20250807-WA0003_u999yh.jpg'
       ],
       isActive: true,
@@ -355,15 +289,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
     try {
       const token = localStorage.getItem('token');
-      const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${apiBase}/bookings`, { method: 'POST', headers, body: JSON.stringify(bookingData) });
       if (res.ok) {
         const saved = await res.json();
         setBookings(prev => {
           const next = [...prev, saved as Booking];
-          try { localStorage.setItem('bookings', JSON.stringify(next)); } catch {}
-          try { window.dispatchEvent(new Event('app_data_updated')); } catch {}
+          try { localStorage.setItem('bookings', JSON.stringify(next)); } catch { }
+          try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
           return next;
         });
         return;
@@ -387,8 +321,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return next;
     });
     // Update event booked seats (local)
-    setEvents(prev => prev.map(event => 
-      event.id === bookingData.eventId 
+    setEvents(prev => prev.map(event =>
+      event.id === bookingData.eventId
         ? { ...event, bookedSeats: event.bookedSeats + (bookingData.seats || 1) }
         : event
     ));
@@ -398,15 +332,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
     try {
       const token = localStorage.getItem('token');
-      const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${apiBase}/orders`, { method: 'POST', headers, body: JSON.stringify(orderData) });
       if (res.ok) {
         const saved = await res.json();
         setOrders(prev => {
           const next = [...prev, saved as Order];
-          try { localStorage.setItem('orders', JSON.stringify(next)); } catch {}
-          try { window.dispatchEvent(new Event('app_data_updated')); } catch {}
+          try { localStorage.setItem('orders', JSON.stringify(next)); } catch { }
+          try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
           return next;
         });
         return;
@@ -431,8 +365,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Update product stock
     (orderData.products || []).forEach((product: any) => {
-      setProducts(prev => prev.map(p => 
-        p.id === product.productId 
+      setProducts(prev => prev.map(p =>
+        p.id === product.productId
           ? { ...p, stock: Math.max(0, p.stock - product.quantity) }
           : p
       ));
@@ -444,8 +378,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (booking && !booking.isVerified) {
       setBookings(prev => {
         const next = prev.map(b => b.qrCode === qrCode ? { ...b, isVerified: true } : b);
-  try { localStorage.setItem('bookings', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
-  try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore dispatch errors */ }
+        try { localStorage.setItem('bookings', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
+        try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore dispatch errors */ }
         return next;
       });
       return true;
@@ -454,7 +388,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateCMSContent = async (content: CMSContent) => {
-    setCmsContent(prev => prev.map(c => 
+    setCmsContent(prev => prev.map(c =>
       c.id === content.id ? { ...content, updatedAt: new Date().toISOString() } : c
     ));
   };
@@ -522,82 +456,134 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 
-  const fetchProductsByBranch = async (branchId: string): Promise<Product[]> => {
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
-    try {
-      const response = await fetch(`${apiBase}/products/branch/${branchId}`);
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-    } catch (error) {
-      console.error('Error fetching products by branch:', error);
-    }
-    // Fallback to local products filtered by branch
-    return products.filter(p => p.branchId === branchId);
-  };
-
   const updateOrderStatus = async (orderId: string, status: string) => {
     setOrders(prev => {
       const next = prev.map(order => order.id === orderId ? { ...order, orderStatus: status as unknown as Order['orderStatus'] } : order);
-  try { localStorage.setItem('orders', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
-  try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore dispatch errors */ }
+      try { localStorage.setItem('orders', JSON.stringify(next)); } catch { /* ignore localStorage errors */ }
+      try { window.dispatchEvent(new Event('app_data_updated')); } catch { /* ignore dispatch errors */ }
       return next;
     });
   };
 
-  const [branchesState, setBranches] = useState<Branch[]>([
-    {
-      id: 'hyderabad',
-      name: 'Craft Factory Hyderabad',
-      location: 'Hyderabad',
-      address: 'Hitech City Rd, Hyderabad, Telangana',
-      phone: '+91 90000 00001',
-      email: 'hyderabad@craftfactory.com',
-    stripeAccountId: 'acct_hyderabad123',
-    razorpayKey: 'rzp_test_hyderabad_key',
-    razorpayAccountId: 'acc_hyderabad_razorpay',
-      supportsSlime: true,
-      supportsTufting: true,
-      managerId: '10',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: 'vijayawada',
-      name: 'Craft Factory Vijayawada',
-      location: 'Vijayawada',
-      address: 'MG Road, Vijayawada, Andhra Pradesh',
-      phone: '+91 90000 00002',
-      email: 'vijayawada@craftfactory.com',
-    stripeAccountId: 'acct_vijayawada123',
-    razorpayKey: 'rzp_test_vijayawada_key',
-    razorpayAccountId: 'acc_vijayawada_razorpay',
-      supportsSlime: true,
-      supportsTufting: false,
-      managerId: '11',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: 'bangalore',
-      name: 'Craft Factory Bangalore',
-      location: 'Bangalore',
-      address: 'Indiranagar, Bangalore, Karnataka',
-      phone: '+91 90000 00003',
-      email: 'bangalore@craftfactory.com',
-    stripeAccountId: 'acct_bangalore123',
-    razorpayKey: 'rzp_test_bangalore_key',
-    razorpayAccountId: 'acc_bangalore_razorpay',
-      supportsSlime: true,
-      supportsTufting: true,
-      managerId: '12',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
-    }
-  ]);
+  const [branchesState, setBranches] = useState<Branch[]>([]);
 
   const getBranchById = (id: string | undefined) => branchesState.find(b => b.id === id) || null;
+
+  // Fetch backend data on mount
+  useEffect(() => {
+    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const token = localStorage.getItem('token');
+    const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // Branches
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/branches`);
+        if (res.ok) {
+          const data = await res.json();
+          const mapped: Branch[] = data.map((b: any) => ({
+            id: b._id,
+            name: b.name,
+            location: b.location,
+            address: b.address || '',
+            phone: b.phone || '',
+            email: b.email || '',
+            razorpayKey: b.razorpayKey,
+            supportsSlime: true,
+            supportsTufting: (b.location || '').toLowerCase() !== 'vijayawada',
+            managerId: b.managerId || '',
+            isActive: true,
+            createdAt: b.createdAt || new Date().toISOString()
+          }));
+          setBranches(mapped);
+        }
+      } catch { /* ignore */ }
+    })();
+
+    // Products
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/products?isActive=true`);
+        if (res.ok) {
+          const data = await res.json();
+          const mapped: Product[] = data.map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            description: p.description || '',
+            price: p.price,
+            images: p.imageUrl ? [p.imageUrl] : [],
+            category: p.category || '',
+            stock: typeof p.stock === 'number' ? p.stock : (typeof p.quantity === 'number' ? p.quantity : 0),
+            materials: Array.isArray(p.tags) ? p.tags : [],
+            isActive: p.isActive !== false,
+            createdAt: p.createdAt || new Date().toISOString()
+          }));
+          setProducts(mapped);
+        }
+      } catch { /* ignore */ }
+    })();
+
+    // Orders (auth)
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/orders`, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+        if (res.ok) {
+          const data = await res.json();
+          const mapped: Order[] = data.map((o: any) => ({
+            id: o._id,
+            products: (o.products || []).map((it: any) => ({ productId: it.productId || it._id, name: it.name, quantity: it.quantity, price: it.price })),
+            totalAmount: o.totalAmount,
+            branchId: typeof o.branchId === 'object' ? o.branchId._id : o.branchId,
+            customerId: typeof o.customerId === 'object' ? o.customerId._id : o.customerId,
+            customerName: o.customerName,
+            customerEmail: o.customerEmail,
+            customerPhone: o.customerPhone,
+            shippingAddress: o.shippingAddress,
+            paymentStatus: o.paymentStatus,
+            orderStatus: o.orderStatus,
+            trackingNumber: o.trackingNumber,
+            trackingUpdates: (o.trackingUpdates || []).map((u: any) => ({ id: u._id || undefined, status: u.status, location: u.location, description: u.description, createdAt: u.createdAt })),
+            createdAt: o.createdAt
+          }));
+          setOrders(mapped);
+          try { localStorage.setItem('orders', JSON.stringify(mapped)); } catch { }
+        }
+      } catch { /* ignore */ }
+    })();
+
+    // Bookings (auth)
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/bookings`, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+        if (res.ok) {
+          const data = await res.json();
+          const mapped: Booking[] = data.map((b: any) => ({
+            id: b._id,
+            eventId: b.eventId,
+            sessionId: typeof b.sessionId === 'object' ? b.sessionId._id : b.sessionId,
+            activity: b.activity,
+            branchId: typeof b.branchId === 'object' ? b.branchId._id : b.branchId,
+            customerId: typeof b.customerId === 'object' ? b.customerId._id : b.customerId,
+            customerName: b.customerName,
+            customerEmail: b.customerEmail,
+            customerPhone: b.customerPhone,
+            date: b.date || b.sessionDate,
+            time: b.time,
+            seats: b.seats,
+            totalAmount: b.totalAmount || 0,
+            paymentStatus: b.paymentStatus,
+            qrCode: b.qrCode || b.qrCodeData,
+            isVerified: !!b.isVerified,
+            verifiedAt: b.verifiedAt,
+            status: b.status,
+            createdAt: b.createdAt
+          }));
+          setBookings(mapped);
+          try { localStorage.setItem('bookings', JSON.stringify(mapped)); } catch { }
+        }
+      } catch { /* ignore */ }
+    })();
+  }, []);
 
   const addBranch = async (branchData: Omit<Branch, 'id' | 'createdAt'>) => {
     const newBranch: Branch = {
@@ -620,15 +606,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
     try {
       const token = localStorage.getItem('token');
-      const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${apiBase}/orders/${orderId}/tracking`, { method: 'POST', headers, body: JSON.stringify(update) });
       if (res.ok) {
         const saved = await res.json();
         setOrders(prev => {
           const next = prev.map(o => o.id === saved._id || o.id === saved.id ? (saved as any) : o);
-          try { localStorage.setItem('orders', JSON.stringify(next)); } catch {}
-          try { window.dispatchEvent(new Event('app_data_updated')); } catch {}
+          try { localStorage.setItem('orders', JSON.stringify(next)); } catch { }
+          try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
           return next;
         });
         return;
@@ -702,7 +688,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const persistSlotsVersion = (v: number) => {
-  try { localStorage.setItem('sessionSlotsVersion', String(v)); } catch { /* ignore */ }
+    try { localStorage.setItem('sessionSlotsVersion', String(v)); } catch { /* ignore */ }
   };
 
   const persistSlots = (slotsState: Record<string, ActivitySlots>) => {
@@ -756,10 +742,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!next[key]) next[key] = {};
       next[key][date] = { ...slots };
       persistSlots(next);
-  // bump version so consumers reload
-  const v = Date.now();
-  setSlotsVersion(v);
-  persistSlotsVersion(v);
+      // bump version so consumers reload
+      const v = Date.now();
+      setSlotsVersion(v);
+      persistSlotsVersion(v);
       return next;
     });
   };
@@ -771,11 +757,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider value={{
       branches: branchesState,
-  // utility to get full branch metadata including razorpayKey
-  getBranchById,
+      // utility to get full branch metadata including razorpayKey
+      getBranchById,
       events,
       products,
-      fetchProductsByBranch,
       orders,
       bookings,
       cmsContent,
@@ -802,14 +787,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateBranch,
       deleteBranch,
       addTrackingUpdate
-  ,
-  updateSlotsForDate,
-  getSlotsForDate
-  ,
-  getBranchAvailability,
-  updateBranchAvailability
-  ,
-  slotsVersion
+      ,
+      updateSlotsForDate,
+      getSlotsForDate
+      ,
+      getBranchAvailability,
+      updateBranchAvailability
+      ,
+      slotsVersion
     }}>
       {children}
     </DataContext.Provider>

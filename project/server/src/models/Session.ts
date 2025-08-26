@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export interface ISession extends mongoose.Document {
-  branchId: string;
+  branchId: mongoose.Types.ObjectId; // Changed to ObjectId
   date: string; // YYYY-MM-DD format
   activity: 'slime' | 'tufting';
   time: string; // HH:MM format
@@ -13,12 +13,12 @@ export interface ISession extends mongoose.Document {
   ageGroup: string; // e.g., "3+", "8+", "All", "15+"
   price?: number; // Base price (can be overridden by packages)
   isActive: boolean;
-  createdBy?: string; // Admin/Manager who created this session
+  createdBy?: mongoose.Types.ObjectId; // Admin/Manager who created this session - changed to ObjectId
   notes?: string; // Additional notes for the session
 }
 
 const SessionSchema = new mongoose.Schema<ISession>({
-  branchId: { type: String, required: true },
+  branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
   date: { type: String, required: true }, // YYYY-MM-DD
   activity: { type: String, required: true, enum: ['slime', 'tufting'] },
   time: { type: String, required: true }, // HH:MM
@@ -30,7 +30,7 @@ const SessionSchema = new mongoose.Schema<ISession>({
   ageGroup: { type: String, required: true }, // "3+", "8+", "All", "15+"
   price: { type: Number, min: 0 },
   isActive: { type: Boolean, default: true },
-  createdBy: { type: String },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String }
 }, { 
   timestamps: true,

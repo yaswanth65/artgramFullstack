@@ -7,7 +7,7 @@ export interface IUser extends mongoose.Document {
   email: string;
   password: string;
   role: Role;
-  branchId?: string;
+  branchId?: mongoose.Types.ObjectId; // Changed to ObjectId
   phone?: string;
   address?: {
     street?: string;
@@ -23,9 +23,9 @@ export interface IUser extends mongoose.Document {
 const UserSchema = new mongoose.Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, minlength: 6 }, // Added password minimum length
   role: { type: String, enum: ['admin','branch_manager','customer'], default: 'customer' },
-  branchId: { type: String },
+  branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
   phone: { type: String },
   address: {
     street: String,

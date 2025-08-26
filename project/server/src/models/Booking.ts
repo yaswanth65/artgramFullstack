@@ -6,12 +6,12 @@ export interface IBooking extends mongoose.Document {
   sessionDate?: string;
   
   // New session-based fields
-  sessionId?: string; // Reference to Session model
+  sessionId?: mongoose.Types.ObjectId; // Reference to Session model
   activity?: 'slime' | 'tufting'; // slime or tufting
   
   // Branch and customer info
-  branchId?: string;
-  customerId?: string;
+  branchId?: mongoose.Types.ObjectId; // Changed to ObjectId
+  customerId?: mongoose.Types.ObjectId; // Changed to ObjectId
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
@@ -31,7 +31,7 @@ export interface IBooking extends mongoose.Document {
   qrCodeData?: string;
   isVerified?: boolean;
   verifiedAt?: Date;
-  verifiedBy?: string; // Manager who verified
+  verifiedBy?: mongoose.Types.ObjectId; // Manager who verified - changed to ObjectId
   
   // Additional info
   packageType?: string; // 'base', 'premium', etc.
@@ -49,8 +49,8 @@ const BookingSchema = new mongoose.Schema<IBooking>({
   activity: { type: String, enum: ['slime', 'tufting'] },
   
   // Branch and customer info
-  branchId: { type: String, required: true },
-  customerId: { type: String, required: true },
+  branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerPhone: String,
@@ -70,11 +70,11 @@ const BookingSchema = new mongoose.Schema<IBooking>({
   paymentIntentId: String,
   
   // QR and verification
-  qrCode: String,
+  qrCode: { type: String, unique: true, sparse: true }, // Ensure unique QR codes
   qrCodeData: String,
   isVerified: { type: Boolean, default: false },
   verifiedAt: Date,
-  verifiedBy: String,
+  verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   
   // Additional info
   packageType: String,

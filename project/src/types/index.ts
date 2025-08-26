@@ -116,7 +116,6 @@ export interface Product {
   price: number;
   images: string[];
   category: string;
-  branchId: string;
   stock: number;
   materials: string[];
   isActive: boolean;

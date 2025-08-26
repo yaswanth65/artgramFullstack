@@ -5,7 +5,7 @@ import { initiatePayment, createRazorpayOrder, RazorpayResponse } from '../../ut
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 
 const Store: React.FC = () => {
-  const { products, branches, selectedBranch, setSelectedBranch, createOrder } = useData();
+  const { products, createOrder } = useData();
   const { user } = useAuth();
   const [cart, setCart] = useState<{ [productId: string]: number }>({});
   const [filter, setFilter] = useState('all');
@@ -14,46 +14,12 @@ const Store: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [priceRange, setPriceRange] = useState(3000);
-  const [branchProducts, setBranchProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  // hoveredProduct removed (unused) to satisfy linter
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Fetch products by branch
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!selectedBranch) {
-        setBranchProducts(products);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
-        const response = await fetch(`${apiBase}/products/branch/${selectedBranch}`);
-        if (response.ok) {
-          const data = await response.json();
-          setBranchProducts(data);
-        } else {
-          // Fallback to local products filtered by branch
-          setBranchProducts(products.filter(p => p.branchId === selectedBranch));
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        // Fallback to local products filtered by branch
-        setBranchProducts(products.filter(p => p.branchId === selectedBranch));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [selectedBranch, products]);
-
-  const availableProducts = branchProducts.filter(product => 
+  const availableProducts = products.filter(product => 
     product.isActive && 
     product.stock > 0 &&
     (filter === 'all' || product.category === filter) &&
@@ -62,17 +28,17 @@ const Store: React.FC = () => {
   );
 
   const categories = [
-    { id: 'all', name: 'All Products', icon: '🎨', count: branchProducts.length },
-    ...Array.from(new Set(branchProducts.map(p => p.category))).map(cat => ({
+    { id: 'all', name: 'All Products', icon: '🎨', count: products.length },
+    ...Array.from(new Set(products.map(p => p.category))).map(cat => ({
       id: cat,
       name: cat.charAt(0).toUpperCase() + cat.slice(1) + ' Kits',
       icon: cat === 'slime' ? '🌈' : cat === 'art' ? '🎨' : cat === 'tufting' ? '🧶' : '🛍️',
-      count: branchProducts.filter(p => p.category === cat).length
+      count: products.filter(p => p.category === cat).length
     }))
   ];
 
   const addToCart = (productId: string) => {
-    const product = branchProducts.find(p => p.id === productId);
+    const product = products.find(p => p.id === productId);
     if (product && (cart[productId] || 0) < product.stock) {
       setCart(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
     }
@@ -93,14 +59,14 @@ const Store: React.FC = () => {
   const getTotalItems = () => Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   const getTotalPrice = () => {
     return Object.entries(cart).reduce((sum, [productId, qty]) => {
-      const product = branchProducts.find(p => p.id === productId);
+      const product = products.find(p => p.id === productId);
       return sum + (product?.price || 0) * qty;
     }, 0);
   };
 
-  const handleCheckout = async () => {
-    if (!user || !selectedBranch) {
-      alert('Please login and select a branch to checkout');
+    const handleCheckout = async () => {
+    if (!user) {
+      alert('Please login to checkout');
       return;
     }
 
@@ -108,7 +74,7 @@ const Store: React.FC = () => {
     try {
       const totalAmount = getTotalPrice();
       const orderProducts = Object.entries(cart).map(([productId, quantity]) => {
-        const product = branchProducts.find(p => p.id === productId)!;
+        const product = products.find(p => p.id === productId)!;
         return {
           productId,
           quantity,
@@ -117,8 +83,7 @@ const Store: React.FC = () => {
         };
       });
 
-      // Create Razorpay order (server-side recommended). Use branch-specific publishable key when initiating payment.
-      const branch = branches.find(b => b.id === selectedBranch);
+      // Create Razorpay order (server-side recommended)
       const order = await createRazorpayOrder(totalAmount);
       // Initiate Razorpay payment
       await initiatePayment({
@@ -127,7 +92,7 @@ const Store: React.FC = () => {
         name: 'Craft Factory',
         description: 'Purchase from Craft Factory Store',
         order_id: order.id,
-        key: branch?.razorpayKey,
+        key: 'rzp_test_default_key', // Default key for global orders
         handler: async (response: RazorpayResponse) => {
           try {
             // Payment successful, create order
@@ -136,7 +101,7 @@ const Store: React.FC = () => {
               customerName: user.name,
               customerEmail: user.email,
               customerPhone: user?.phone || '',
-              branchId: selectedBranch,
+              branchId: 'online', // Online orders not tied to specific branch
               products: orderProducts,
               totalAmount,
               paymentStatus: 'completed',
@@ -221,44 +186,6 @@ const Store: React.FC = () => {
       {/* Main Content */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-6">
-          {/* Branch Selection */}
-          <div className="mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
-                <span className="text-2xl">📍</span>
-                Select Your Branch
-              </h2>
-              <div className="flex flex-wrap gap-4">
-                {branches.map((branch) => (
-                  <button
-                    key={branch.id}
-                    onClick={() => setSelectedBranch(branch.id)}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      selectedBranch === branch.id
-                        ? 'bg-gradient-to-r from-purple-600 to-rose-600 text-white shadow-lg transform scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                    }`}
-                  >
-                    <span className="text-lg">🏪</span>
-                    <div className="text-left">
-                      <div className="font-bold">{branch.name}</div>
-                      <div className={`text-sm ${selectedBranch === branch.id ? 'text-white/80' : 'text-gray-500'}`}>
-                        {branch.location}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              {!selectedBranch && (
-                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <p className="text-orange-800 text-center">
-                    Please select a branch to view available products
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Filters Sidebar */}
             <aside className="lg:col-span-1">
@@ -328,15 +255,9 @@ const Store: React.FC = () => {
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">
                   {filter === 'all' ? 'All Products' : categories.find(c => c.id === filter)?.name}
-                  {selectedBranch && (
-                    <span className="text-lg font-normal text-purple-600 ml-2">
-                      - {branches.find(b => b.id === selectedBranch)?.name}
-                    </span>
-                  )}
                 </h2>
                 <p className="text-gray-600">
-                  Showing {availableProducts.length} of {branchProducts.length} products
-                  {loading && <span className="ml-2 text-blue-600">Loading...</span>}
+                  Showing {availableProducts.length} of {products.length} products
                 </p>
               </div>
               {/* Shopping Cart Summary */}
@@ -353,7 +274,7 @@ const Store: React.FC = () => {
                       <span className="text-orange-800 font-bold text-lg">₹{getTotalPrice()}</span>
                       <button
                         onClick={() => setShowCheckout(true)}
-                        disabled={!user || !selectedBranch}
+                        disabled={!user}
                         className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 transition-colors"
                       >
                         Checkout
@@ -364,33 +285,16 @@ const Store: React.FC = () => {
               )}
               {/* Products Grid */}
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-                {!selectedBranch ? (
-                  <div className="col-span-full text-center py-16">
-                    <div className="text-6xl mb-4">🏪</div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Select a Branch</h3>
-                    <p className="text-gray-600 text-lg">
-                      Please select a branch above to view available products for that location.
-                    </p>
-                  </div>
-                ) : loading ? (
-                  <div className="col-span-full text-center py-16">
-                    <div className="text-6xl mb-4">⏳</div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Loading Products...</h3>
-                    <p className="text-gray-600 text-lg">
-                      Fetching products for {branches.find(b => b.id === selectedBranch)?.name}
-                    </p>
-                  </div>
-                ) : availableProducts.length === 0 ? (
-                  <div className="col-span-full text-center py-16">
-                    <div className="text-6xl mb-4">📦</div>
+                {availableProducts.length === 0 ? (
+                  <div className="col-span-full text-center py-20">
+                    <div className="text-gray-400 text-6xl mb-4">🛍️</div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">No Products Found</h3>
-                    <p className="text-gray-600 text-lg">
-                      No products match your current filters for {branches.find(b => b.id === selectedBranch)?.name}.
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      No products match your current filters. Try adjusting your search criteria.
                     </p>
                   </div>
                 ) : (
                   availableProducts.map((product, index) => {
-                    const branch = branches.find(b => b.id === product.branchId);
                     const cartQuantity = cart[product.id] || 0;
                     return (
                       <div
@@ -402,7 +306,7 @@ const Store: React.FC = () => {
                         <div className="relative h-80 w-full overflow-hidden">
                           <div
                             className="h-full w-full bg-center bg-cover transition-transform duration-500 group-hover:scale-110"
-                            style={{ backgroundImage: `url('${product.images?.[0] || product.imageUrl || ''}')` }}
+                            style={{ backgroundImage: `url('${product.images?.[0] || ''}')` }}
                           />
                           {/* Hover Overlay */}
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -440,13 +344,13 @@ const Store: React.FC = () => {
                           {/* Removed 'Includes' (materials) section as requested */}
                           <div className="flex justify-between items-center mb-4">
                             <span className={`text-sm px-2 py-1 rounded ${
-                              (product.stock || product.quantity || 0) > 10 ? 'bg-green-100 text-green-800' :
-                              (product.stock || product.quantity || 0) > 0 ? 'bg-yellow-100 text-yellow-800' :
+                              product.stock > 10 ? 'bg-green-100 text-green-800' :
+                              product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
                               'bg-red-100 text-red-800'
                             }`}>
-                              Stock: {product.stock || product.quantity || 0}
+                              Stock: {product.stock}
                             </span>
-                            <span className="text-sm text-gray-600">{branch?.name}</span>
+                            <span className="text-sm text-gray-600">Available Nationwide</span>
                           </div>
                           <div className="flex items-center justify-between">
                             {cartQuantity > 0 ? (
@@ -460,7 +364,7 @@ const Store: React.FC = () => {
                                 <span className="font-semibold text-lg">{cartQuantity}</span>
                                 <button
                                   onClick={() => addToCart(product.id)}
-                                  disabled={cartQuantity >= (product.stock || product.quantity || 0)}
+                                  disabled={cartQuantity >= product.stock}
                                   className="bg-gray-300 text-gray-700 p-2 rounded-md hover:bg-gray-400 disabled:opacity-50 transition-colors"
                                 >
                                   <Plus className="h-4 w-4" />
@@ -469,7 +373,7 @@ const Store: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => addToCart(product.id)}
-                                disabled={(product.stock || product.quantity || 0) === 0 || !user}
+                                disabled={product.stock === 0 || !user}
                                 className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                               >
                                 <ShoppingCart className="h-4 w-4" />
@@ -530,7 +434,7 @@ const Store: React.FC = () => {
                       <div className="border-b pb-4">
                         <h4 className="font-semibold text-gray-800 mb-2">Order Summary</h4>
                         {Object.entries(cart).map(([productId, quantity]) => {
-                          const product = branchProducts.find(p => p.id === productId);
+                          const product = products.find(p => p.id === productId);
                           return (
                             <div key={productId} className="flex justify-between items-center py-2">
                               <div>

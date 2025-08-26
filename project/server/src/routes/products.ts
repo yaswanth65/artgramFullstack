@@ -6,18 +6,11 @@ const router = express.Router();
 
 // Get all products
 router.get('/', asyncHandler(async (req, res) => {
-  const { branchId, category, isActive = 'true' } = req.query;
-  
+  const { category, isActive = 'true' } = req.query;
   const filter: any = { isActive: isActive === 'true' };
-  
-  if (branchId) {
-    filter.branchId = branchId;
-  }
-  
   if (category) {
     filter.category = category;
   }
-  
   const products = await Product.find(filter).lean();
   res.json(products);
 }));
@@ -37,8 +30,7 @@ router.post('/', asyncHandler(async (req, res) => {
     name,
     description,
     price,
-    quantity,
-    branchId,
+    stock,
     category,
     imageUrl,
     isActive,
@@ -52,8 +44,7 @@ router.post('/', asyncHandler(async (req, res) => {
     name,
     description,
     price,
-    quantity,
-    branchId,
+    stock,
     category,
     imageUrl,
     isActive,
@@ -92,19 +83,6 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ message: 'Product deleted successfully' });
 }));
 
-// Get products by branch
-router.get('/branch/:branchId', asyncHandler(async (req, res) => {
-  const { branchId } = req.params;
-  const { category, isActive = 'true' } = req.query;
-  
-  const filter: any = { branchId, isActive: isActive === 'true' };
-  
-  if (category) {
-    filter.category = category;
-  }
-  
-  const products = await Product.find(filter).lean();
-  res.json(products);
-}));
+
 
 export default router;

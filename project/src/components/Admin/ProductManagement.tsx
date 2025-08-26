@@ -17,7 +17,6 @@ import {
 const ProductManagement: React.FC = () => {
   const { 
     products, 
-    branches,
     addProduct, 
     updateProduct, 
     deleteProduct 
@@ -31,7 +30,6 @@ const ProductManagement: React.FC = () => {
     price: 0,
     images: [''],
     category: '',
-    branchId: '',
     stock: 0,
     materials: [''],
     isActive: true
@@ -56,7 +54,6 @@ const ProductManagement: React.FC = () => {
         price: 0,
         images: [''],
         category: '',
-        branchId: '',
         stock: 0,
         materials: [''],
         isActive: true
@@ -83,11 +80,6 @@ const ProductManagement: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       await deleteProduct(id);
     }
-  };
-
-  const getBranchName = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
-    return branch ? branch.name : 'All Branches';
   };
 
   const addImageField = (isEditing = false) => {
@@ -192,7 +184,7 @@ const ProductManagement: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-2xl font-bold text-gray-800">Product Management</h3>
-          <p className="text-gray-600">Manage all products across branches</p>
+          <p className="text-gray-600">Manage all products available nationwide</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -263,7 +255,7 @@ const ProductManagement: React.FC = () => {
 
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xl font-bold text-green-600">₹{product.price}</span>
-                <span className="text-sm text-gray-600">{getBranchName(product.branchId)}</span>
+                <span className="text-sm text-gray-600">Available Globally</span>
               </div>
 
               <div className="flex justify-between items-center">
@@ -369,20 +361,6 @@ const ProductManagement: React.FC = () => {
                     placeholder="0"
                     min="0"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Branch</label>
-                  <select
-                    value={newProduct.branchId}
-                    onChange={(e) => setNewProduct({ ...newProduct, branchId: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">All Branches</option>
-                    {branches.map(branch => (
-                      <option key={branch.id} value={branch.id}>{branch.name}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
 
@@ -559,20 +537,6 @@ const ProductManagement: React.FC = () => {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                     min="0"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Branch</label>
-                  <select
-                    value={editingProduct.branchId}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, branchId: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">All Branches</option>
-                    {branches.map(branch => (
-                      <option key={branch.id} value={branch.id}>{branch.name}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
 

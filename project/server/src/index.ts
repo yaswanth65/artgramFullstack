@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
 import branchRoutes from './routes/branches';
 import orderRoutes from './routes/orders';
@@ -14,13 +15,53 @@ import sessionRoutes from './routes/sessions';
 dotenv.config();
 
 const app = express();
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
 
-app.get('/api/health', (req, res) => res.json({ok: true}));
-app.use('/api/auth', authRoutes);
+// Security middleware
+app.use(helmet());
+
+// CORS configuration - restrict to specific origins in production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-production-domain.com', 'https://craft-factory.com'] 
+    : ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// Auth specific rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 auth requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
+  skipSuccessfulRequests: true,
+});
+
+app.use(express.json({ limit: '10mb' }));
+app.use(morgan('combined'));
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Something went wrong!' 
+      : err.message 
+  });
+});
+
+app.get('/api/health', (req, res) => res.json({ok: true, timestamp: new Date().toISOString()}));
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/bookings', bookingRoutes);

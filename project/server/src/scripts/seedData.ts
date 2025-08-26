@@ -14,7 +14,7 @@ const seedData = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || '');
     console.log('Connected to MongoDB');
-    
+
     // Clear existing data
     await User.deleteMany({});
     await Branch.deleteMany({});
@@ -23,7 +23,7 @@ const seedData = async () => {
     await Order.deleteMany({});
     await Session.deleteMany({});
     console.log('Cleared existing data');
-    
+
     // Create branches first
     const branches = [
       {
@@ -180,7 +180,7 @@ const seedData = async () => {
         }
       }
     ];
-    
+
     const savedUsers = await User.insertMany(users);
     console.log('Users created successfully');
 
@@ -190,152 +190,137 @@ const seedData = async () => {
     await Branch.findByIdAndUpdate(savedBranches[2]._id, { managerId: savedUsers[3]._id.toString() });
     console.log('Branch managers assigned successfully');
 
-    // Create products for each branch
+    // Create global products (no branch restrictions)
     const products = [
-      // Hyderabad Products
       {
-        name: 'Hyderabad Slime Making Kit',
-        description: 'Complete slime making kit with all essential materials',
+        name: 'Complete Slime Making Kit',
+        description: 'Everything you need to make amazing slime at home - includes glue, activator, colors, glitter, and mixing tools',
         price: 1200,
-        quantity: 50,
-        branchId: savedBranches[0]._id.toString(),
+        stock: 100,
         category: 'Slime Kits',
         imageUrl: 'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754651195/DSC07659_zj2pcc.jpg',
         isActive: true,
-        sku: 'HYD-SLIME-001',
+        sku: 'SLIME-KIT-001',
         weight: 0.5,
         dimensions: { length: 20, width: 15, height: 8 },
-        tags: ['slime', 'kids', 'craft']
+        tags: ['slime', 'kids', 'craft', 'starter']
       },
       {
-        name: 'Hyderabad Art Supply Bundle',
-        description: 'Professional art supplies for serious crafters',
+        name: 'Professional Art Supply Bundle',
+        description: 'Premium art supplies including canvas, acrylic paints, brushes, palette, and easel for serious artists',
         price: 2500,
-        quantity: 30,
-        branchId: savedBranches[0]._id.toString(),
+        stock: 75,
         category: 'Art Supplies',
         imageUrl: 'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1755025999/IMG-20250807-WA0003_u999yh.jpg',
         isActive: true,
-        sku: 'HYD-ART-001',
+        sku: 'ART-BUNDLE-001',
         weight: 1.2,
         dimensions: { length: 30, width: 25, height: 5 },
-        tags: ['art', 'painting', 'professional']
+        tags: ['art', 'painting', 'professional', 'canvas']
       },
       {
-        name: 'Hyderabad Tufting Starter Kit',
-        description: 'Everything needed to start your tufting journey',
+        name: 'Kids Craft Starter Pack',
+        description: 'Perfect starter kit for young artists with colored paper, safety scissors, glue sticks, and crayons',
+        price: 800,
+        stock: 120,
+        category: 'Kids Supplies',
+        imageUrl: 'https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg',
+        isActive: true,
+        sku: 'KIDS-CRAFT-001',
+        weight: 0.8,
+        dimensions: { length: 25, width: 20, height: 6 },
+        tags: ['kids', 'craft', 'starter', 'safe']
+      },
+      {
+        name: 'Premium Paint Set',
+        description: 'High-quality acrylic paints with brushes, palette knife, and canvas boards for professional results',
+        price: 1800,
+        stock: 85,
+        category: 'Art Supplies',
+        imageUrl: 'https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg',
+        isActive: true,
+        sku: 'PAINT-SET-001',
+        weight: 1.0,
+        dimensions: { length: 28, width: 22, height: 4 },
+        tags: ['paint', 'acrylic', 'premium', 'brushes']
+      },
+      {
+        name: 'Tufting Starter Kit',
+        description: 'Everything needed to start your tufting journey including rug canvas, yarn, and tufting gun',
         price: 3500,
-        quantity: 20,
-        branchId: savedBranches[0]._id.toString(),
+        stock: 45,
         category: 'Tufting Kits',
         imageUrl: 'https://images.pexels.com/photos/1109541/pexels-photo-1109541.jpeg',
         isActive: true,
-        sku: 'HYD-TUFT-001',
+        sku: 'TUFT-START-001',
         weight: 2.0,
         dimensions: { length: 40, width: 30, height: 10 },
-        tags: ['tufting', 'rug', 'advanced']
-      },
-
-      // Vijayawada Products
-      {
-        name: 'Vijayawada Glitter Slime Kit',
-        description: 'Special glitter slime kit exclusive to Vijayawada',
-        price: 1100,
-        quantity: 45,
-        branchId: savedBranches[1]._id.toString(),
-        category: 'Slime Kits',
-        imageUrl: 'https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg',
-        isActive: true,
-        sku: 'VJA-SLIME-001',
-        weight: 0.6,
-        dimensions: { length: 22, width: 16, height: 9 },
-        tags: ['slime', 'glitter', 'special']
+        tags: ['tufting', 'rug', 'starter', 'yarn']
       },
       {
-        name: 'Vijayawada Kids Craft Set',
-        description: 'Perfect starter kit for young artists in Vijayawada',
-        price: 800,
-        quantity: 60,
-        branchId: savedBranches[1]._id.toString(),
-        category: 'Kids Supplies',
-        imageUrl: 'https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg',
-        isActive: true,
-        sku: 'VJA-KIDS-001',
-        weight: 0.8,
-        dimensions: { length: 25, width: 20, height: 6 },
-        tags: ['kids', 'craft', 'starter']
-      },
-      {
-        name: 'Vijayawada Premium Paint Set',
-        description: 'High-quality acrylic paints for professional results',
-        price: 1800,
-        quantity: 35,
-        branchId: savedBranches[1]._id.toString(),
-        category: 'Art Supplies',
-        imageUrl: 'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1755026061/HAR05826_hv05wz.jpg',
-        isActive: true,
-        sku: 'VJA-PAINT-001',
-        weight: 1.0,
-        dimensions: { length: 28, width: 22, height: 4 },
-        tags: ['paint', 'acrylic', 'premium']
-      },
-
-      // Bangalore Products
-      {
-        name: 'Bangalore Crystal Slime Kit',
-        description: 'Make beautiful crystal clear slime with this premium kit',
+        name: 'Glitter Slime Special Kit',
+        description: 'Make sparkling glitter slime with this special edition kit including premium glitters and colors',
         price: 1350,
-        quantity: 40,
-        branchId: savedBranches[2]._id.toString(),
+        stock: 90,
         category: 'Slime Kits',
         imageUrl: 'https://images.pexels.com/photos/6941924/pexels-photo-6941924.jpeg',
         isActive: true,
-        sku: 'BLR-SLIME-001',
-        weight: 0.7,
-        dimensions: { length: 24, width: 18, height: 10 },
-        tags: ['slime', 'crystal', 'premium']
+        sku: 'GLITTER-SLIME-001',
+        weight: 0.6,
+        dimensions: { length: 22, width: 16, height: 9 },
+        tags: ['slime', 'glitter', 'special', 'sparkle']
       },
       {
-        name: 'Bangalore Professional Art Kit',
-        description: 'Complete professional art kit for serious artists',
-        price: 3200,
-        quantity: 25,
-        branchId: savedBranches[2]._id.toString(),
-        category: 'Art Supplies',
-        imageUrl: 'https://images.pexels.com/photos/1047540/pexels-photo-1047540.jpeg',
-        isActive: true,
-        sku: 'BLR-ART-001',
-        weight: 1.5,
-        dimensions: { length: 35, width: 28, height: 8 },
-        tags: ['art', 'professional', 'complete']
-      },
-      {
-        name: 'Bangalore Advanced Tufting Set',
-        description: 'Advanced tufting set with premium materials',
+        name: 'Advanced Tufting Pro Set',
+        description: 'Professional tufting set with advanced materials and tools for expert-level projects',
         price: 4200,
-        quantity: 15,
-        branchId: savedBranches[2]._id.toString(),
+        stock: 30,
         category: 'Tufting Kits',
         imageUrl: 'https://images.pexels.com/photos/1545558/pexels-photo-1545558.jpeg',
         isActive: true,
-        sku: 'BLR-TUFT-001',
+        sku: 'TUFT-PRO-001',
         weight: 2.5,
         dimensions: { length: 45, width: 35, height: 12 },
-        tags: ['tufting', 'advanced', 'premium']
+        tags: ['tufting', 'advanced', 'professional', 'premium']
       },
       {
-        name: 'Bangalore Craft Combo Pack',
-        description: 'Mix of various craft supplies for creative exploration',
+        name: 'Craft Combo Mega Pack',
+        description: 'Ultimate variety pack with slime, art, and craft supplies for endless creative exploration',
         price: 2800,
-        quantity: 30,
-        branchId: savedBranches[2]._id.toString(),
+        stock: 60,
         category: 'Combo Packs',
         imageUrl: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
         isActive: true,
-        sku: 'BLR-COMBO-001',
+        sku: 'COMBO-MEGA-001',
         weight: 1.8,
         dimensions: { length: 32, width: 26, height: 15 },
-        tags: ['combo', 'craft', 'variety']
+        tags: ['combo', 'variety', 'craft', 'mega']
+      },
+      {
+        name: 'Crystal Clear Slime Kit',
+        description: 'Create beautiful transparent crystal-clear slime with this premium transparency kit',
+        price: 1450,
+        stock: 70,
+        category: 'Slime Kits',
+        imageUrl: 'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1755026061/HAR05826_hv05wz.jpg',
+        isActive: true,
+        sku: 'CRYSTAL-SLIME-001',
+        weight: 0.7,
+        dimensions: { length: 24, width: 18, height: 10 },
+        tags: ['slime', 'crystal', 'clear', 'premium']
+      },
+      {
+        name: 'Eco-Friendly Craft Set',
+        description: 'Sustainable craft supplies made from recycled materials - perfect for environmentally conscious creators',
+        price: 1650,
+        stock: 55,
+        category: 'Eco Supplies',
+        imageUrl: 'https://images.pexels.com/photos/1047540/pexels-photo-1047540.jpeg',
+        isActive: true,
+        sku: 'ECO-CRAFT-001',
+        weight: 1.1,
+        dimensions: { length: 26, width: 21, height: 7 },
+        tags: ['eco', 'sustainable', 'recycled', 'green']
       }
     ];
 
@@ -362,7 +347,7 @@ const seedData = async () => {
       for (const dt of dates) {
         for (const tmpl of sessionTemplates) {
           sessionsToCreate.push({
-            branchId: branch._id.toString(),
+            branchId: branch._id, // Using ObjectId directly instead of toString()
             date: dt,
             activity: tmpl.activity,
             time: tmpl.time,
@@ -374,7 +359,7 @@ const seedData = async () => {
             ageGroup: tmpl.ageGroup,
             price: tmpl.activity === 'slime' ? 300 : 800,
             isActive: true,
-            createdBy: 'seed-script'
+            createdBy: savedUsers[0]._id // Using ObjectId for the admin user
           });
         }
       }
@@ -385,24 +370,24 @@ const seedData = async () => {
 
     // Create sample bookings with proper session references
     const bookings: any[] = [];
-    
+
     // Get some sessions for creating bookings
-    const hyderabadSlimeSession = savedSessions.find(s => 
-      s.branchId === savedBranches[0]._id.toString() && s.activity === 'slime'
+    const hyderabadSlimeSession = savedSessions.find(s =>
+      s.branchId.toString() === savedBranches[0]._id.toString() && s.activity === 'slime'
     );
-    const vijayawadaTuftingSession = savedSessions.find(s => 
-      s.branchId === savedBranches[1]._id.toString() && s.activity === 'tufting'
+    const vijayawadaTuftingSession = savedSessions.find(s =>
+      s.branchId.toString() === savedBranches[1]._id.toString() && s.activity === 'tufting'
     );
-    const bangaloreSlimeSession = savedSessions.find(s => 
-      s.branchId === savedBranches[2]._id.toString() && s.activity === 'slime'
+    const bangaloreSlimeSession = savedSessions.find(s =>
+      s.branchId.toString() === savedBranches[2]._id.toString() && s.activity === 'slime'
     );
 
     if (hyderabadSlimeSession) {
       bookings.push({
-        sessionId: hyderabadSlimeSession._id.toString(),
+        sessionId: hyderabadSlimeSession._id,
         activity: hyderabadSlimeSession.activity,
         branchId: hyderabadSlimeSession.branchId,
-        customerId: savedUsers[4]._id.toString(), // John Doe
+        customerId: savedUsers[4]._id, // John Doe - using ObjectId
         customerName: 'John Doe',
         customerEmail: 'customer@example.com',
         customerPhone: '+91 98765 43210',
@@ -412,6 +397,7 @@ const seedData = async () => {
         totalAmount: (hyderabadSlimeSession.price || 300) * 2,
         paymentStatus: 'completed',
         packageType: 'base',
+        qrCode: `QR-${Date.now()}-1`,
         qrCodeData: `QR-${Date.now()}-1`,
         status: 'active',
         isVerified: false
@@ -420,10 +406,10 @@ const seedData = async () => {
 
     if (vijayawadaTuftingSession) {
       bookings.push({
-        sessionId: vijayawadaTuftingSession._id.toString(),
+        sessionId: vijayawadaTuftingSession._id,
         activity: vijayawadaTuftingSession.activity,
         branchId: vijayawadaTuftingSession.branchId,
-        customerId: savedUsers[5]._id.toString(), // Jane Smith
+        customerId: savedUsers[5]._id, // Jane Smith - using ObjectId
         customerName: 'Jane Smith',
         customerEmail: 'jane@example.com',
         customerPhone: '+91 98765 43211',
@@ -433,20 +419,21 @@ const seedData = async () => {
         totalAmount: (vijayawadaTuftingSession.price || 800) * 1,
         paymentStatus: 'completed',
         packageType: 'premium',
+        qrCode: `QR-${Date.now()}-2`,
         qrCodeData: `QR-${Date.now()}-2`,
         status: 'active',
         isVerified: true,
         verifiedAt: new Date(),
-        verifiedBy: savedUsers[2]._id.toString() // Priya Sharma
+        verifiedBy: savedUsers[2]._id // Priya Sharma - using ObjectId
       });
     }
 
     if (bangaloreSlimeSession) {
       bookings.push({
-        sessionId: bangaloreSlimeSession._id.toString(),
+        sessionId: bangaloreSlimeSession._id,
         activity: bangaloreSlimeSession.activity,
         branchId: bangaloreSlimeSession.branchId,
-        customerId: savedUsers[6]._id.toString(), // Mike Johnson
+        customerId: savedUsers[6]._id, // Mike Johnson - using ObjectId
         customerName: 'Mike Johnson',
         customerEmail: 'mike@example.com',
         customerPhone: '+91 98765 43212',
@@ -456,6 +443,7 @@ const seedData = async () => {
         totalAmount: (bangaloreSlimeSession.price || 300) * 3,
         paymentStatus: 'pending',
         packageType: 'base',
+        qrCode: `QR-${Date.now()}-3`,
         qrCodeData: `QR-${Date.now()}-3`,
         status: 'active',
         isVerified: false,
@@ -465,13 +453,13 @@ const seedData = async () => {
 
     // Add more bookings for other customers
     const additionalSessions = savedSessions.slice(0, 3);
-    
+
     if (additionalSessions.length > 0) {
       bookings.push({
-        sessionId: additionalSessions[0]._id.toString(),
+        sessionId: additionalSessions[0]._id,
         activity: additionalSessions[0].activity,
         branchId: additionalSessions[0].branchId,
-        customerId: savedUsers[7]._id.toString(), // Anita Patel
+        customerId: savedUsers[7]._id, // Anita Patel - using ObjectId
         customerName: 'Anita Patel',
         customerEmail: 'anita@example.com',
         customerPhone: '+91 98765 43213',
@@ -481,6 +469,7 @@ const seedData = async () => {
         totalAmount: (additionalSessions[0].price || 300) * 1,
         paymentStatus: 'completed',
         packageType: 'base',
+        qrCode: `QR-${Date.now()}-4`,
         qrCodeData: `QR-${Date.now()}-4`,
         status: 'completed',
         isVerified: true,
@@ -490,10 +479,10 @@ const seedData = async () => {
 
     if (additionalSessions.length > 1) {
       bookings.push({
-        sessionId: additionalSessions[1]._id.toString(),
+        sessionId: additionalSessions[1]._id,
         activity: additionalSessions[1].activity,
         branchId: additionalSessions[1].branchId,
-        customerId: savedUsers[8]._id.toString(), // Rohit Gupta
+        customerId: savedUsers[8]._id, // Rohit Gupta - using ObjectId
         customerName: 'Rohit Gupta',
         customerEmail: 'rohit@example.com',
         customerPhone: '+91 98765 43214',
@@ -503,6 +492,7 @@ const seedData = async () => {
         totalAmount: (additionalSessions[1].price || 300) * 2,
         paymentStatus: 'failed',
         packageType: 'base',
+        qrCode: `QR-${Date.now()}-5`,
         qrCodeData: `QR-${Date.now()}-5`,
         status: 'cancelled',
         isVerified: false
@@ -526,10 +516,10 @@ const seedData = async () => {
         customerEmail: 'customer@example.com',
         customerPhone: '+91 98765 43210',
         shippingAddress: {
-          street: '12 MG Road', 
-          city: 'Hyderabad', 
-          state: 'Telangana', 
-          zipCode: '500081', 
+          street: '12 MG Road',
+          city: 'Hyderabad',
+          state: 'Telangana',
+          zipCode: '500081',
           country: 'India'
         },
         paymentStatus: 'completed',
@@ -651,8 +641,8 @@ const seedData = async () => {
     console.log(`✅ Created ${orders.length} orders`);
     console.log('\n=== BRANCH DETAILS ===');
     savedBranches.forEach(branch => {
-      const branchProducts = savedProducts.filter(p => p.branchId === branch._id.toString());
-      console.log(`📍 ${branch.name} (${branch.location}): ${branchProducts.length} products`);
+      // Products are global in current schema (no branchId field on Product)
+      console.log(`📍 ${branch.name} (${branch.location}): ${savedProducts.length} products available`);
     });
     console.log('\n=== LOGIN CREDENTIALS ===');
     console.log('Admin: admin@craftfactory.com / password');
@@ -664,7 +654,7 @@ const seedData = async () => {
     console.log('Mike: mike@example.com / password');
     console.log('Anita: anita@example.com / password');
     console.log('Rohit: rohit@example.com / password');
-    
+
     process.exit(0);
   } catch (error) {
     console.error('Error seeding data:', error);

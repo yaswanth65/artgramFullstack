@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  QrCode, 
-  Package, 
-  TrendingUp, 
+import {
+  QrCode,
+  Package,
+  TrendingUp,
   Calendar,
   DollarSign,
   Eye,
@@ -18,13 +18,13 @@ import type { Order } from '../../types';
 
 const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { 
-    orders, 
-    events, 
-    bookings, 
+  const {
+    orders,
+    events,
+    bookings,
     branches
   } = useData();
-  
+
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingUpdate, setTrackingUpdate] = useState({
@@ -35,8 +35,10 @@ const ManagerDashboard: React.FC = () => {
   const [qrCode, setQrCode] = useState('');
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [qrResult, setQrResult] = useState<any>(null);
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [scannerActive, setScannerActive] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  
+
   // Get API base URL
   const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
 
@@ -49,7 +51,7 @@ const ManagerDashboard: React.FC = () => {
   const branchOrders = orders.filter(order => order.branchId === managerBranch?.id);
   const branchBookings = bookings.filter(booking => booking.branchId === managerBranch?.id);
   const branchEvents = events.filter(event => event.branchId === managerBranch?.id);
-  
+
   // Calculate analytics
   const totalRevenue = branchOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const totalBookings = branchBookings.length;
@@ -146,6 +148,55 @@ const ManagerDashboard: React.FC = () => {
       setQrCode('');
     }
   };
+
+  // Simple camera-based QR scanner using BarcodeDetector if available
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let rafId: number | null = null;
+    let detector: any = null;
+    const start = async () => {
+      if (!qrScannerOpen || scannerActive) return;
+      try {
+        // @ts-ignore: experimental API
+        const Supported = 'BarcodeDetector' in window;
+        if (!Supported) return;
+        // @ts-ignore
+        detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          setScannerActive(true);
+          const scan = async () => {
+            try {
+              if (!videoRef.current) return;
+              // @ts-ignore
+              const detections = await detector.detect(videoRef.current);
+              if (detections && detections.length > 0) {
+                const code = detections[0].rawValue || detections[0].rawValue;
+                if (code) {
+                  verifyQRCode(code);
+                }
+              }
+            } catch { }
+            rafId = requestAnimationFrame(scan);
+          };
+          rafId = requestAnimationFrame(scan);
+        }
+      } catch (e) {
+        // Fallback: no-op
+      }
+    };
+    const stop = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+      setScannerActive(false);
+    };
+    if (qrScannerOpen) start();
+    return () => stop();
+  }, [qrScannerOpen]);
 
   const handleStatusUpdate = (orderId: string, status: string) => {
     updateOrderStatus(orderId, status);
@@ -271,14 +322,14 @@ const ManagerDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     #{order.id.slice(0, 8)}
                   </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0,6)}`}</div>
-                      <div className="text-xs text-gray-600">{order.customerEmail || '—'}</div>
-                      <div className="text-xs text-gray-600">{order.customerPhone || '—'}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {order.shippingAddress ? `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.zipCode}` : '—'}
-                      </div>
-                    </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0, 6)}`}</div>
+                    <div className="text-xs text-gray-600">{order.customerEmail || '—'}</div>
+                    <div className="text-xs text-gray-600">{order.customerPhone || '—'}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {order.shippingAddress ? `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.zipCode}` : '—'}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     ₹{order.totalAmount.toFixed(2)}
                   </td>
@@ -315,7 +366,7 @@ const ManagerDashboard: React.FC = () => {
             .map(c => (
               <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
-                  <p className="font-medium text-gray-900">{c.name || `Customer #${c.id?.slice(0,6)}`}</p>
+                  <p className="font-medium text-gray-900">{c.name || `Customer #${c.id?.slice(0, 6)}`}</p>
                   <p className="text-xs text-gray-600">{c.email || '—'}</p>
                 </div>
                 <div className="text-sm text-gray-600">{c.phone || '—'}</div>
@@ -360,7 +411,7 @@ const ManagerDashboard: React.FC = () => {
                   #{order.id.slice(0, 8)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0,6)}`}</div>
+                  <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0, 6)}`}</div>
                   <div className="text-xs text-gray-600">{order.customerEmail || '—'}</div>
                   <div className="text-xs text-gray-600">{order.customerPhone || '—'}</div>
                 </td>
@@ -412,7 +463,7 @@ const ManagerDashboard: React.FC = () => {
       {/* QR Scanner Section */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4">QR Code Scanner</h3>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* Manual QR Input */}
           <div>
@@ -446,12 +497,24 @@ const ManagerDashboard: React.FC = () => {
             <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
               <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600 mb-4">Use your device camera to scan QR codes</p>
-              <button
-                onClick={() => setQrScannerOpen(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-              >
-                Open Camera Scanner
-              </button>
+              {!qrScannerOpen ? (
+                <button
+                  onClick={() => setQrScannerOpen(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Open Camera Scanner
+                </button>
+              ) : (
+                <div>
+                  <video ref={videoRef} className="mx-auto w-full max-w-xs rounded border" muted playsInline></video>
+                  <button
+                    onClick={() => setQrScannerOpen(false)}
+                    className="mt-3 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                  >
+                    Close Scanner
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -476,7 +539,7 @@ const ManagerDashboard: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       {/* Recent Verifications */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h4 className="text-md font-semibold text-gray-800 mb-4">Recent Verifications</h4>
@@ -485,28 +548,28 @@ const ManagerDashboard: React.FC = () => {
             .filter(booking => booking.isVerified)
             .slice(0, 10)
             .map((booking) => (
-            <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">{booking.customerName || `Customer #${booking.customerId.slice(0, 6)}`}</p>
-                <p className="text-sm text-gray-600">
-                  {booking.activity} • {booking.date} • {booking.time}
-                </p>
-                <p className="text-xs text-gray-500">
-                  QR: {booking.qrCode}
-                </p>
-              </div>
-              <div className="flex items-center text-green-600">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                <div className="text-right">
-                  <span className="text-sm font-medium">Verified</span>
+              <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{booking.customerName || `Customer #${booking.customerId.slice(0, 6)}`}</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.activity} • {booking.date} • {booking.time}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {booking.verifiedAt ? new Date(booking.verifiedAt).toLocaleDateString() : ''}
+                    QR: {booking.qrCode}
                   </p>
                 </div>
+                <div className="flex items-center text-green-600">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  <div className="text-right">
+                    <span className="text-sm font-medium">Verified</span>
+                    <p className="text-xs text-gray-500">
+                      {booking.verifiedAt ? new Date(booking.verifiedAt).toLocaleDateString() : ''}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-          
+            ))}
+
           {branchBookings.filter(booking => booking.isVerified).length === 0 && (
             <div className="text-center py-6 text-gray-500">
               <QrCode className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -538,11 +601,10 @@ const ManagerDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`flex items-center px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === tab.id
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <tab.icon className="h-4 w-4 mr-2" />
                 {tab.label}
@@ -565,7 +627,7 @@ const ManagerDashboard: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Add Tracking Update - Order #{selectedOrder.id.slice(0, 8)}
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -573,7 +635,7 @@ const ManagerDashboard: React.FC = () => {
                   </label>
                   <select
                     value={trackingUpdate.status}
-                    onChange={(e) => setTrackingUpdate({...trackingUpdate, status: e.target.value})}
+                    onChange={(e) => setTrackingUpdate({ ...trackingUpdate, status: e.target.value })}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">Select Status</option>
@@ -592,7 +654,7 @@ const ManagerDashboard: React.FC = () => {
                   <input
                     type="text"
                     value={trackingUpdate.location}
-                    onChange={(e) => setTrackingUpdate({...trackingUpdate, location: e.target.value})}
+                    onChange={(e) => setTrackingUpdate({ ...trackingUpdate, location: e.target.value })}
                     placeholder="e.g., Warehouse, Transit Hub, Local Facility"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
@@ -604,7 +666,7 @@ const ManagerDashboard: React.FC = () => {
                   </label>
                   <textarea
                     value={trackingUpdate.description}
-                    onChange={(e) => setTrackingUpdate({...trackingUpdate, description: e.target.value})}
+                    onChange={(e) => setTrackingUpdate({ ...trackingUpdate, description: e.target.value })}
                     placeholder="Additional details about this update"
                     rows={3}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -633,9 +695,8 @@ const ManagerDashboard: React.FC = () => {
 
       {/* Toast Notifications */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg z-50 ${
-          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-        }`}>
+        <div className={`fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg z-50 ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}>
           <div className="flex items-center">
             {toast.type === 'success' ? (
               <CheckCircle className="h-5 w-5 mr-2" />
@@ -657,7 +718,7 @@ const ManagerDashboard: React.FC = () => {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="text-center py-8">
               <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-4">

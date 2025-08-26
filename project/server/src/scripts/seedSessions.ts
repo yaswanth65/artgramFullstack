@@ -1,13 +1,16 @@
 import mongoose from 'mongoose';
 import Session from '../models/Session';
+import Branch from '../models/Branch';
+import User from '../models/User';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Template sessions (branchId will be replaced with actual ObjectIds)
 const sessions = [
   // Hyderabad Branch - Slime Sessions
   {
-    branchId: 'hyderabad',
+    branchKey: 'hyderabad',
     date: '2025-08-27',
     activity: 'slime',
     time: '10:00',
@@ -21,7 +24,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'hyderabad',
+    branchKey: 'hyderabad',
     date: '2025-08-27',
     activity: 'slime',
     time: '11:30',
@@ -35,7 +38,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'hyderabad',
+    branchKey: 'hyderabad',
     date: '2025-08-27',
     activity: 'slime',
     time: '16:00',
@@ -48,10 +51,10 @@ const sessions = [
     isActive: true,
     createdBy: 'system'
   },
-  
+
   // Hyderabad Branch - Tufting Sessions
   {
-    branchId: 'hyderabad',
+    branchKey: 'hyderabad',
     date: '2025-08-27',
     activity: 'tufting',
     time: '12:00',
@@ -65,7 +68,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'hyderabad',
+    branchKey: 'hyderabad',
     date: '2025-08-27',
     activity: 'tufting',
     time: '15:00',
@@ -81,7 +84,7 @@ const sessions = [
 
   // Vijayawada Branch - Slime Sessions only (no tufting)
   {
-    branchId: 'vijayawada',
+    branchKey: 'vijayawada',
     date: '2025-08-27',
     activity: 'slime',
     time: '10:00',
@@ -95,7 +98,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'vijayawada',
+    branchKey: 'vijayawada',
     date: '2025-08-27',
     activity: 'slime',
     time: '14:00',
@@ -111,7 +114,7 @@ const sessions = [
 
   // Bangalore Branch - Both activities
   {
-    branchId: 'bangalore',
+    branchKey: 'bangalore',
     date: '2025-08-27',
     activity: 'slime',
     time: '10:00',
@@ -125,7 +128,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'bangalore',
+    branchKey: 'bangalore',
     date: '2025-08-27',
     activity: 'slime',
     time: '13:00',
@@ -139,7 +142,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'bangalore',
+    branchKey: 'bangalore',
     date: '2025-08-27',
     activity: 'tufting',
     time: '11:00',
@@ -153,7 +156,7 @@ const sessions = [
     createdBy: 'system'
   },
   {
-    branchId: 'bangalore',
+    branchKey: 'bangalore',
     date: '2025-08-27',
     activity: 'tufting',
     time: '14:30',
@@ -177,6 +180,20 @@ const seedSessions = async () => {
     await Session.deleteMany({});
     console.log('Cleared existing sessions');
 
+    // Load branches and admin for references
+    const branches = await Branch.find().lean();
+    if (!branches.length) {
+      throw new Error('No branches found. Run seedData.ts first to create branches.');
+    }
+    const nameToBranchId: Record<string, mongoose.Types.ObjectId> = {};
+    for (const b of branches) {
+      const key = (b.location || b.name || '').toLowerCase();
+      if (key.includes('hyderabad')) nameToBranchId['hyderabad'] = b._id as unknown as mongoose.Types.ObjectId;
+      if (key.includes('vijayawada')) nameToBranchId['vijayawada'] = b._id as unknown as mongoose.Types.ObjectId;
+      if (key.includes('bangalore')) nameToBranchId['bangalore'] = b._id as unknown as mongoose.Types.ObjectId;
+    }
+    const admin = await User.findOne({ role: 'admin' }).lean();
+
     // Create today and next few days sessions
     const today = new Date();
     const sessionPromises = [];
@@ -185,24 +202,30 @@ const seedSessions = async () => {
       const date = new Date(today);
       date.setDate(today.getDate() + dayOffset);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       // Skip Mondays for most branches (except Vijayawada)
       const isMonday = date.getDay() === 1;
-      
+
       for (const session of sessions) {
         // Skip Monday sessions for certain branches
-        if (isMonday && session.branchId !== 'vijayawada') {
+        if (isMonday && session.branchKey !== 'vijayawada') {
           continue;
         }
-        
-        const sessionData = {
+
+        const sessionData: any = {
           ...session,
           date: dateStr,
           // Reset seat counts for future dates
           bookedSeats: dayOffset === 0 ? session.bookedSeats : Math.floor(Math.random() * session.totalSeats * 0.3),
         };
         sessionData.availableSeats = sessionData.totalSeats - sessionData.bookedSeats;
-        
+        // Replace branchKey with actual ObjectId
+        const bId = nameToBranchId[session.branchKey as 'hyderabad' | 'vijayawada' | 'bangalore'];
+        if (!bId) continue;
+        delete sessionData.branchKey;
+        sessionData.branchId = bId;
+        if (admin) sessionData.createdBy = admin._id;
+
         sessionPromises.push(Session.create(sessionData));
       }
     }
