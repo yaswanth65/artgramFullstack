@@ -89,8 +89,8 @@ const Store: React.FC = () => {
       await initiatePayment({
         amount: order.amount / 100,
         currency: order.currency,
-        name: 'Craft Factory',
-        description: 'Purchase from Craft Factory Store',
+        name: 'Artgram',
+        description: 'Purchase from Artgram Store',
         order_id: order.id,
         key: 'rzp_test_default_key', // Default key for global orders
         handler: async (response: RazorpayResponse) => {
@@ -151,7 +151,7 @@ const Store: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-slate-50 via-purple-50 to-rose-50 ">
       {/* Hero Header */}
-      <section className="relative bg-gradient-to-br from-indigo-900 via-purple-900 to-rose-900 overflow-hidden">
+      <section className="relative  overflow-hidden" style={{backgroundColor: '#7F55B1'}}>
         {/* Background Elements */}
         <div className="absolute inset-0">
           {[...Array(6)].map((_, i) => (
@@ -173,9 +173,9 @@ const Store: React.FC = () => {
           }`}>
             <div className="mb-4">
               <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-white via-purple-200 to-rose-200 bg-clip-text text-transparent mb-1">
-                Art & Slime
+                Art & Slime DIY Kits
               </h1>
-              <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-rose-400 mx-auto rounded-full mb-6" />
+              <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-pink-200 mx-auto rounded-full mb-6" />
             </div>
             <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed">
               Curated premium kits and materials to bring your creativity to life at home!
@@ -205,7 +205,7 @@ const Store: React.FC = () => {
                           onClick={() => setFilter(category.id)}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left
                             ${filter === category.id 
-                              ? 'bg-gradient-to-r from-purple-600 to-rose-600 text-white shadow-lg' 
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-300 text-white shadow-lg' 
                               : 'bg-gray-50 text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                             }`}
                         >
@@ -391,7 +391,7 @@ const Store: React.FC = () => {
               <div className="bg-gradient-to-br from-white via-purple-50 to-rose-50 p-12 rounded-3xl shadow-xl border border-purple-100 mt-12">
                 <div className="text-center max-w-2xl mx-auto">
                   <div className="text-6xl mb-6">📦</div>
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-rose-600 bg-clip-text text-transparent mb-4">
+                  <h3 className="text-3xl font-bold  bg-clip-text text-transparent mb-4" style={{backgroundColor: '#7F55B1'}}>
                     Looking for Bulk Orders?
                   </h3>
                   <p className="text-gray-600 mb-8 text-lg leading-relaxed">
@@ -399,7 +399,7 @@ const Store: React.FC = () => {
                     Get in touch with us for a custom quote and exclusive deals!
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button className="group bg-gradient-to-r from-purple-600 to-rose-600 text-white font-semibold px-8 py-4 rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                    <button className="group  text-white font-semibold px-8 py-4 rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105" style={{backgroundColor: '#7F55B1'}}>
                       <span className="flex items-center justify-center gap-3">
                         📞 Get Custom Quote
                         <div className="w-0 group-hover:w-4 h-0.5 bg-white rounded transition-all duration-300" />

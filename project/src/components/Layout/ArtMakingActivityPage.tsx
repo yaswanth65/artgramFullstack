@@ -108,7 +108,7 @@ export default function ArtMakingActivityPage() {
 
   return (
      <div 
-      className="min-h-screen bg-gradient-to-br from-green-100 to-purple-100"
+      className="min-h-screen bg-white"
       onClick={handleUserInteraction}
     >
       {/* Hero Section */}
@@ -214,7 +214,7 @@ export default function ArtMakingActivityPage() {
                 {/* Pricing Info */}
                 
                 <div className="lg:col-span-2 space-y-4 md:space-y-2">
-  <h3 className="text-5xl p-8 font-bold bg-gradient-to-r from-purple-600 to-rose-600 bg-clip-text text-transparent mb-4 md:mb-6 ">
+  <h3 className="text-5xl p-8 font-bold  bg-clip-text text-transparent mb-4 md:mb-6 " style={{ color: '#7F55B1' }}>
     Art Making Experience
   </h3>
 
@@ -261,7 +261,7 @@ export default function ArtMakingActivityPage() {
 
                 {/* Special Offer */}
                 <div className="relative">
-                  <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl p-6 md:p-8 text-white text-center shadow-2xl transform hover:scale-105 transition-all duration-300">
+                  <div className="rounded-3xl p-6 md:p-8 text-white text-center shadow-2xl transform hover:scale-105 transition-all duration-300" style={{backgroundColor: '#7F55B1'}}>
                     <div className="absolute -top-3 -right-3 w-12 h-12 md:-top-4 md:-right-4 md:w-16 md:h-16 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-lg">
                       HOT!
                     </div>
@@ -305,7 +305,7 @@ export default function ArtMakingActivityPage() {
           {/* Art Forms Gallery - Kids Section */}
           <div className="mb-20 pt-20">
             <div className="text-center mb-8 md:mb-12">
-              <h3 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 md:mb-4">
+              <h3 className="text-3xl md:text-4xl font-black text-gray-800 mb-3 md:mb-4" style={{color: '#7F55B1'}}>
                 Art Forms for Kids 🧑‍🎨
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
@@ -335,7 +335,7 @@ export default function ArtMakingActivityPage() {
           {/* Art Forms Gallery - Adults Section */}
           <div className="mb-20">
             <div className="text-center mb-8 md:mb-12">
-              <h3 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 md:mb-4">
+              <h3 className="text-3xl md:text-4xl font-black mb-3 md:mb-4" style={{color: '#7F55B1'}}>
                 Art Forms for Adults 🧑‍🎨
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
@@ -368,7 +368,7 @@ export default function ArtMakingActivityPage() {
 
           {/* Brochure Section */}
           <div className="mt-16 md:mt-20 text-center">
-  <h3 className="text-3xl font-bold text-gray-800 mb-4">Our Brochures</h3>
+  <h3 className="text-3xl font-black mb-4" style={{ color: '#7F55B1' }}>Our Brochures</h3>
   <p className="text-base md:text-xl text-gray-600 mb-10">
     Get detailed information about all our art forms and pricing across different branches
   </p>
@@ -389,7 +389,7 @@ export default function ArtMakingActivityPage() {
         href="https://www.canva.com/design/DAGkzJWHL44/aCM0VggQIbL4QbK96MEopw/view"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform"
+        className="mt-4 inline-block  text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform"style={{backgroundColor: '#7F55B1'}}
       >
         📋 View / Download
       </a>
@@ -410,7 +410,7 @@ export default function ArtMakingActivityPage() {
         href="https://www.canva.com/design/DAFzM-Gz7Kg/92ExSAFWSxaxXJownvur4A/view"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform"
+        className="mt-4 inline-block  text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform" style={{backgroundColor: '#7F55B1'}}
       >
         📋 View / Download
       </a>
@@ -431,7 +431,7 @@ export default function ArtMakingActivityPage() {
         href="https://www.canva.com/design/DAFzMTK_uQY/B3-KsNjAyUb0Jx3YCDwmtg/view"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform"
+        className="mt-4 inline-block  text-white px-6 py-2 rounded-full shadow-md hover:scale-105 transition-transform" style={{backgroundColor: '#7F55B1'}}
       >
         📋 View / Download
       </a>

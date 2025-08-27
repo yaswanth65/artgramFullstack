@@ -1,5 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { body, validationResult, ValidationChain } from 'express-validator';
+
+// Use CommonJS require at runtime so destructuring matches the actual exported
+// shape of the installed express-validator package (avoids default import issues).
+// Avoid importing the package's types because the installed @types may not match
+// the runtime package version; use a local alias for ValidationChain instead.
+const expressValidator = require('express-validator');
+const { body, validationResult } = expressValidator;
+type ValidationChain = any;
 
 // Generic validation middleware
 export const validate = (validations: ValidationChain[]) => {
@@ -105,7 +112,7 @@ export const bookingValidationRules = () => {
     body('date')
       .isISO8601()
       .withMessage('Date must be in valid ISO format')
-      .custom((value) => {
+  .custom((value: string) => {
         const bookingDate = new Date(value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -132,7 +139,7 @@ export const sessionValidationRules = () => {
     body('date')
       .isISO8601()
       .withMessage('Date must be in valid ISO format')
-      .custom((value) => {
+  .custom((value: string) => {
         const sessionDate = new Date(value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);

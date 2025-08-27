@@ -39,7 +39,7 @@ export const generateResetToken = (): string => {
 export const createManagerInviteEmail = (data: ManagerInviteData): EmailTemplate => {
   return {
     to: data.email,
-    subject: 'Welcome to Craft Factory - Manager Account Created',
+    subject: 'Welcome to Artgram - Manager Account Created',
     html: `
       <!DOCTYPE html>
       <html>
@@ -57,7 +57,7 @@ export const createManagerInviteEmail = (data: ManagerInviteData): EmailTemplate
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎨 Welcome to Craft Factory!</h1>
+            <h1>🎨 Welcome to Artgram!</h1>
             <p>Your Manager Account Has Been Created</p>
           </div>
           <div class="content">
@@ -87,7 +87,7 @@ export const createManagerInviteEmail = (data: ManagerInviteData): EmailTemplate
             <p>If you have any questions or need assistance, please contact the admin team.</p>
           </div>
           <div class="footer">
-            <p>© 2024 Craft Factory. All rights reserved.</p>
+            <p>© 2024 Artgram. All rights reserved.</p>
             <p>This is an automated message. Please do not reply to this email.</p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export const createManagerInviteEmail = (data: ManagerInviteData): EmailTemplate
 export const createPasswordResetEmail = (data: PasswordResetData): EmailTemplate => {
   return {
     to: data.email,
-    subject: 'Craft Factory - Password Reset Request',
+    subject: 'Artgram - Password Reset Request',
     html: `
       <!DOCTYPE html>
       <html>
@@ -121,11 +121,11 @@ export const createPasswordResetEmail = (data: PasswordResetData): EmailTemplate
         <div class="container">
           <div class="header">
             <h1>🔐 Password Reset Request</h1>
-            <p>Craft Factory Manager Portal</p>
+            <p>Artgram Manager Portal</p>
           </div>
           <div class="content">
             <h2>Hello ${data.name},</h2>
-            <p>We received a request to reset your password for your Craft Factory manager account.</p>
+            <p>We received a request to reset your password for your Artgram manager account.</p>
             
             <div class="reset-info">
               <h3>🔑 Reset Your Password:</h3>
@@ -151,7 +151,7 @@ export const createPasswordResetEmail = (data: PasswordResetData): EmailTemplate
             <p style="word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px;">${data.resetUrl}</p>
           </div>
           <div class="footer">
-            <p>© 2024 Craft Factory. All rights reserved.</p>
+            <p>© 2024 Artgram. All rights reserved.</p>
             <p>This is an automated message. Please do not reply to this email.</p>
           </div>
         </div>

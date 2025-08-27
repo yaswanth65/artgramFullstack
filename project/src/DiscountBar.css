@@ -1,0 +1,13 @@
+.scroll-text {
+  display: inline-block;
+  animation: scroll-left 20s linear infinite;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(230%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}

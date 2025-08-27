@@ -297,7 +297,7 @@ const EventsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-orange-900 via-orange-900 to-orange-900 overflow-hidden">
+      <section className="relative  overflow-hidden" style={{backgroundColor: '#7F55B1'}}>
         {/* Background Elements */}
         <div className="absolute inset-0">
           {[...Array(6)].map((_, i) => (
@@ -389,7 +389,7 @@ const EventsPage = () => {
 
             <div className="overflow-y-auto h-full">
               {/* Header */}
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-12 text-white">
+              <div className=" px-8 py-12 text-white" style={{backgroundColor: '#7F55B1'}}>
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-3xl backdrop-blur-sm">
                     {selectedEvent.icon}
@@ -416,7 +416,7 @@ const EventsPage = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 border-b-2 px-3 py-3 md:px-4 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                         activeTab === tab.id
-                          ? "border-rose-500 text-rose-600"
+                          ? "border-purple-700 text-rose-600"
                           : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                     >
@@ -447,15 +447,15 @@ const EventsPage = () => {
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {selectedEvent.features.map((feature, index) => (
                           <div key={index} className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                            <div className="h-2 w-2 rounded-full " style={{backgroundColor: '#7F55B1'}}></div>
                             <span className="text-gray-600">{feature}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <button className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 py-4 text-white font-semibold text-lg hover:shadow-lg transition-all transform hover:scale-105">
-                      Book This Event
+                    <button className="w-full rounded-xl py-4 text-white font-semibold text-lg hover:shadow-lg transition-all transform hover:scale-105" style={{backgroundColor: '#7F55B1'}}>
+                      Book this event – Call us today!
                     </button>
                   </div>
                 )}
@@ -494,7 +494,7 @@ const EventsPage = () => {
                           onClick={() => setCurrentImageIndex(index)}
                           className={`flex-shrink-0 rounded-xl overflow-hidden ${
                             currentImageIndex === index
-                              ? "ring-4 ring-orange-500"
+                              ? "ring-4 ring-purple-500"
                               : ""
                           }`}
                         >
@@ -615,7 +615,7 @@ const EventCard = ({ event, onClick }) => {
   return (
     <div className="group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2">
       <div className="relative">
-        <div className="h-48 bg-gradient-to-br from-orange-400 to-purple-500 p-8">
+        <div className="h-48  p-8" style={{backgroundColor: '#9B7EBD'}}>
           <div className="flex h-full flex-col justify-between">
             <div className="text-right">
               <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
@@ -662,7 +662,7 @@ const EventCard = ({ event, onClick }) => {
       <div className="border-t bg-gray-50 p-6">
         <button
           onClick={onClick}
-          className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 py-3 font-semibold text-white transition-all hover:shadow-lg transform hover:scale-105"
+          className="w-full rounded-xl  py-3 font-semibold text-white transition-all hover:shadow-lg transform hover:scale-105" style={{backgroundColor: '#7F55B1'}}
         >
           View Details
         </button>

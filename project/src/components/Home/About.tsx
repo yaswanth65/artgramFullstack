@@ -13,7 +13,7 @@ const About: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              {aboutContent?.title || 'About Craft Factory'}
+              {aboutContent?.title || 'About Artgram'}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               {aboutContent?.content || 'We are passionate about bringing creativity to life through hands-on crafting experiences'}
@@ -24,7 +24,7 @@ const About: React.FC = () => {
             <div>
               <img
                 src={aboutImages[0]}
-                alt="Craft Factory Workshop"
+                alt="Artgram Workshop"
                 className="rounded-lg shadow-lg w-full h-96 object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/1545558/pexels-photo-1545558.jpeg';
@@ -34,7 +34,7 @@ const About: React.FC = () => {
             <div>
               <h3 className="text-3xl font-bold text-gray-800 mb-6">Our Story</h3>
               <p className="text-gray-600 mb-6">
-                Founded with a passion for creativity, Craft Factory has been inspiring artists and crafters 
+                Founded with a passion for creativity, Artgram has been inspiring artists and crafters 
                 of all ages to explore their artistic potential. Our expert instructors and premium materials 
                 create the perfect environment for learning and creating.
               </p>

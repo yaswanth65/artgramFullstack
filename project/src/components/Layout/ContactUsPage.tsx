@@ -32,7 +32,7 @@ const ContactUsPage = () => {
   return (
     <div className="bg-gradient-to-br from-slate-50 via-purple-50 to-rose-50">
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-900 to-gray-900 overflow-hidden">
+      <section className="relative  overflow-hidden" style={{backgroundColor: '#7F55B1'}}>
       <div className="absolute inset-0">
           {[...Array(6)].map((_, i) => (
             <div 
@@ -53,7 +53,7 @@ const ContactUsPage = () => {
           }`}>
           <div className="mb-6">
           <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-white via-purple-200 to-rose-200 bg-clip-text text-transparent mb-4">Get in Touch</h1>
-          <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-rose-400 mx-auto rounded-full mb-6" />
+          <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-pink-200 mx-auto rounded-full mb-6" />
             </div>
           <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">We'd love to hear from you! Whether it's a question, feedback, or collaboration idea—drop us a message.</p>
         </div>
@@ -64,9 +64,9 @@ const ContactUsPage = () => {
       
 
       {/* Branches Section */}
-      <section className="py-16">
+      <section className="py-16 bg-white">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-bold mb-12 text-gray-800">Our Branches</h2>
+          <h2 className="text-center text-3xl font-black mb-12 " style={{color: '#7F55B1'}}>Our Branches</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <BranchCard
               img="https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754637272/wp6539521_vvafqv.jpg"
@@ -263,14 +263,14 @@ Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hal
         </div>
       </section>
  */}
-      <section className="py-16">
+      <section className="py-16 bg-white" >
         <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-5 gap-12">
           {/* Form on the left */}
           
 
           {/* Contact info on the right */}
           <div className="md:col-span-2">
-          <div className="bg-white p-8 rounded-3xl shadow-xl border-gray-100 sticky top-32">
+          <div className=" p-8 rounded-3xl shadow-xl border-gray-100 sticky top-32">
             <h3 className="text-2xl font-semibold mb-6">Reach Us Directly</h3>
             <div className="space-y-4 text-slate-900">
               <div className="flex items-start gap-3">
@@ -331,7 +331,7 @@ Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hal
  */
 const BranchCard = ({ img, name, address, phone, openTime, closeTime, onWhatsApp, instagram }) => {
   return (
-    <div className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-105">
+     <div className="group  rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-105" style={{backgroundColor: '#fdf7f6'}}>
       <div className="relative h-52 overflow-hidden">
         <img 
           src={img || "/placeholder.svg"} 

@@ -204,7 +204,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     {
       id: '0',
       type: 'carousel',
-      title: 'Welcome to Craft Factory',
+      title: 'Welcome to Artgram',
       content: 'Discover the joy of crafting with our expert-led workshops and premium supplies',
       images: [
         'https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754651195/DSC07659_zj2pcc.jpg',
@@ -241,7 +241,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     {
       id: '1',
       type: 'hero',
-      title: 'Welcome to Craft Factory',
+      title: 'Welcome to Artgram',
       content: 'Discover the joy of crafting with our expert-led workshops and premium supplies',
       images: ['https://images.pexels.com/photos/1545558/pexels-photo-1545558.jpeg'],
       isActive: true,
@@ -250,7 +250,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     {
       id: '2',
       type: 'about',
-      title: 'About Craft Factory',
+      title: 'About Artgram',
       content: 'We are passionate about bringing creativity to life through hands-on crafting experiences. Our expert instructors and premium materials create the perfect environment for learning and creating.',
       images: [
         'https://images.pexels.com/photos/1545558/pexels-photo-1545558.jpeg',
@@ -550,7 +550,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Mock branches for immediate testing
     {
       id: 'hyderabad',
-      name: 'Craft Factory Hyderabad',
+      name: 'Artgram Hyderabad',
       location: 'Hyderabad',
       address: '123 Tech City, Hyderabad',
       phone: '+91 40 1234 5678',
@@ -564,7 +564,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     {
       id: 'vijayawada',
-      name: 'Craft Factory Vijayawada',
+      name: 'Artgram Vijayawada',
       location: 'Vijayawada',
       address: '456 Business Center, Vijayawada',
       phone: '+91 866 1234 5678',
@@ -578,7 +578,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     {
       id: 'bangalore',
-      name: 'Craft Factory Bangalore',
+      name: 'Artgram Bangalore',
       location: 'Bangalore',
       address: '789 Innovation Hub, Bangalore',
       phone: '+91 80 1234 5678',

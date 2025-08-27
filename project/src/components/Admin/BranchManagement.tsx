@@ -182,7 +182,7 @@ const BranchManagement: React.FC = () => {
                   value={newBranch.name}
                   onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Craft Factory Mumbai"
+                  placeholder="e.g., Artgram Mumbai"
                 />
               </div>
 

@@ -262,7 +262,7 @@ export default function SlimePlayPage() {
   const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
   const branch = getBranchById(branchId);
   const order = await createRazorpayOrder(total);
-  await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Slime Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
+  await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Artgram', description: 'Slime Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
         // on success create booking using new session-based API
         const branchId = bookingData.location ? branchMapRef.current[bookingData.location] : undefined;
         
@@ -395,7 +395,7 @@ export default function SlimePlayPage() {
   <div className="max-w-6xl mx-auto px-5 flex flex-col">
     
     {/* Title */}
-    <h2 className="text-3xl md:text-4xl font-bold text-center text-red-600 mb-10">
+    <h2 className="text-3xl md:text-4xl font-bold text-center  mb-10" style={{color: '#7F55B1'}}>
       Choose Your Slime Adventure
     </h2>
 
@@ -404,7 +404,7 @@ export default function SlimePlayPage() {
       
   {/* Base Package */}
   <div className="bg-gradient-to-br from-green-50 to-white rounded-3xl p-6 md:p-8 shadow-2xl border-4 border-green-400">
-    <h3 className="text-2xl md:text-3xl font-black text-center text-red-600 mb-3">
+    <h3 className="text-2xl md:text-3xl font-black text-center mb-3" style={{color: '#7F55B1'}}>
       Rs 750/- Base Package
     </h3>
     <p className="text-gray-600 text-base md:text-lg font-medium text-center mb-4">
@@ -421,8 +421,8 @@ export default function SlimePlayPage() {
           className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
         />
         <div>
-          <h4 className="text-base md:text-lg font-bold text-red-600">
-            Slime Play 
+          <h4 className="text-base md:text-lg font-bold" style={{color: '#7F55B1'}}>
+            Slime Play
             <span className="bg-yellow-400 text-white px-2 py-1 rounded-full text-xs font-semibold ml-2">
               45 min
             </span>
@@ -443,8 +443,8 @@ export default function SlimePlayPage() {
           className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
         />
         <div>
-          <h4 className="text-base md:text-lg font-bold text-red-600">
-            Slime Demo 
+          <h4 className="text-base md:text-lg font-bold" style={{color: '#7F55B1'}}>
+            Slime Demo
             <span className="bg-yellow-400 text-white px-2 py-1 rounded-full text-xs font-semibold ml-2">
               15 min
             </span>
@@ -465,8 +465,8 @@ export default function SlimePlayPage() {
           className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
         />
         <div>
-          <h4 className="text-base md:text-lg font-bold text-red-600">
-            Slime Making 
+          <h4 className="text-base md:text-lg font-bold" style={{color: '#7F55B1'}}>
+            Slime Making
             <span className="bg-yellow-400 text-white px-2 py-1 rounded-full text-xs font-semibold ml-2">
               15 min
             </span>
@@ -496,7 +496,7 @@ export default function SlimePlayPage() {
 
   {/* Premium Package */}
   <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-white rounded-3xl p-6 md:p-8 shadow-2xl border-4 border-purple-500">
-    <h3 className="text-2xl md:text-3xl font-black text-center text-red-600 mb-2">
+    <h3 className="text-2xl md:text-3xl font-black text-center" style={{color: '#7F55B1'}}>
       Rs 850/- Premium Experience
     </h3>
     <p className="text-gray-600 text-base md:text-lg font-medium text-center mb-4">
@@ -516,7 +516,7 @@ export default function SlimePlayPage() {
             className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
           />
           <div>
-            <h4 className="text-base md:text-lg font-bold text-red-600">
+            <h4 className="text-base md:text-lg font-bold" style={{color: '#7F55B1'}}>
               Everything in Base Package
               <span className="bg-yellow-400 text-white px-2 py-1 rounded-full text-xs font-semibold ml-2">
                 1 Hour
@@ -545,8 +545,8 @@ export default function SlimePlayPage() {
           className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
         />
         <div>
-          <h4 className="text-base md:text-lg font-bold text-red-600">
-            ✨ Glow in Dark Experience 
+          <h4 className="text-base md:text-lg font-bold" style={{color: '#7F55B1'}}>
+            ✨ Glow in Dark Experience
             <span className="bg-gradient-to-r from-pink-400 to-purple-500 text-white px-2 py-1 rounded-full text-xs font-semibold ml-2">
               +15 min
             </span>
@@ -580,12 +580,12 @@ export default function SlimePlayPage() {
       {/* Additional Information Section */}
       <section className="py-20 bg-gradient-to-br from-green-50 to-purple-50">
         <div className="max-w-6xl mx-auto px-5">
-          <h2 className="text-4xl font-bold text-center text-red-600 mb-12">
+          <h2 className="text-4xl font-bold text-center mb-12" style={{color: '#7F55B1'}}>
             Additional Information
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-8 border-l-4 border-green-400">
-              <h4 className="text-xl font-bold text-red-600 mb-3">
+              <h4 className="text-xl font-bold" style={{color: '#7F55B1'}}>
                 Booking Required
               </h4>
               <p className="text-gray-700">
@@ -594,7 +594,7 @@ export default function SlimePlayPage() {
               </p>
             </div>
             <div className="bg-white rounded-2xl p-8 border-l-4 border-green-400">
-              <h4 className="text-xl font-bold text-red-600 mb-3">
+              <h4 className="text-xl font-bold" style={{color: '#7F55B1'}}>
                 Parent Supervision
               </h4>
               <p className="text-gray-700">
@@ -603,7 +603,7 @@ export default function SlimePlayPage() {
               </p>
             </div>
             <div className="bg-white rounded-2xl p-8 border-l-4 border-green-400">
-              <h4 className="text-xl font-bold text-red-600 mb-3">
+              <h4 className="text-xl font-bold" style={{color: '#7F55B1'}}>
                 Age Requirement
               </h4>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
@@ -618,7 +618,7 @@ export default function SlimePlayPage() {
               </ul>
             </div>
             <div className="bg-white rounded-2xl p-8 border-l-4 border-green-400">
-              <h4 className="text-xl font-bold text-red-600 mb-3">
+              <h4 className="text-xl font-bold" style={{color: '#7F55B1'}}>
                 Group & Private Sessions
               </h4>
               <p className="text-gray-700">
@@ -633,7 +633,7 @@ export default function SlimePlayPage() {
       {/* Gallery Section */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-5">
-          <h2 className="text-4xl font-bold text-center text-red-600 mb-12">
+          <h2 className="text-4xl font-bold text-center mb-12" style={{color: '#7F55B1'}}>
             Slime Experience Gallery
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -665,17 +665,17 @@ export default function SlimePlayPage() {
       <section id="booking" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-5">
           <div className="bg-white rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-4xl font-bold text-center text-red-600 mb-8">Book Your Slime Experience</h2>
+            <h2 className="text-4xl font-bold text-center  mb-8" style={{color: '#7F55B1'}}>Book Your Slime Experience</h2>
             
             {/* Step 1: Select Location */}
             {currentStep === 1 && (
               <div>
-                <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 1: Choose Location</h3>
+                <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 1: Choose Location</h3>
                 <div className="flex gap-5 flex-wrap justify-center mb-5">
                   {['downtown', 'mall', 'park'].map(id => (
                     <div key={id} onClick={() => selectLocation(id)} className={`border-2 rounded-xl p-6 text-center cursor-pointer transition-all min-w-48 ${bookingData.location === id ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'border-gray-200 hover:border-green-400 hover:bg-green-50'}`}>
                       <div className="font-bold text-lg mb-1">{getLocationName(id)}</div>
-                      {id === 'mall' && <div className="text-xs text-red-500">No Session on Mondays</div>}
+                      {id === 'mall' && <div className="text-xs "style={{color: '#7F55B1'}}>No Session on Mondays</div>}
                     </div>
                   ))}
                 </div>
@@ -688,7 +688,7 @@ export default function SlimePlayPage() {
             {/* Step 2: Select Date */}
             {currentStep === 2 && (
               <div>
-                <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 2: Select Your Date</h3>
+                <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 2: Select Your Date</h3>
                 <div className="flex gap-4 flex-wrap justify-center mb-5">
                   {[...Array(9)].map((_, i) => {
                     const date = new Date();
@@ -711,7 +711,7 @@ export default function SlimePlayPage() {
                         <div className="text-sm font-semibold">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                         <div className="text-xl font-bold my-1">{date.getDate()}</div>
                         <div className="text-xs">{date.toLocaleDateString('en-US', { month: 'short' })}</div>
-                        {isDisabled && <div className="text-xs text-red-500 mt-1">No Sessions</div>}
+                        {isDisabled && <div className="text-xs mt-1" style={{color: '#7F55B1'}}>No Sessions</div>}
                       </div>
                     );
                   })}
@@ -726,7 +726,7 @@ export default function SlimePlayPage() {
             {/* Step 3: Select Quantity */}
             {currentStep === 3 && (
                 <div>
-                    <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 3: How many tickets?</h3>
+                    <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 3: How many tickets?</h3>
                     <div className="flex justify-center items-center gap-4 mb-5">
                         <button onClick={() => setQuantity(Math.max(1, bookingData.quantity - 1))} className="w-12 h-12 rounded-full bg-gray-200 text-2xl font-bold">-</button>
                         <span className="text-4xl font-bold w-20 text-center">{bookingData.quantity}</span>
@@ -742,7 +742,6 @@ export default function SlimePlayPage() {
             {/* Step 4: Select Session & Time */}
             {currentStep === 4 && (
               <div>
-                <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 4: Choose Session</h3>
                  <div className="flex gap-5 flex-wrap justify-center mb-10">
                     <div onClick={() => selectSession('complete', '850')} className={`border-2 rounded-2xl p-6 text-center cursor-pointer min-w-48 ${bookingData.session === 'complete' ? 'border-purple-400 bg-purple-100' : 'hover:border-purple-400'}`}>
                         <div className="font-bold text-lg mb-1">Premium Experience</div>
@@ -756,7 +755,7 @@ export default function SlimePlayPage() {
                     </div>
                  </div>
 
-                <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 5: Select Time Slot</h3>
+                <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 5: Select Time Slot</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
                   {timeSlots.map((slot) => (
                     <div key={slot.time} onClick={() => slot.status !== 'sold-out' && selectTime(slot.time)} 
@@ -780,7 +779,7 @@ export default function SlimePlayPage() {
             {/* Step 6: Contact Details & Summary */}
             {currentStep === 5 && (
               <div>
-                <h3 className="text-2xl font-bold text-red-600 text-center mb-6">Step 6: Contact & Summary</h3>
+                <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 6: Contact & Summary</h3>
                 <div className="grid lg:grid-cols-2 gap-8">
                   <div>
                     <h4 className="text-xl font-semibold mb-4">Contact Information</h4>

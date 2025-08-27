@@ -215,7 +215,7 @@ const TuftingActivityPage = () => {
     
     {/* Title */}
     <div className="text-center mb-10">
-      <h2 className="text-3xl md:text-4xl font-black text-rose-600 mb-2">
+      <h2 className="text-3xl md:text-4xl font-black mb-2" style={{ color: '#7F55B1' }}>
         🤔 What is Tufting?
       </h2>
       <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
@@ -235,7 +235,7 @@ const TuftingActivityPage = () => {
           </h3>
           <div className="flex items-center gap-3 group">
   {/* Bullet */}
-  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full group-hover:scale-150 transition-transform duration-300" />
+  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-300 rounded-full group-hover:scale-150 transition-transform duration-300" />
   
   {/* Text */}
   <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
@@ -304,9 +304,9 @@ const TuftingActivityPage = () => {
 
 
       {/* Gallery Section */}
-      <section className="py-16 bg-pink-50">
+      <section className="py-16 bg-white">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-bold text-center mb-10 text-rose-600">
+          <h2 className="text-3xl font-bold text-center mb-10" style={{ color: '#7F55B1' }}>
             🖼️ Tufting Gallery - Customer Creations
           </h2>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -328,7 +328,7 @@ const TuftingActivityPage = () => {
      <section
         id="tufting-booking"
         className="py-16"
-        style={{ backgroundImage: "linear-gradient(135deg, #f9699c, #3f51b5)" }}
+        
       >
         <div className="mx-auto max-w-6xl px-4">
           <div className="backdrop-blur bg-white/95 rounded-3xl p-8 shadow-2xl">
@@ -584,7 +584,7 @@ const TuftingActivityPage = () => {
                       try {
                         const branch = getBranchById(booking.location);
                         const order = await createRazorpayOrder(amount);
-                        await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Craft Factory', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
+                        await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Artgram', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
                           const bookingPayload: any = {
                               customerId: user.id,
                               customerName: user.name,

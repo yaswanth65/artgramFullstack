@@ -28,21 +28,21 @@ const seedData = async () => {
     const branches = [
       {
         _id: new mongoose.Types.ObjectId(),
-        name: 'Craft Factory Hyderabad',
+        name: 'Artgram Hyderabad',
         location: 'Hyderabad',
         managerId: null, // Will be set after creating managers
         razorpayKey: 'rzp_test_hyderabad_key'
       },
       {
         _id: new mongoose.Types.ObjectId(),
-        name: 'Craft Factory Vijayawada',
+        name: 'Artgram Vijayawada',
         location: 'Vijayawada',
         managerId: null, // Will be set after creating managers
         razorpayKey: 'rzp_test_vijayawada_key'
       },
       {
         _id: new mongoose.Types.ObjectId(),
-        name: 'Craft Factory Bangalore',
+        name: 'Artgram Bangalore',
         location: 'Bangalore',
         managerId: null, // Will be set after creating managers
         razorpayKey: 'rzp_test_bangalore_key'

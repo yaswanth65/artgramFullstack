@@ -72,7 +72,7 @@ const HomePage = () => {
     <div style={{ fontFamily: "'Poppins', sans-serif" }}>
       {/* Hero Section with Carousel */}
       <header className="relative w-full max-w-6xl mx-auto mt-4 md:mt-8 px-4">
-        <div className="relative w-full aspect-[4/3] md:aspect-video bg-gray-200 rounded-xl md:rounded-2xl shadow-lg overflow-hidden">
+        <div className="relative w-full aspect-[4/3] md:aspect-video bg-white-200 rounded-xl md:rounded-2xl shadow-lg overflow-hidden">
           <img
             key={currentSlide}
             src={carouselImages[currentSlide]}
@@ -148,7 +148,7 @@ const HomePage = () => {
 
       {/* The rest of your components remain the same */}
       {/* About Section */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-gray-100">
+      <section className="py-20 bg-gradient-to-br from-slate-50 to-white-100">
         <div className="mx-auto max-w-6xl px-6 grid lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
             <video
@@ -163,10 +163,10 @@ const HomePage = () => {
             </video>
           </div>
           <div className="order-1 lg:order-2 text-center lg:text-left">
-            <h2 className="font-black text-4xl mb-4 text-slate-800">
+            <h2 className="font-black text-4xl mb-4 " style={{color: '#7F55B1'}}>
               ABOUT ARTGRAM
             </h2>
-            <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent" style={{color: '#F49BAB'}}>
               From Inspiration to Impact
             </h3>
             <p className="mb-4 text-lg leading-relaxed text-gray-700">
@@ -183,20 +183,20 @@ const HomePage = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 text-center">
-          <div className="p-6 bg-white rounded-2xl shadow-lg">
-            <p className="text-4xl font-bold text-rose-600">25,000+</p>
+          <div className="p-6  rounded-2xl shadow-lg" style={{backgroundColor: '#fdf7f6'}}>
+            <p className="text-4xl font-bold " style={{color: '#7F55B1'}}>25,000+</p>
             <p className="text-gray-600 font-medium">Customers</p>
           </div>
-          <div className="p-6 bg-white rounded-2xl shadow-lg">
-            <p className="text-4xl font-bold text-rose-600">40+</p>
+          <div className="p-6  rounded-2xl shadow-lg" style={{backgroundColor: '#fdf7f6'}}>
+            <p className="text-4xl font-bold " style={{color: '#7F55B1'}}>40+</p>
             <p className="text-gray-600 font-medium">Unique Designs</p>
           </div>
-          <div className="p-6 bg-white rounded-2xl shadow-lg">
-            <p className="text-4xl font-bold text-rose-600">100+</p>
+          <div className="p-6  rounded-2xl shadow-lg" style={{backgroundColor: '#fdf7f6'}}>
+            <p className="text-4xl font-bold " style={{color: '#7F55B1'}}>100+</p>
             <p className="text-gray-600 font-medium">Birthday Parties</p>
           </div>
-          <div className="p-6 bg-white rounded-2xl shadow-lg">
-            <p className="text-4xl font-bold text-rose-600">5</p>
+          <div className="p-6  rounded-2xl shadow-lg" style={{backgroundColor: '#fdf7f6'}}>
+            <p className="text-4xl font-bold " style={{color: '#7F55B1'}}>5</p>
             <p className="text-gray-600 font-medium">Studio Locations</p>
           </div>
         </div>
@@ -205,22 +205,23 @@ const HomePage = () => {
       {/* Activities Section */}
       <section
         id="activities"
-        className="py-20 text-center bg-gradient-to-b from-purple-50 via-pink-50 to-orange-50"
+        className="py-20 text-center bg-white "
       >
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12">
-            <h2 className="text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-black  bg-clip-text text-transparent" style={{color:`#7F55B1`}}>
               Explore activities at Artgram
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
             <ActivityCard
-              img="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755538130/HAR05881_knyc5j.jpg"
-              title="🎨 Art Making"
-              text="Enjoy 30+ hands on activities for all age groups"
-              bgColor="bg-gradient-to-br from-pink-100 to-purple-100"
-              link="/art-making-activity.html"
-            />
+  img="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755538130/HAR05881_knyc5j.jpg"
+  title="🎨 Art Making"
+  text="Enjoy 30+ hands on activities for all age groups"
+  link="/art-making-activity.html"
+  bgColor="#F49BAB"
+/>
+
             <ActivityCard
               img="https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754630801/HAR05956_c7944n.jpg"
               title="🌈 Slime Play"
@@ -270,7 +271,7 @@ const HomePage = () => {
             </div>
 
             <div className="text-center lg:text-left">
-              <h2 className="text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
+              <h2 className="text-4xl font-black  bg-clip-text text-transparent mb-6" style={{color: '#7F55B1'}}>
                 Events at Artgram
               </h2>
               <p className="mb-4 text-lg leading-relaxed text-gray-700">
@@ -316,9 +317,9 @@ const HomePage = () => {
       </section>
 
       {/* Instagram Feed Placeholder */}
-      <section className="py-16 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <section className="py-16 bg-white">
   <div className="max-w-6xl mx-auto px-6 text-center">
-    <h2 className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+    <h2 className="text-3xl font-black  bg-clip-text text-transparent mb-2" style={{color: '#7F55B1'}}>
       From Our Instagram
     </h2>
     <p className="text-gray-600 mb-10">
@@ -347,7 +348,7 @@ const HomePage = () => {
             href="https://www.instagram.com/reel/DGS5MUppMc4/"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-pink-600 hover:text-white transition"
+            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition"
           >
             View on Instagram
           </a>
@@ -366,7 +367,7 @@ const HomePage = () => {
             href="https://www.instagram.com/reel/DNC-sJuR0A4/"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-pink-600 hover:text-white transition"
+            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition"
           >
             View on Instagram
           </a>
@@ -385,7 +386,7 @@ const HomePage = () => {
             href="https://www.instagram.com/reel/DM91tFgvQrS/"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-orange-600 hover:text-white transition"
+            className="bg-white text-black px-4 py-2 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition"
           >
             View on Instagram
           </a>
@@ -399,37 +400,38 @@ const HomePage = () => {
       {/* Testimonials Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
-          <h2 className="text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-16 text-center">
+          <h2 className="text-4xl font-black  bg-clip-text text-transparent mb-16 text-center" style={{color: '#7F55B1'}}>
             In their own words: Artgram experiences
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto text-white">
             <TestimonialCard
-              stars="⭐⭐⭐⭐⭐"
-              text="Had a wonderful time doing the slime activity! Everything was well-organized, and the staff were so kind, patient, and engaging. It was a lot of fun for both kids and adults!"
-              name="Tejaswi Kalisetty"
-              bgColor="bg-gradient-to-br from-gray-600 to-blue-900 text-white"
-            />
+  stars="⭐⭐⭐⭐⭐"
+  text="Had a wonderful time doing the slime activity! Everything was well-organized, and the staff were so kind, patient, and engaging. It was a lot of fun for both kids and adults!"
+  name="Tejaswi Kalisetty"
+  bgColor="bg-[#9B7EBD]"
+/>
+
             <TestimonialCard
               stars="⭐⭐⭐⭐⭐"
               text="We hosted a onesie-themed baby shower at Artgram, and it was the best decision! Their team was attentive and turned a simple idea into a beautiful, memorable event."
               name="Mohana Swetha Nune"
-              bgColor="bg-gradient-to-br from-gray-600 to-blue-900 text-white"
+              bgColor="bg-[#9B7EBD]"
             />
             <TestimonialCard
               stars="⭐⭐⭐⭐⭐"
               text="I celebrated my daughter's birthday party here and everyone had a fantastic time! The venue was spacious, bright, and easy to reach, and the team was very responsive."
               name="Bhaswati Bhar"
-              bgColor="bg-gradient-to-br from-gray-600 to-blue-900 text-white"
+              bgColor="bg-[#9B7EBD]"
             />
           </div>
         </div>
       </section>
 
       {/* Branches Section */}
-      <section className="py-16">
+      <section className="py-16 bg-white">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-bold mb-12 text-gray-800">Our Branches</h2>
+           <h2 className="text-4xl font-black  bg-clip-text text-transparent mb-16 text-center" style={{color: '#7F55B1'}}>Our Branches</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <BranchCard
               img="https://res.cloudinary.com/df2mieky2/image/upload/q_70/v1754637272/wp6539521_vvafqv.jpg"
@@ -438,6 +440,7 @@ const HomePage = () => {
               phone="+917766012299"
               openTime="9:00 AM"
               closeTime="9:00 PM"
+             
               onWhatsApp={() => openWhatsApp("917766012299", "Hi, I am interested in ArtGram activities in Hyderabad!")}
             />
             <BranchCard
@@ -488,7 +491,7 @@ Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hal
       <div aria-hidden={false} className="fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
         <button
           onClick={handleBookNow}
-          className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-3 rounded-full shadow-lg hover:scale-105 transition-transform duration-200"
+          className="inline-flex items-center gap-2  text-white px-4 py-3 rounded-full shadow-lg hover:scale-105 transition-transform duration-200" style={ {backgroundColor:'#F49BAB'}}
           aria-label="Book Slime Session"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -518,7 +521,8 @@ const ActivityCard = ({ img, title, text, bgColor, link }) => {
   return (
     <Link to={link} className="block no-underline">
       <div
-        className={`${bgColor} rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 flex flex-col border border-white/50 cursor-pointer`}
+        className={`bg-[#9B7EBD] rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 flex flex-col border border-white/50 cursor-pointer`}
+
       >
         <div className="relative overflow-hidden">
           <img
@@ -529,8 +533,8 @@ const ActivityCard = ({ img, title, text, bgColor, link }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
         </div>
         <div className="p-6 flex-1 flex flex-col">
-          <h3 className="font-bold text-xl mb-3 text-gray-800">{title}</h3>
-          <p className="text-gray-700 text-base leading-relaxed flex-grow">
+          <h3 className="font-bold text-xl mb-3 text-white">{title}</h3>
+          <p className="text-white text-base leading-relaxed flex-grow">
             {text}
           </p>
         </div>
@@ -574,8 +578,8 @@ const EventCard = ({ icon, title, bgColor, link }) => {
 
 const BranchCard = ({ img, name, address, phone, openTime, closeTime, onWhatsApp, instagram }) => {
   return (
-    <div className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-105">
-      <div className="relative h-52 overflow-hidden">
+    <div className="group  rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-105" style={{backgroundColor: '#fdf7f6'}}>
+      <div className="relative h-52 overflow-hidden" >
         <img 
           src={img || "/placeholder.svg"} 
           alt={name} 
