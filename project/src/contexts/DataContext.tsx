@@ -23,6 +23,7 @@ interface DataContextType {
   products: Product[];
   orders: Order[];
   bookings: Booking[];
+  sessions: any[];
   cmsContent: CMSContent[];
   managers: User[];
   selectedBranch: string | null;
@@ -122,6 +123,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ]);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
 
   const [orders, setOrders] = useState<Order[]>([
     // Mock data for immediate testing
@@ -662,6 +664,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     })();
 
+    // Sessions
+    (async () => {
+      try {
+        console.log('🕐 Fetching sessions...');
+        const res = await fetch(`${apiBase}/sessions`);
+        if (res.ok) {
+          const data = await res.json();
+          console.log('✅ Sessions fetched:', data?.length || 0);
+          setSessions(data || []);
+        } else {
+          console.error('❌ Failed to fetch sessions:', res.status, res.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching sessions:', error);
+      }
+    })();
+
   // Orders (auth)
     (async () => {
       if (!token) {
@@ -1121,6 +1140,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getBranchById,
       events,
       products,
+      sessions,
       orders,
       bookings,
       cmsContent,

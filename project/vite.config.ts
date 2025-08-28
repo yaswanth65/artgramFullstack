@@ -10,7 +10,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+  // Backend runs on 5000 by default (server/src/index.ts sets PORT=5000)
+  target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },

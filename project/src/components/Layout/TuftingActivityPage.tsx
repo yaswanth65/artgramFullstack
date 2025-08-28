@@ -95,11 +95,11 @@ const TuftingActivityPage = () => {
     }
   }, [location.hash, location.pathname]);
 
-  // Effect to generate the next 7 days for date selection
+  // Effect to generate the next 10 days for date selection
   useEffect(() => {
     const today = new Date();
     const arr = [];
-  for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 10; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       arr.push(d);
@@ -142,10 +142,33 @@ const TuftingActivityPage = () => {
     if (!booking.location || !booking.date) return;
     const branchMap: Record<string, string> = { downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore', hyderabad: 'hyderabad', bangalore: 'bangalore', vijayawada: 'vijayawada' };
     const branchId = branchMap[booking.location] || booking.location;
-    const saved = getSlotsForDate(branchId, booking.date);
-    if (saved && Array.isArray(saved.tufting)) {
-      setTuftingSlots(saved.tufting as TuftingSlot[]);
-    }
+    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/sessions/next-10-days/${branchId}?activity=tufting`);
+        if (res.ok) {
+          const sessions = await res.json();
+          const forDate = sessions.filter((s: any) => s.date === booking.date && s.isActive).map((s: any) => ({
+            time: s.time,
+            label: s.label || s.time,
+            available: s.availableSeats,
+            total: s.totalSeats,
+            status: s.availableSeats <= 0 ? 'sold-out' : s.availableSeats <= Math.max(1, Math.round(s.totalSeats * 0.25)) ? 'filling-fast' : 'available',
+            type: s.type,
+            age: s.ageGroup
+          }));
+          setTuftingSlots(forDate);
+          return;
+        }
+      } catch (e) {
+        // fall back below
+      }
+      const saved = getSlotsForDate(branchId, booking.date);
+      if (saved && Array.isArray(saved.tufting)) {
+        setTuftingSlots(saved.tufting as TuftingSlot[]);
+      }
+    })();
   }, [booking.location, booking.date, getSlotsForDate, slotsVersion]);
 
   // Check if all required fields for the final step are filled

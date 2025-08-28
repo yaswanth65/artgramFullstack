@@ -418,7 +418,7 @@ const EnhancedSessionManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Date Selector */}
+  {/* Date Selector */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <h4 className="text-lg font-semibold mb-4">Select Date</h4>
         <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
@@ -426,6 +426,8 @@ const EnhancedSessionManagement: React.FC = () => {
             const dateObj = new Date(date);
             const isMonday = dateObj.getDay() === 1;
             const isSelected = selectedDate === date;
+    const branch = branches.find(b => b.id === selectedBranchId);
+    const allowMonday = (branch?.location || branch?.name || '').toLowerCase().includes('vijayawada');
             
             return (
               <button
@@ -434,11 +436,11 @@ const EnhancedSessionManagement: React.FC = () => {
                 className={`p-3 rounded-lg text-center transition-all ${
                   isSelected
                     ? 'bg-purple-600 text-white'
-                    : isMonday
+        : (isMonday && !allowMonday)
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-gray-50 hover:bg-gray-100'
                 }`}
-                disabled={isMonday}
+        disabled={isMonday && !allowMonday}
               >
                 <div className="text-xs font-medium">
                   {formatDate(date)}
@@ -527,11 +529,11 @@ const EnhancedSessionManagement: React.FC = () => {
                               Inactive
                             </span>
                           )}
-                          {session.createdBy === 'system' && (
+                          {(session as any).notes?.includes('Auto-created') || (session as any).createdBy === 'system' ? (
                             <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
                               Auto-created
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         {session.notes && (
                           <p className="text-sm text-gray-600 mt-1">{session.notes}</p>

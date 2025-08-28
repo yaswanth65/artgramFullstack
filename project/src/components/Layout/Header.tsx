@@ -79,15 +79,14 @@ const Header: React.FC = () => {
       <DiscountBar />
       <nav id="universalNavbar" className="sticky top-0 inset-x-0 z-[1030]  shadow-sm" style={{ backgroundColor: '#fdf7f6' }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="flex items-center justify-between h-[86px]">
+    <div className="flex items-center justify-between h-16 sm:h-[86px]">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center no-underline">
-              <img src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755159745/ARTGRAM_LOGO_zdhftc.png" alt="ArtGram Logo" className="h-14 w-auto" />
-              <span className="ml-3 text-2xl font-bold " style={ {color: '#7F55B1'}}>ArtGram</span>
+      <img src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755159745/ARTGRAM_LOGO_zdhftc.png" alt="ArtGram Logo" className="h-10 sm:h-14 w-auto" />
+      <span className="ml-3 text-2xl font-bold hidden sm:inline" style={ {color: '#7F55B1'}}>ArtGram</span>
             </Link>
             
           </div>
-
           <div className="hidden md:flex md:items-center md:gap-4">
             <Link to="/" className={`${linkBase} ${isActive(['/', '/index.html']) ? activeLink : ''}`}>Home</Link>
             <div className="relative" ref={desktopDropdownRef}>
@@ -139,7 +138,17 @@ const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-      <Link to="/cart" className="ml-4 inline-flex items-center gap-2 px-3 py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
+      {/* small-screen icons moved here so logo stays visible */}
+      <div className="flex items-center gap-2 md:hidden">
+        <button aria-label="Open menu" onClick={() => setOpen((v) => !v)} className="p-1 rounded-md text-[#7F55B1] hover:bg-gray-100 focus:outline-none">
+          <span className="text-xl leading-none">⋮</span>
+        </button>
+        <button aria-label="Open menu" onClick={() => setOpen(true)} className="p-1 rounded-md text-[#7F55B1] hover:bg-gray-100 focus:outline-none font-semibold text-sm">
+          Aa
+        </button>
+      </div>
+
+      <Link to="/cart" className="ml-0 sm:ml-4 inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
               <span className="ml-2 text-gray-600">🛒</span>
               {cartCount > 0 && (
         <span className="ml-2 inline-flex items-center justify-center bg-rose-600 text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
@@ -147,12 +156,7 @@ const Header: React.FC = () => {
             </Link>
 
             {!user && (
-  <Link
-    to="/login"
-    className="ml-2 inline-block rounded-full text-white px-4 py-2 font-semibold transition-all no-underline bg-[#7F55B1] hover:bg-[#6B4396]"
-  >
-    Login
-  </Link>
+  <Link to="/login" className="ml-2 inline-block rounded-full text-white px-3 py-1 text-sm sm:px-4 sm:py-2 font-semibold transition-all no-underline bg-[#7F55B1] hover:bg-[#6B4396]">Login</Link>
 )}
 
 

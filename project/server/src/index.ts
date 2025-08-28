@@ -68,7 +68,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 mongoose.connect(process.env.MONGO_URI || '')
   .then(() => {

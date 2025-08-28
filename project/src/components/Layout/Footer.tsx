@@ -24,20 +24,20 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-white-400">
-              <li><a href="#" className="hover:text-purple-700 transition-colors">About us</a></li>
-              <li><a href="#" className="hover:text-purple-700 transition-colors">Shop DIY kits</a></li>
-              <li><a href="#" className="hover:text-purple-700 transition-colors">Events</a></li>
-              <li><a href="#" className="hover:text-purple-700 transition-colors">Contact us</a></li>
+              <li><a href="#" className="hover:text-white-700 transition-colors">About us</a></li>
+              <li><a href="#" className="hover:text-white-700 transition-colors">Shop DIY kits</a></li>
+              <li><a href="#" className="hover:text-white-700 transition-colors">Events</a></li>
+              <li><a href="#" className="hover:text--700 transition-colors">Contact us</a></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-white-400">
-                <li><Link to="/privacy-policy" className="hover:text-purple-700 transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms-and-conditions" className="hover:text-purple-700 transition-colors">Terms & Conditions</Link></li>
-                <li><Link to="/shipping-policy" className="hover:text-purple-700 transition-colors">Shipping Policy</Link></li>
-                <li><Link to="/refund-policy" className="hover:text-purple-700 transition-colors">Refund Policy</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white-500 transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-and-conditions" className="hover:text-white-500 transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/shipping-policy" className="hover:text-white-500 transition-colors">Shipping Policy</Link></li>
+                <li><Link to="/refund-policy" className="hover:text-white-500 transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 

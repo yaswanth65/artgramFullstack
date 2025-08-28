@@ -1,0 +1,80 @@
+(# Node modules
+node_modules/
+
+# Optional npm cache folder
+.npm/
+
+# Build output
+dist/
+build/
+out/
+lib/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+logs/
+
+# Process directories and pid files
+pids/
+*.pid
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Test output
+jest-test-results.json
+test-results.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Misc caches
+.cache/
+.parcel-cache/
+
+# Yarn v2/v3 (if used)
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Database dumps / local data
+dump/
+data/
+
+# archive files
+*.tgz
+
+# Docker
+.dockerignore
+
+# Ignore local debug and coverage artifacts
+.vscode-test/
+

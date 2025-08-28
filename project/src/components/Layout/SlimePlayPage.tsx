@@ -106,7 +106,7 @@ export default function SlimePlayPage() {
     
     const fetchSessions = async () => {
       try {
-        const branchId = branchMapRef.current[bookingData.location];
+  const branchId = bookingData.location ? (branchMapRef.current as any)[bookingData.location] : undefined;
         const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
         
         // Get next 10 days sessions for this branch
@@ -135,7 +135,7 @@ export default function SlimePlayPage() {
         } else {
           console.error('Failed to fetch sessions');
           // Fallback to DataContext
-          const saved = getSlotsForDate(branchId, bookingData.date);
+      const saved = branchId && bookingData.date ? getSlotsForDate(branchId, bookingData.date) : null;
           if (saved && saved.slime && Array.isArray(saved.slime)) {
             setTimeSlots(saved.slime.map(s => ({
               time: s.time,
@@ -144,15 +144,16 @@ export default function SlimePlayPage() {
               type: s.type,
               age: s.age,
               available: s.available,
-              total: s.total,
+        total: s.total,
+        sessionId: undefined,
             })));
           }
         }
       } catch (error) {
         console.error('Error fetching sessions:', error);
         // Fallback to DataContext
-        const branchId = branchMapRef.current[bookingData.location];
-        const saved = getSlotsForDate(branchId, bookingData.date);
+    const branchId = bookingData.location ? (branchMapRef.current as any)[bookingData.location] : undefined;
+    const saved = branchId && bookingData.date ? getSlotsForDate(branchId, bookingData.date) : null;
         if (saved && saved.slime && Array.isArray(saved.slime)) {
           setTimeSlots(saved.slime.map(s => ({
             time: s.time,
@@ -161,7 +162,8 @@ export default function SlimePlayPage() {
             type: s.type,
             age: s.age,
             available: s.available,
-            total: s.total,
+      total: s.total,
+      sessionId: undefined,
           })));
         }
       }
@@ -690,13 +692,14 @@ export default function SlimePlayPage() {
               <div>
                 <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 2: Select Your Date</h3>
                 <div className="flex gap-4 flex-wrap justify-center mb-5">
-                  {[...Array(9)].map((_, i) => {
+                  {[...Array(10)].map((_, i) => {
                     const date = new Date();
                     date.setDate(date.getDate() + i);
                     const value = date.toISOString().split('T')[0];
                     const isMonday = date.getDay() === 1;
-                    const isHyderabad = bookingData.location === 'mall';
-                    const isDisabled = isMonday && isHyderabad;
+                    // Vijayawada (mall) allows Monday, others don't
+                    const isVijayawada = bookingData.location === 'mall';
+                    const isDisabled = isMonday && !isVijayawada;
                     
                     return (
                       <div 

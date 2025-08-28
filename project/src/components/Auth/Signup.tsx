@@ -15,6 +15,8 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validation
     if (!name || !email || !password || !confirmPassword) {
       setError('All fields are required');
       return;
@@ -23,34 +25,87 @@ const Signup: React.FC = () => {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    // Server requires a stronger password: min 8 chars, uppercase, lowercase, number and special char
+    const pwdRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}/;
+    if (!pwdRegex.test(password)) {
+      setError('Password must be at least 8 characters and include uppercase, lowercase, a number and a special character');
       return;
     }
+    
     setLoading(true);
+    console.log('🔵 Starting signup process for:', email);
+    
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/register`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const registerUrl = `${apiUrl}/auth/register`;
+      
+      console.log('📡 Sending registration request to:', registerUrl);
+      console.log('📋 Registration data:', { name, email, role: 'customer' });
+      
+      const res = await fetch(registerUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password,
+          role: 'customer'
+        })
       });
+      
+      console.log('📊 Registration response status:', res.status);
+      
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || 'Registration failed');
-        setLoading(false);
+        let errorMessage = 'Registration failed';
+        try {
+          const data = await res.json();
+          errorMessage = data.message || data.error || errorMessage;
+          console.error('❌ Registration error response:', data);
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorMessage = `Registration failed with status ${res.status}`;
+        }
+        setError(errorMessage);
         return;
       }
-      // Try to auto-login the user after successful registration
-      try {
-        await login(email, password);
+      
+      const data = await res.json();
+      console.log('✅ Registration successful:', { userId: data.user?.id, email: data.user?.email });
+      
+      // Auto-login with the response token and user data
+      if (data.token && data.user) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('🔑 Auto-login successful, redirecting to home');
         navigate('/');
         return;
-      } catch {
-        // If auto-login fails, fall back to the login page
+      }
+      
+      // If no token returned, try manual login
+      console.log('🔄 No token in response, attempting manual login');
+      try {
+        await login(email, password);
+        console.log('✅ Manual login successful');
+        navigate('/');
+        return;
+      } catch (loginError) {
+        console.error('❌ Manual login failed:', loginError);
+        console.log('🔄 Redirecting to login page');
         navigate('/login');
       }
+      
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e || 'Network error');
+      console.error('❌ Network/fetch error during signup:', e);
+      let msg = 'Network error - please check your connection';
+      if (e instanceof Error) {
+        msg = e.message;
+        if (e.message.includes('fetch')) {
+          msg = 'Unable to connect to server. Please check if the server is running.';
+        }
+      }
       setError(msg);
     } finally {
       setLoading(false);
