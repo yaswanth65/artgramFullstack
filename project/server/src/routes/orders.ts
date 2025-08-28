@@ -16,60 +16,18 @@ router.get('/', protect, asyncHandler(async (req, res) => {
   console.log('User branchId (raw):', user.branchId);
   console.log('Query branchId:', queryBranchId);
 
-  // Extract branchId from user (handle populated vs string)
-  let userBranchId: string | undefined;
-  if (user.branchId) {
-    if (typeof user.branchId === 'string') {
-      userBranchId = user.branchId;
-    } else if (user.branchId._id) {
-      userBranchId = user.branchId._id.toString();
-    } else {
-      userBranchId = user.branchId.toString();
-    }
+  // ADMIN ONLY: Only admin can access order management
+  if (user.role !== 'admin') {
+    console.log('Access denied: Order management is admin-only');
+    return res.status(403).json({ message: 'Order management is restricted to administrators only' });
   }
 
-  console.log('Normalized user branchId:', userBranchId);
-
-  if (user.role === 'admin') {
-    // Admin sees all orders, or filtered by queryBranchId
-    const filter = queryBranchId ? { branchId: queryBranchId } : {};
-    console.log('Admin filter:', filter);
-    const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
-    console.log('Found orders:', orders.length);
-    return res.json(orders);
-  }
-
-  if (user.role === 'manager' || user.role === 'branch_manager') {
-    // Manager sees orders for their branch or queryBranchId (if they match)
-    let targetBranchId = queryBranchId || userBranchId;
-    
-    // Security: if user has branchId, they can only see their own branch
-    if (userBranchId && queryBranchId && queryBranchId !== userBranchId) {
-      console.log('Security: Manager trying to access different branch');
-      return res.status(403).json({ message: 'Cannot access other branch orders' });
-    }
-    
-    if (!targetBranchId) {
-      console.log('No target branchId for manager');
-      return res.status(400).json({ message: 'Branch ID required for manager' });
-    }
-
-    console.log('Manager target branchId:', targetBranchId);
-    const orders = await Order.find({ branchId: targetBranchId }).sort({ createdAt: -1 }).lean();
-    console.log('Found orders for manager:', orders.length);
-    
-    if (orders.length > 0) {
-      console.log('Sample order branchIds:', orders.slice(0, 3).map(o => o.branchId));
-    }
-    
-    return res.json(orders);
-  }
-
-  // Customer sees only their own orders
-  console.log('Customer filter: customerId =', user._id);
-  const orders = await Order.find({ customerId: user._id.toString() }).sort({ createdAt: -1 }).lean();
-  console.log('Found customer orders:', orders.length);
-  res.json(orders);
+  // Admin sees all orders, or filtered by queryBranchId
+  const filter = queryBranchId ? { branchId: queryBranchId } : {};
+  console.log('Admin filter:', filter);
+  const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
+  console.log('Found orders:', orders.length);
+  return res.json(orders);
 }));
 
 router.post('/', protect, asyncHandler(async (req, res) => {
@@ -88,26 +46,20 @@ router.post('/', protect, asyncHandler(async (req, res) => {
   res.json(order);
 }));
 
-// Update order status (Manager/Admin only)
+// Update order status (Admin only)
 router.patch('/:id/status', protect, asyncHandler(async (req, res) => {
   const { status } = req.body;
   const user = req.user;
   
-  const order = await Order.findById(req.params.id);
-  if (!order) {
-    res.status(404).json({ message: 'Order not found' });
+  // ADMIN ONLY: Only admin can update order status
+  if (user.role !== 'admin') {
+    res.status(403).json({ message: 'Order status updates are restricted to administrators only' });
     return;
   }
   
-  // Check permissions
-  if (user.role === 'manager' || user.role === 'branch_manager') {
-    const managerBranchId = user.branchId;
-    if (order.branchId !== managerBranchId) {
-      res.status(403).json({ message: 'Not authorized to update this order' });
-      return;
-    }
-  } else if (user.role !== 'admin') {
-    res.status(403).json({ message: 'Not authorized to update order status' });
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    res.status(404).json({ message: 'Order not found' });
     return;
   }
   
@@ -122,8 +74,8 @@ router.patch('/:id/status', protect, asyncHandler(async (req, res) => {
   // Add tracking update
   order.trackingUpdates.push({
     status: status,
-    location: user.branchId || 'Branch Location',
-    description: `Order status updated to ${status}`,
+    location: 'Admin Update',
+    description: `Order status updated to ${status} by admin`,
     createdAt: new Date()
   });
   
@@ -133,14 +85,23 @@ router.patch('/:id/status', protect, asyncHandler(async (req, res) => {
 
 router.post('/:id/tracking', protect, asyncHandler(async (req, res) => {
   const { status, location, description } = req.body;
+  const user = req.user;
+  
+  // ADMIN ONLY: Only admin can add tracking updates
+  if (user.role !== 'admin') {
+    res.status(403).json({ message: 'Tracking updates are restricted to administrators only' });
+    return;
+  }
+  
   const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  
   order.trackingUpdates.push({ status, location, description, createdAt: new Date() });
   await order.save();
   res.json(order);
 }));
 
-// QR Code verification endpoint for bookings
+// QR Code verification endpoint for bookings (updated to handle already verified)
 router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
   const { qrCode } = req.body;
   const user = req.user;
@@ -171,10 +132,21 @@ router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
   }
   
   if (booking.isVerified) {
-    res.status(400).json({ 
+    // Return 409 for already verified with additional data
+    res.status(409).json({ 
+      alreadyVerified: true,
       message: 'Booking already verified',
-      verifiedAt: booking.verifiedAt,
-      verifiedBy: booking.verifiedBy
+      booking: {
+        id: booking._id,
+        customerName: booking.customerName,
+        activity: booking.activity,
+        date: booking.date,
+        time: booking.time,
+        seats: booking.seats,
+        status: booking.status,
+        verifiedAt: booking.verifiedAt,
+        verifiedBy: booking.verifiedBy
+      }
     });
     return;
   }
@@ -187,6 +159,7 @@ router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
   await booking.save();
   
   res.json({
+    success: true,
     message: 'Booking verified successfully',
     booking: {
       id: booking._id,
@@ -195,6 +168,7 @@ router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
       date: booking.date,
       time: booking.time,
       seats: booking.seats,
+      status: booking.status,
       verifiedAt: booking.verifiedAt,
       verifiedBy: booking.verifiedBy
     }

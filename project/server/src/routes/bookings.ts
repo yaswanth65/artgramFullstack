@@ -145,7 +145,13 @@ router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
   }
 
   if (booking.isVerified) {
-    return res.status(400).json({ message: 'Booking already verified', booking });
+    return res.status(409).json({ 
+      message: 'Booking already verified', 
+      booking,
+      alreadyVerified: true,
+      verifiedAt: booking.verifiedAt,
+      verifiedBy: booking.verifiedBy
+    });
   }
 
   booking.isVerified = true;
@@ -153,7 +159,11 @@ router.post('/verify-qr', protect, asyncHandler(async (req, res) => {
   booking.verifiedBy = req.user._id;
   await booking.save();
 
-  res.json({ message: 'Booking verified successfully', booking });
+  res.json({ 
+    message: 'Booking verified successfully', 
+    booking,
+    alreadyVerified: false
+  });
 }));
 
 // Get booking by QR code

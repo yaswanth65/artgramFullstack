@@ -255,9 +255,8 @@ const SessionManagement: React.FC = () => {
         </button>
       </div>
 
-
-          // Branch selector + 9-Day Date Picker + Preview
-          <div className="mb-8 bg-white rounded-2xl p-6 shadow">
+      {/* Branch selector + 9-Day Date Picker + Preview */}
+      <div className="mb-8 bg-white rounded-2xl p-6 shadow">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-gray-600">Manage Branch:</label>

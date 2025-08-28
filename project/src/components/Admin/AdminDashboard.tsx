@@ -9,6 +9,7 @@ import ProductManagement from './ProductManagement';
 import SessionManagement from './SessionManagement';
 import EnhancedSessionManagement from './EnhancedSessionManagement';
 import PaymentTracking from './PaymentTracking';
+import OrderManagement from './OrderManagement';
 import { 
   Users,
   Edit,
@@ -24,7 +25,8 @@ import {
   Save,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  ShoppingCart
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -690,6 +692,7 @@ const AdminDashboard: React.FC = () => {
             {[
               { id: 'overview', label: 'Overview', icon: TrendingUp },
               { id: 'analytics', label: 'Sales Analytics', icon: BarChart3 },
+              { id: 'orders', label: 'Order Management', icon: ShoppingCart },
               { id: 'products', label: 'Products', icon: Package },
               { id: 'sessions', label: 'Sessions', icon: Calendar },
               { id: 'payments', label: 'Payments', icon: CreditCard },
@@ -717,6 +720,7 @@ const AdminDashboard: React.FC = () => {
         <div>
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'analytics' && <SalesAnalytics />}
+          {activeTab === 'orders' && <OrderManagement />}
           {activeTab === 'products' && <ProductManagement />}
           {activeTab === 'sessions' && <EnhancedSessionManagement />}
           {activeTab === 'payments' && <PaymentTracking />}

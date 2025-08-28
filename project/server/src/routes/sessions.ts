@@ -183,18 +183,76 @@ router.get('/next-10-days/:branchId', asyncHandler(async (req, res): Promise<voi
   res.json(allSessions);
 }));
 
-// Get specific session by ID
+// Get specific session by ID with registered users
 router.get('/:id', asyncHandler(async (req, res): Promise<void> => {
   const session = await Session.findById(req.params.id);
   if (!session) {
-  res.status(404).json({ message: 'Session not found' });
-  return;
+    res.status(404).json({ message: 'Session not found' });
+    return;
   }
-  res.json(session);
+  
+  // Get registered users for this session
+  const bookings = await Booking.find({ 
+    sessionId: session._id, 
+    status: 'active',
+    paymentStatus: 'completed' 
+  }).select('customerName customerEmail seats isVerified verifiedAt').lean();
+
+  // Debug logging to help developers see what bookings are returned
+  try {
+    console.log(`GET /api/sessions/${req.params.id} -> found ${bookings.length} bookings`);
+    if (bookings.length) {
+      console.log('Booking emails:', bookings.map(b => b.customerEmail));
+    }
+  } catch (err) {
+    console.warn('Failed to log bookings for session', req.params.id, err);
+  }
+  
+  const sessionWithUsers = {
+    ...session.toObject(),
+    registeredUsers: bookings
+  };
+  
+  res.json(sessionWithUsers);
+}));
+
+// Get registered users for a session
+router.get('/:id/users', protect, asyncHandler(async (req, res): Promise<void> => {
+  const session = await Session.findById(req.params.id);
+  if (!session) {
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+  
+  const bookings = await Booking.find({ 
+    sessionId: session._id, 
+    status: 'active',
+    paymentStatus: 'completed' 
+  }).select('customerName customerEmail seats isVerified verifiedAt').lean();
+  
+  res.json({
+    sessionId: session._id,
+    totalRegistered: bookings.length,
+    totalSeats: bookings.reduce((sum, booking) => sum + (booking.seats || 1), 0),
+    users: bookings
+  });
 }));
 
 // Create new session (Admin/Manager only)
 router.post('/', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
+  const { branchId } = req.body;
+  const user = req.user;
+  
+  // If user is a manager, ensure they can only create sessions for their branch
+  if (user.role === 'branch_manager' || user.role === 'manager') {
+    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+    
+    if (branchId !== managerBranchId) {
+      res.status(403).json({ message: 'Managers can only create sessions for their assigned branch' });
+      return;
+    }
+  }
+  
   const sessionData = {
     ...req.body,
     createdBy: req.user._id,
@@ -209,8 +267,21 @@ router.post('/', protect, adminOrBranchManager, asyncHandler(async (req, res): P
 router.put('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
   const session = await Session.findById(req.params.id);
   if (!session) {
-  res.status(404).json({ message: 'Session not found' });
-  return;
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+
+  const user = req.user;
+  
+  // If user is a manager, ensure they can only update sessions for their branch
+  if (user.role === 'branch_manager' || user.role === 'manager') {
+    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+    const sessionBranchId = session.branchId?.toString();
+    
+    if (sessionBranchId !== managerBranchId) {
+      res.status(403).json({ message: 'Managers can only update sessions for their assigned branch' });
+      return;
+    }
   }
 
   // Update fields
@@ -257,17 +328,30 @@ router.patch('/:id/seats', protect, asyncHandler(async (req, res): Promise<void>
 router.delete('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
   const session = await Session.findById(req.params.id);
   if (!session) {
-  res.status(404).json({ message: 'Session not found' });
-  return;
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+
+  const user = req.user;
+  
+  // If user is a manager, ensure they can only delete sessions for their branch
+  if (user.role === 'branch_manager' || user.role === 'manager') {
+    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+    const sessionBranchId = session.branchId?.toString();
+    
+    if (sessionBranchId !== managerBranchId) {
+      res.status(403).json({ message: 'Managers can only delete sessions for their assigned branch' });
+      return;
+    }
   }
 
   // Check if there are any bookings for this session
   const bookingsCount = await Booking.countDocuments({ sessionId: session._id, status: 'active' });
   if (bookingsCount > 0) {
-  res.status(400).json({
+    res.status(400).json({
       message: `Cannot delete session with ${bookingsCount} active bookings. Cancel bookings first.`
     });
-  return;
+    return;
   }
 
   await Session.findByIdAndDelete(req.params.id);
