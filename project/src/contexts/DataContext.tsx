@@ -72,7 +72,7 @@ export const useData = () => {
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // branches are defined below as branchesState
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [events, setEvents] = useState<Event[]>([
     {
@@ -178,7 +178,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [managers, setManagers] = useState<User[]>([
     {
       id: '10',
-      email: 'hyderabad@craftfactory.com',
+  email: 'hyderabad@artgram.com',
       name: 'Hyderabad Branch Manager',
       role: 'branch_manager',
       branchId: 'hyderabad',
@@ -186,7 +186,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     {
       id: '11',
-      email: 'vijayawada@craftfactory.com',
+  email: 'vijayawada@artgram.com',
       name: 'Vijayawada Branch Manager',
       role: 'branch_manager',
       branchId: 'vijayawada',
@@ -194,7 +194,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     {
       id: '12',
-      email: 'bangalore@craftfactory.com',
+  email: 'bangalore@artgram.com',
       name: 'Bangalore Branch Manager',
       role: 'branch_manager',
       branchId: 'bangalore',
@@ -336,7 +336,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'createdAt'>) => {
     // Try backend first
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
     try {
       const token = localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -379,7 +379,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt'>) => {
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
     try {
       const token = localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -508,7 +508,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     // Try backend first
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
     try {
       const token = localStorage.getItem('token');
       if (token) {
@@ -556,7 +556,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       location: 'Hyderabad',
       address: '123 Tech City, Hyderabad',
       phone: '+91 40 1234 5678',
-      email: 'hyderabad@craftfactory.com',
+  email: 'hyderabad@artgram.com',
       supportsSlime: true,
       supportsTufting: true,
       managerId: '10',
@@ -570,7 +570,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       location: 'Vijayawada',
       address: '456 Business Center, Vijayawada',
       phone: '+91 866 1234 5678',
-      email: 'vijayawada@craftfactory.com',
+  email: 'vijayawada@artgram.com',
       supportsSlime: true,
       supportsTufting: false,
       managerId: '11',
@@ -584,7 +584,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       location: 'Bangalore',
       address: '789 Innovation Hub, Bangalore',
       phone: '+91 80 1234 5678',
-      email: 'bangalore@craftfactory.com',
+  email: 'bangalore@artgram.com',
       supportsSlime: true,
       supportsTufting: true,
       managerId: '12',
@@ -598,7 +598,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Fetch backend data on mount
   useEffect(() => {
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
+    // Wait for AuthContext to initialize; this avoids races where DataContext
+    // clears auth state before AuthContext has a chance to restore it from localStorage.
+    if (authLoading) {
+      console.log('🔄 Waiting for auth to initialize before fetching data...');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -648,7 +655,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: p.name,
             description: p.description || '',
             price: p.price,
-            images: p.imageUrl ? [p.imageUrl] : [],
+            // backend may return media[] or imageUrl
+            media: Array.isArray(p.media) ? p.media.map((m: any) => ({ url: m.url, type: m.type || 'image' })) : undefined,
+            images: Array.isArray(p.media) ? p.media.filter((m: any) => m.type === 'image').map((m: any) => m.url) : (p.imageUrl ? [p.imageUrl] : []),
             category: p.category || '',
             stock: typeof p.stock === 'number' ? p.stock : (typeof p.quantity === 'number' ? p.quantity : 0),
             materials: Array.isArray(p.tags) ? p.tags : [],
@@ -773,7 +782,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('❌ Error fetching bookings:', error);
       }
     })();
-  }, []);
+  }, [authLoading, user, selectedBranch]);
 
   // Load cached data from localStorage as fallback if backend fails
   useEffect(() => {
@@ -803,7 +812,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Periodically refresh orders and bookings from backend so status changes propagate
   useEffect(() => {
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
     let timer: number | null = null;
     let refreshCount = 0;
 
@@ -869,11 +878,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.error('❌ Orders request failed:', oRes.status, oRes.statusText);
           if (oRes.status === 401 || oRes.status === 403) {
-            console.log('🔒 Authentication failed, stopping polling and clearing auth');
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
+            console.log('🔒 Authentication failed for orders - stopping polling but not forcing logout');
+            // Stop polling to prevent repeated failing requests, but do not clear
+            // localStorage here. Let AuthContext handle verification and logout.
             if (timer) window.clearInterval(timer);
-            window.location.reload();
             return;
           }
         }
@@ -921,11 +929,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.error('❌ Bookings request failed:', bRes.status, bRes.statusText);
           if (bRes.status === 401 || bRes.status === 403) {
-            console.log('🔒 Authentication failed, stopping polling and clearing auth');
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
+            console.log('🔒 Authentication failed for bookings - stopping polling but not forcing logout');
             if (timer) window.clearInterval(timer);
-            window.location.reload();
             return;
           }
         }
@@ -935,8 +940,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Start polling if logged in
-    if (localStorage.getItem('token')) {
+  // Start polling if logged in
+  if (localStorage.getItem('token')) {
       fetchOrdersAndBookings();
 
       // Use visibility change to avoid background polling
@@ -962,7 +967,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
     return () => { if (timer) window.clearInterval(timer); };
-  }, []);
+  }, [user, selectedBranch]);
 
   const addBranch = async (branchData: Omit<Branch, 'id' | 'createdAt'>) => {
     const newBranch: Branch = {
@@ -982,7 +987,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addTrackingUpdate = async (orderId: string, update: Omit<TrackingUpdate, 'id'>) => {
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+    const apiBase = '/api'; // Force use of Vite proxy
     try {
       const token = localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };

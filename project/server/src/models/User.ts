@@ -2,6 +2,14 @@ import mongoose from 'mongoose';
 
 export type Role = 'admin' | 'branch_manager' | 'customer';
 
+export interface CartItem {
+  productId: string;
+  title: string;
+  price: number;
+  qty: number;
+  image?: string;
+}
+
 export interface IUser extends mongoose.Document {
   name: string;
   email: string;
@@ -16,6 +24,7 @@ export interface IUser extends mongoose.Document {
     zipCode?: string;
     country?: string;
   };
+  cart?: CartItem[]; // Add cart to user model
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,7 +42,14 @@ const UserSchema = new mongoose.Schema<IUser>({
     state: String,
     zipCode: String,
     country: String
-  }
+  },
+  cart: [{
+    productId: { type: String, required: true },
+    title: { type: String, required: true },
+    price: { type: Number, required: true },
+    qty: { type: Number, required: true, min: 1 },
+    image: { type: String }
+  }]
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

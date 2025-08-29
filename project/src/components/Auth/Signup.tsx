@@ -36,7 +36,7 @@ const Signup: React.FC = () => {
     console.log('🔵 Starting signup process for:', email);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const registerUrl = `${apiUrl}/auth/register`;
       
       console.log('📡 Sending registration request to:', registerUrl);

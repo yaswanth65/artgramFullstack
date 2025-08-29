@@ -41,9 +41,10 @@ const ProductManagement: React.FC = () => {
     if (newProduct.name && newProduct.description && newProduct.price > 0) {
       const filteredImages = newProduct.images.filter(img => img.trim() !== '');
       const filteredMaterials = newProduct.materials.filter(mat => mat.trim() !== '');
-      
+      const media = filteredImages.map((url) => ({ url, type: 'image' as const }));
       await addProduct({
         ...newProduct,
+        media,
         images: filteredImages.length > 0 ? filteredImages : ['https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg'],
         materials: filteredMaterials.length > 0 ? filteredMaterials : ['Basic materials']
       });
@@ -66,9 +67,10 @@ const ProductManagement: React.FC = () => {
     if (editingProduct) {
       const filteredImages = editingProduct.images.filter((img: string) => img.trim() !== '');
       const filteredMaterials = editingProduct.materials.filter((mat: string) => mat.trim() !== '');
-      
+      const media = filteredImages.map((url: string) => ({ url, type: 'image' as const }));
       await updateProduct({
         ...editingProduct,
+        media,
         images: filteredImages.length > 0 ? filteredImages : ['https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg'],
         materials: filteredMaterials.length > 0 ? filteredMaterials : ['Basic materials']
       });

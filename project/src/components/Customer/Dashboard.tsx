@@ -193,18 +193,6 @@ const CustomerDashboard: React.FC = () => {
               <ShoppingBag className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
             </div>
           </div>
-
-          <div className={cardClasses}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs md:text-sm text-gray-600">Total Spent</p>
-                <p className="text-xl md:text-2xl font-bold text-green-600">
-                  ₹{[...userBookings, ...userOrders].reduce((sum, item) => sum + item.totalAmount, 0).toLocaleString()}
-                </p>
-              </div>
-              <Package className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">

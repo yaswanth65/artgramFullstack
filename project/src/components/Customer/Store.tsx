@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 import { initiatePayment, createRazorpayOrder, RazorpayResponse } from '../../utils/razorpay';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 
 const Store: React.FC = () => {
   const { products, createOrder } = useData();
   const { user } = useAuth();
-  const [cart, setCart] = useState<{ [productId: string]: number }>({});
+  const { items: cartItems, addItem, totalItems, clear, totalPrice } = useCart();
   const [filter, setFilter] = useState('all');
   const [searchTerm] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -38,31 +39,24 @@ const Store: React.FC = () => {
   ];
 
   const addToCart = (productId: string) => {
+    if (!user) {
+      alert('Please login to add items to cart');
+      return;
+    }
+    
     const product = products.find(p => p.id === productId);
-    if (product && (cart[productId] || 0) < product.stock) {
-      setCart(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
+    if (!product) return;
+    const existing = cartItems.find(i => i.id === productId);
+    const currentQty = existing ? existing.qty : 0;
+    if (currentQty < product.stock) {
+      addItem({ id: productId, title: product.name, price: product.price, image: product.images?.[0] }, 1);
+    } else {
+      alert('Maximum stock reached for this product');
     }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => {
-      const newCart = { ...prev };
-      if (newCart[productId] > 1) {
-        newCart[productId]--;
-      } else {
-        delete newCart[productId];
-      }
-      return newCart;
-    });
-  };
-
-  const getTotalItems = () => Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-  const getTotalPrice = () => {
-    return Object.entries(cart).reduce((sum, [productId, qty]) => {
-      const product = products.find(p => p.id === productId);
-      return sum + (product?.price || 0) * qty;
-    }, 0);
-  };
+  const getTotalItems = () => totalItems;
+  const getTotalPrice = () => totalPrice;
 
     const handleCheckout = async () => {
     if (!user) {
@@ -73,13 +67,13 @@ const Store: React.FC = () => {
     setProcessing(true);
     try {
       const totalAmount = getTotalPrice();
-      const orderProducts = Object.entries(cart).map(([productId, quantity]) => {
-        const product = products.find(p => p.id === productId)!;
+      const orderProducts = cartItems.map((item) => {
+        const product = products.find(p => p.id === item.id);
         return {
-          productId,
-          quantity,
-          price: product.price,
-          name: product.name
+          productId: item.id,
+          quantity: item.qty,
+          price: product?.price || item.price,
+          name: product?.name || item.title
         };
       });
 
@@ -116,7 +110,7 @@ const Store: React.FC = () => {
               }
             });
             
-            setCart({});
+            clear(); // Clear cart using CartContext
             setShowCheckout(false);
             setProcessing(false);
             alert('Payment successful! Order placed successfully. Check your dashboard for tracking details.');
@@ -260,8 +254,8 @@ const Store: React.FC = () => {
                   Showing {availableProducts.length} of {products.length} products
                 </p>
               </div>
-              {/* Shopping Cart Summary */}
-              {getTotalItems() > 0 && (
+              {/* Shopping Cart Summary - Only show when user is logged in */}
+              {user && getTotalItems() > 0 && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-4">
@@ -295,10 +289,10 @@ const Store: React.FC = () => {
                   </div>
                 ) : (
                   availableProducts.map((product, index) => {
-                    const cartQuantity = cart[product.id] || 0;
                     return (
                       <div
                         key={product.id}
+                        onClick={() => window.location.assign(`/product/${product.id}`)}
                         className="group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer transform hover:scale-105"
                         style={{ animationDelay: `${index * 0.1}s` }}
                       >
@@ -325,9 +319,11 @@ const Store: React.FC = () => {
                             </div>
                           )}
                           {/* Shop Icon (Bottom Right) */}
-                          <div 
-                            className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white cursor-pointer"
-                            onClick={() => addToCart(product.id)}
+                          <div
+                            className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-full shadow-md transition-opacity duration-300 hover:bg-white"
+                            onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}
+                            role="button"
+                            aria-label={`Add ${product.name} to cart`}
                           >
                             <ShoppingCart className="h-6 w-6 text-gray-800" />
                           </div>
@@ -339,7 +335,6 @@ const Store: React.FC = () => {
                           </div>
                           {/* Removed description and rating as requested */}
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-2xl font-bold text-orange-600">₹{product.price}</span>
                           </div>
                           {/* Removed 'Includes' (materials) section as requested */}
                           <div className="flex justify-between items-center mb-4">
@@ -352,38 +347,11 @@ const Store: React.FC = () => {
                             </span>
                             <span className="text-sm text-gray-600">Available Nationwide</span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            {cartQuantity > 0 ? (
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  onClick={() => removeFromCart(product.id)}
-                                  className="bg-gray-300 text-gray-700 p-2 rounded-md hover:bg-gray-400 transition-colors"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </button>
-                                <span className="font-semibold text-lg">{cartQuantity}</span>
-                                <button
-                                  onClick={() => addToCart(product.id)}
-                                  disabled={cartQuantity >= product.stock}
-                                  className="bg-gray-300 text-gray-700 p-2 rounded-md hover:bg-gray-400 disabled:opacity-50 transition-colors"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => addToCart(product.id)}
-                                disabled={product.stock === 0 || !user}
-                                className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                <ShoppingCart className="h-4 w-4" />
-                                <span>{!user ? 'Login to Buy' : 'Add to Cart'}</span>
-                              </button>
-                            )}
-                          </div>
+                          {/* Inline controls removed from card body — primary interaction is click to view product; cart icon is available on image */}
+                          <div className="text-sm text-gray-500">Click card for details</div>
                         </div>
-                      </div>
-                    );
+                    </div>
+                  );
                   })
                 )}
               </div>
@@ -433,15 +401,15 @@ const Store: React.FC = () => {
                     <div className="space-y-4">
                       <div className="border-b pb-4">
                         <h4 className="font-semibold text-gray-800 mb-2">Order Summary</h4>
-                        {Object.entries(cart).map(([productId, quantity]) => {
-                          const product = products.find(p => p.id === productId);
+                        {cartItems.map((item) => {
+                          const product = products.find(p => p.id === item.id);
                           return (
-                            <div key={productId} className="flex justify-between items-center py-2">
+                            <div key={item.id} className="flex justify-between items-center py-2">
                               <div>
-                                <p className="font-medium">{product?.name}</p>
-                                <p className="text-sm text-gray-600">Qty: {quantity}</p>
+                                <p className="font-medium">{product?.name || item.title}</p>
+                                <p className="text-sm text-gray-600">Qty: {item.qty}</p>
                               </div>
-                              <span className="font-semibold">₹{(product?.price || 0) * quantity}</span>
+                              <span className="font-semibold">₹{(product?.price || item.price) * item.qty}</span>
                             </div>
                           );
                         })}

@@ -1,5 +1,5 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/asyncHandler';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { protect } from '../middleware/auth';
@@ -115,6 +115,14 @@ router.post('/verify', asyncHandler(async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    // Check if token needs refresh and provide new one if needed
+    const { refreshIfNeeded } = require('../utils/jwt');
+    const newToken = refreshIfNeeded(token, {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role
+    });
+
     res.json({ 
       valid: true, 
       user: {
@@ -125,7 +133,8 @@ router.post('/verify', asyncHandler(async (req, res) => {
         branchId: user.branchId,
         phone: user.phone,
         address: user.address
-      }
+      },
+      token: newToken !== token ? newToken : undefined // Only send new token if it was refreshed
     });
   } catch (error: any) {
     console.error('Token verification error:', error);

@@ -19,7 +19,7 @@ const AuthTest: React.FC = () => {
     try {
       // Test Health
       addResult('Testing health endpoint...');
-      const healthResponse = await fetch('http://localhost:5001/api/health');
+      const healthResponse = await fetch('/api/health');
       const healthData = await healthResponse.json();
       addResult(`Health: ${healthResponse.status} - ${JSON.stringify(healthData)}`);
 
@@ -27,7 +27,7 @@ const AuthTest: React.FC = () => {
       const testEmail = `test${Date.now()}@example.com`;
       addResult(`Testing registration with: ${testEmail}`);
       
-      const registerResponse = await fetch('http://localhost:5001/api/auth/register', {
+      const registerResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -43,7 +43,7 @@ const AuthTest: React.FC = () => {
 
         // Test Login
         addResult('Testing login...');
-        const loginResponse = await fetch('http://localhost:5001/api/auth/login', {
+        const loginResponse = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

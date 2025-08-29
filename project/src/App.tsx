@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { CartProvider } from './contexts/CartContext';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
@@ -26,11 +27,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import OurStoryPage from './components/Layout/OurStoryPage';
 import ActivitiesPage from './components/Layout/ActivitiesPage';
 import CartPage from './components/Layout/CartPage';
+import ProductDetail from './components/Customer/ProductDetail';
 
 function App() {
   return (
     <AuthProvider>
       <DataProvider>
+        <CartProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
             <Header />
@@ -43,6 +46,7 @@ function App() {
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/events" element={<EventBooking />} />
                 <Route path="/store" element={<Store />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/ourstory" element={<OurStoryPage />} />
                 <Route path="/contact" element={<ContactUsPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
@@ -91,6 +95,7 @@ function App() {
             <Footer />
           </div>
         </Router>
+        </CartProvider>
       </DataProvider>
     </AuthProvider>
   );

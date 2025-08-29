@@ -2,11 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
+import { useCart } from '../../contexts/CartContext';
 import { LogOut } from 'lucide-react';
 import DiscountBar from './DiscountBar';
-
-// localStorage cart key
-const CART_KEY = 'cart_items';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -19,7 +17,7 @@ const Header: React.FC = () => {
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const location = useLocation();
   const desktopDropdownRef = useRef<HTMLDivElement | null>(null);
-  const [cartCount, setCartCount] = useState(0);
+  const { totalItems, isLoading } = useCart();
 
   // simple class helpers
   // make nav option text use the requested purple color and a slightly darker hover
@@ -27,24 +25,11 @@ const Header: React.FC = () => {
   const activeLink = 'text-[#7F55B1] font-semibold';
   const isActive = (paths: string[]) => paths.includes(location.pathname);
 
-  // update cart count from localStorage
-  const updateCartCount = () => {
-    try {
-      const raw = localStorage.getItem(CART_KEY);
-      const items = raw ? JSON.parse(raw) : [];
-      const count = items.reduce((s: number, i: { qty?: number }) => s + (i.qty || 1), 0);
-      setCartCount(count);
-    } catch {
-      setCartCount(0);
-    }
-  };
-
   // close menus on route change
   useEffect(() => {
     setOpen(false);
     setDesktopDropdownOpen(false);
     setMobileDropdownOpen(false);
-    updateCartCount();
   }, [location.pathname]);
 
   // click outside handler to close desktop dropdown
@@ -58,21 +43,9 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('click', handler);
   }, []);
 
-  // keep cart count in sync across tabs and via custom events
-  useEffect(() => {
-    updateCartCount();
-    const storageHandler = (e: StorageEvent) => {
-      if (e.key === CART_KEY) updateCartCount();
-    };
-    // custom event dispatched in other parts of the app
-  const custom = () => updateCartCount();
-    window.addEventListener('storage', storageHandler as EventListener);
-    window.addEventListener('app_data_updated', custom as EventListener);
-    return () => {
-      window.removeEventListener('storage', storageHandler as EventListener);
-      window.removeEventListener('app_data_updated', custom as EventListener);
-    };
-  }, []);
+  // Show cart icon only when user is logged in
+  const showCartIcon = Boolean(user);
+  const cartCount = totalItems;
 
   return (
     <>
@@ -148,12 +121,17 @@ const Header: React.FC = () => {
         </button>
       </div>
 
-      <Link to="/cart" className="ml-0 sm:ml-4 inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
-              <span className="ml-2 text-gray-600">🛒</span>
-              {cartCount > 0 && (
-        <span className="ml-2 inline-flex items-center justify-center bg-rose-600 text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-              )}
-            </Link>
+      {/* Cart Icon - Only show when user is logged in */}
+      {showCartIcon && (
+        <Link to="/cart" className="ml-0 sm:ml-4 inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
+          <span className="ml-2 text-gray-600">🛒</span>
+          {!isLoading && cartCount > 0 && (
+            <span className="ml-2 inline-flex items-center justify-center bg-rose-600 text-white text-xs px-2 py-1 rounded-full">
+              {cartCount}
+            </span>
+          )}
+        </Link>
+      )}
 
             {!user && (
   <Link to="/login" className="ml-2 inline-block rounded-full text-white px-3 py-1 text-sm sm:px-4 sm:py-2 font-semibold transition-all no-underline bg-[#7F55B1] hover:bg-[#6B4396]">Login</Link>
@@ -225,9 +203,15 @@ const Header: React.FC = () => {
             <Link to="/store" className={`${linkBase} block ${isActive(['/store']) ? activeLink : ''}`}>Store</Link>
             <Link to="/ourstory" className={`${linkBase} block ${isActive(['/ourstory']) ? activeLink : ''}`}>Our Story</Link>
             <Link to="/contact" className={`${linkBase} block ${isActive(['/contact']) ? activeLink : ''}`}>Contact</Link>
-            <div className="mt-3">
-              <Link to="/cart" className="block text-sm text-gray-700">Cart {cartCount > 0 && <span className="ml-1 text-xs text-red-600">({cartCount})</span>}</Link>
-            </div>
+            
+            {/* Mobile Cart Link - Only show when user is logged in */}
+            {showCartIcon && (
+              <div className="mt-3">
+                <Link to="/cart" className="block text-sm text-gray-700">
+                  Cart {!isLoading && cartCount > 0 && <span className="ml-1 text-xs text-red-600">({cartCount})</span>}
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

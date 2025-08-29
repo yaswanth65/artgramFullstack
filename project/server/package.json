@@ -8,16 +8,21 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc -p .",
-    "seed": "ts-node src/scripts/seedUsers.ts",
-    "seed-all": "ts-node src/scripts/seedData.ts",
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed-master": "ts-node src/scripts/seed.ts",
+    "seed-clean": "ts-node src/scripts/cleanDatabase.ts",
+    "seed-branches": "ts-node src/scripts/seedBranches.ts",
+    "seed-users": "ts-node src/scripts/seedUsers.ts",
+    "seed-products": "ts-node src/scripts/seedProducts.ts", 
     "seed-sessions": "ts-node src/scripts/seedSessions.ts",
-    "seed-hyderabad-orders": "ts-node src/scripts/seedHyderabadOrders.ts",
-    "check-hyderabad-data": "ts-node src/scripts/checkHyderabadData.ts",
-    "flush-and-seed-orders": "ts-node src/scripts/flushAndSeedOrders.ts"
+    "seed-bookings": "ts-node src/scripts/seedBookings.ts",
+    "seed-orders": "ts-node src/scripts/seedOrders.ts",
+    "verify-data": "ts-node src/scripts/verifyData.ts"
   },
   "dependencies": {
     "@types/express-rate-limit": "^5.1.3",
     "@types/express-validator": "^2.20.33",
+    "@types/uuid": "^10.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
@@ -28,7 +33,8 @@
     "helmet": "^6.0.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

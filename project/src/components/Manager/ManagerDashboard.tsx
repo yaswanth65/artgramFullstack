@@ -62,6 +62,8 @@ const ManagerDashboard: React.FC = () => {
   }, [orders.length, bookings.length, branches.length, customEvents.length]);
  
   const [tokenWarning, setTokenWarning] = useState(false);
+  const { logout } = useAuth();
+
   useEffect(() => {
     const checkTokenExpiry = () => {
       const token = localStorage.getItem('token');
@@ -76,10 +78,8 @@ const ManagerDashboard: React.FC = () => {
         if (timeUntilExpiry < 3600 && timeUntilExpiry > 0) {
           setTokenWarning(true);
         } else if (timeUntilExpiry <= 0) {
-          // Token expired, force logout
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          window.location.reload();
+          // Token expired - use central logout to clean up state
+          logout();
         }
       } catch (error) {
         console.error('Error checking token expiry:', error);
@@ -89,7 +89,7 @@ const ManagerDashboard: React.FC = () => {
     checkTokenExpiry();
     const interval = setInterval(checkTokenExpiry, 60000); // Check every minute
     return () => clearInterval(interval);
-  }, []);
+  }, [logout]);
 
   const [activeTab, setActiveTab] = useState('overview');
   // Set initial loading to false and provide immediate data

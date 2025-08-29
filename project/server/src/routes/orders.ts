@@ -1,12 +1,12 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/asyncHandler';
 import Order from '../models/Order';
 import Booking from '../models/Booking';
 import { protect } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', protect, asyncHandler(async (req, res) => {
+router.get('/', protect, asyncHandler(async (req, res, next) => {
   const user = req.user;
   const queryBranchId = req.query.branchId as string;
 

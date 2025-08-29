@@ -8,10 +8,11 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
-  // Backend runs on 5000 by default (server/src/index.ts sets PORT=5000)
-  target: 'http://localhost:5000',
+        // Backend runs on port 3001 (server runs on port 3001)
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       },

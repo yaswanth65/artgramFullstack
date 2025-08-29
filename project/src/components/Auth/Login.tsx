@@ -146,9 +146,9 @@ const Login: React.FC = () => {
         <div className="mt-8 p-4 bg-gray-50 rounded-md">
           <p className="text-sm text-gray-600 mb-2">Demo Credentials:</p>
           <div className="text-xs text-gray-500 space-y-1">
-            <p>Admin: admin@craftfactory.com / password</p>
-            <p>Manager: hyderabad@craftfactory.com / password</p>
-            <p>Customer: customer@example.com / password</p>
+            <p>Admin: admin@artgram.com / password</p>
+            <p>Manager: hyderabad@artgram.com / password</p>
+            <p>Customer: customer@artgram.com  / password</p>
           </div>
         </div>
       </div>

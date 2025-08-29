@@ -226,7 +226,7 @@ const BranchManagement: React.FC = () => {
                   value={newBranch.email}
                   onChange={(e) => setNewBranch({ ...newBranch, email: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="branch@craftfactory.com"
+                  placeholder="branch@artgram.com"
                 />
               </div>
 

@@ -1,5 +1,5 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/asyncHandler';
 import Product from '../models/Product';
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.post('/', asyncHandler(async (req, res) => {
     price,
     stock,
     category,
-    imageUrl,
+  media,
     isActive,
     sku,
     weight,
@@ -46,7 +46,7 @@ router.post('/', asyncHandler(async (req, res) => {
     price,
     stock,
     category,
-    imageUrl,
+  media,
     isActive,
     sku,
     weight,

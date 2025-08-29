@@ -1,5 +1,5 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/asyncHandler';
 import Session from '../models/Session';
 import Branch from '../models/Branch';
 import mongoose from 'mongoose';

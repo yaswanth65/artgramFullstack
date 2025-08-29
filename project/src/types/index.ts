@@ -1,3 +1,11 @@
+export interface CartItem {
+  productId: string;
+  title: string;
+  price: number;
+  qty: number;
+  image?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -7,6 +15,7 @@ export interface User {
   address?: Address;
   role: 'admin' | 'branch_manager' | 'customer';
   branchId?: string;
+  cart?: CartItem[];
   temporaryPassword?: string;
   mustChangePassword?: boolean;
   createdAt: string;
@@ -114,7 +123,8 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  images: string[];
+  images: string[]; // derived from media on the backend (image URLs)
+  media?: { url: string; type: 'image' | 'video' }[];
   category: string;
   stock: number;
   materials: string[];

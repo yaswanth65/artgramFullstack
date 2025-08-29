@@ -1,5 +1,5 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/asyncHandler';
 import Booking from '../models/Booking';
 import Session from '../models/Session';
 import { protect } from '../middleware/auth';
