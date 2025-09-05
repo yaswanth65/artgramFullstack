@@ -83,8 +83,12 @@ const EnhancedSessionManagement: React.FC = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       console.log(`🔄 Fetching sessions for branch ${selectedBranchId}, activity ${selectedActivity}`);
+      
+      // Use the new branch-specific endpoint without auto-creation
+      const startDate = next10Days[0];
+      const endDate = next10Days[next10Days.length - 1];
       const response = await fetch(
-        `${apiBase}/sessions/next-10-days/${selectedBranchId}?activity=${selectedActivity}`,
+        `${apiBase}/sessions/branch/${selectedBranchId}?startDate=${startDate}&endDate=${endDate}&activity=${selectedActivity}`,
         { headers }
       );
       
@@ -309,7 +313,13 @@ const EnhancedSessionManagement: React.FC = () => {
   const branchSupportsActivity = (activity: 'slime' | 'tufting') => {
     const branch = branches.find(b => b.id === selectedBranchId);
     if (!branch) return false;
-    return activity === 'slime' ? branch.supportsSlime : branch.supportsTufting;
+    
+    // Use new permission fields first, fallback to legacy fields
+    if (activity === 'slime') {
+      return branch.allowSlime ?? branch.supportsSlime ?? true;
+    } else {
+      return branch.allowTufting ?? branch.supportsTufting ?? true;
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -426,8 +436,8 @@ const EnhancedSessionManagement: React.FC = () => {
             const dateObj = new Date(date);
             const isMonday = dateObj.getDay() === 1;
             const isSelected = selectedDate === date;
-    const branch = branches.find(b => b.id === selectedBranchId);
-    const allowMonday = (branch?.location || branch?.name || '').toLowerCase().includes('vijayawada');
+            const branch = branches.find(b => b.id === selectedBranchId);
+            const allowMonday = branch?.allowMonday ?? false;
             
             return (
               <button
@@ -436,11 +446,11 @@ const EnhancedSessionManagement: React.FC = () => {
                 className={`p-3 rounded-lg text-center transition-all ${
                   isSelected
                     ? 'bg-purple-600 text-white'
-        : (isMonday && !allowMonday)
+                    : (isMonday && !allowMonday)
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-gray-50 hover:bg-gray-100'
                 }`}
-        disabled={isMonday && !allowMonday}
+                disabled={isMonday && !allowMonday}
               >
                 <div className="text-xs font-medium">
                   {formatDate(date)}

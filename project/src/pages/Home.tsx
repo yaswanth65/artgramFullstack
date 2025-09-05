@@ -9,7 +9,7 @@ const Home: React.FC = () => {
   return (
     <div>
       
-  
+      <Carousel />
       <Hero />
     
    

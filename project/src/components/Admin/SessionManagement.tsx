@@ -4,7 +4,7 @@ import type { Event } from '../../types';
 import { Plus, X, Save } from 'lucide-react';
 
 const SessionManagement: React.FC = () => {
-  const { branches, addEvent, updateEvent, selectedBranch, setSelectedBranch, updateSlotsForDate, getSlotsForDate, getBranchAvailability, updateBranchAvailability, verifyQRCode } = useData();
+  const { branches, addEvent, updateEvent, selectedBranch, setSelectedBranch, updateSlotsForDate, getSlotsForDate, getBranchAvailability, updateBranchAvailability, verifyQRCode, isDayRestricted } = useData();
 
   // Types for slots and activity state
   type Slot = {
@@ -289,13 +289,24 @@ const SessionManagement: React.FC = () => {
                 {nineDays.map((date) => {
                   const value = date.toISOString().split('T')[0];
                   const isMonday = date.getDay() === 1 && !allowMonday;
+                  const slimeRestricted = isDayRestricted(selectedBranchId, value, 'slime');
+                  const tuftingRestricted = isDayRestricted(selectedBranchId, value, 'tufting');
+                  const hasAnyRestrictions = isMonday || slimeRestricted || tuftingRestricted;
                   const selected = selectedDate === value;
+                  
                   return (
-                    <div key={value} onClick={() => !isMonday && setSelectedDate(value)} className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all min-w-24 ${isMonday ? 'bg-gray-100 opacity-60 cursor-not-allowed' : selected ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'hover:border-green-400 hover:bg-green-50'}`}>
+                    <div key={value} onClick={() => setSelectedDate(value)} className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all min-w-24 ${hasAnyRestrictions ? 'border-yellow-300 bg-yellow-50' : selected ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'hover:border-green-400 hover:bg-green-50'}`}>
                       <div className="text-sm font-semibold">{date.toLocaleDateString(undefined, { weekday: 'short' })}</div>
                       <div className="text-xl font-bold my-1">{date.getDate()}</div>
                       <div className="text-xs">{date.toLocaleDateString(undefined, { month: 'short' })}</div>
-                      {isMonday && <div className="text-xs text-red-500 mt-1">No Sessions</div>}
+                      {(isMonday || slimeRestricted || tuftingRestricted) && (
+                        <div className="text-xs text-yellow-600 mt-1">
+                          {isMonday && 'Closed'}
+                          {slimeRestricted && !isMonday && 'Slime Off'}
+                          {tuftingRestricted && !isMonday && !slimeRestricted && 'Tufting Off'}
+                          {slimeRestricted && tuftingRestricted && !isMonday && 'Activities Off'}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -307,28 +318,99 @@ const SessionManagement: React.FC = () => {
       <div className="mb-10">
         <h4 className="text-2xl font-bold text-red-600 mb-4 text-center">Manage Slots for {new Date(selectedDate).toLocaleDateString()}</h4>
 
+        {/* Day restriction warning */}
+        {(() => {
+          const selectedDate_temp = selectedDate;
+          const isMonday = new Date(selectedDate_temp).getDay() === 1 && !allowMonday;
+          const slimeRestricted = isDayRestricted(selectedBranchId, selectedDate_temp, 'slime');
+          const tuftingRestricted = isDayRestricted(selectedBranchId, selectedDate_temp, 'tufting');
+          
+          if (isMonday || slimeRestricted || tuftingRestricted) {
+            return (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center">
+                  <div className="text-yellow-600 mr-2">⚠️</div>
+                  <div>
+                    <h5 className="font-semibold text-yellow-800">Day Restrictions Active</h5>
+                    <p className="text-yellow-700 text-sm">
+                      {isMonday && 'This branch is closed on Mondays. '}
+                      {slimeRestricted && 'Slime activities are disabled on this date. '}
+                      {tuftingRestricted && 'Tufting activities are disabled on this date. '}
+                      Customers will not see sessions for restricted activities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* Activity selector */}
         <div className="flex justify-center gap-3 mb-4">
-          <button onClick={() => setSelectedActivity('slime')} className={`px-4 py-2 rounded ${selectedActivity === 'slime' ? 'bg-green-600 text-white' : 'bg-white border'}`}>
-            Slime
+          <button 
+            onClick={() => setSelectedActivity('slime')} 
+            disabled={(() => {
+              const branch = branches.find(b => b.id === selectedBranchId);
+              return !branch?.allowSlime || isDayRestricted(selectedBranchId, selectedDate, 'slime');
+            })()}
+            className={`px-4 py-2 rounded ${
+              (() => {
+                const branch = branches.find(b => b.id === selectedBranchId);
+                const isDisabled = !branch?.allowSlime || isDayRestricted(selectedBranchId, selectedDate, 'slime');
+                if (isDisabled) {
+                  return 'bg-gray-300 text-gray-500 cursor-not-allowed';
+                }
+                return selectedActivity === 'slime' ? 'bg-green-600 text-white' : 'bg-white border';
+              })()
+            }`}
+          >
+            Slime {(() => {
+              const branch = branches.find(b => b.id === selectedBranchId);
+              if (!branch?.allowSlime) return '(Not Allowed)';
+              if (isDayRestricted(selectedBranchId, selectedDate, 'slime')) return '(Disabled)';
+              return '';
+            })()}
           </button>
           <button
             onClick={() => setSelectedActivity('tufting')}
-            className={`px-4 py-2 rounded ${selectedActivity === 'tufting' ? 'bg-purple-600 text-white' : 'bg-white border'}`}
             disabled={(() => {
               const branch = branches.find(b => b.id === selectedBranchId);
-              return branch ? branch.supportsTufting === false : false;
+              return !branch?.allowTufting || isDayRestricted(selectedBranchId, selectedDate, 'tufting');
             })()}
+            className={`px-4 py-2 rounded ${
+              (() => {
+                const branch = branches.find(b => b.id === selectedBranchId);
+                const isDisabled = !branch?.allowTufting || isDayRestricted(selectedBranchId, selectedDate, 'tufting');
+                if (isDisabled) {
+                  return 'bg-gray-300 text-gray-500 cursor-not-allowed';
+                }
+                return selectedActivity === 'tufting' ? 'bg-purple-600 text-white' : 'bg-white border';
+              })()
+            }`}
           >
-            Tufting
+            Tufting {(() => {
+              const branch = branches.find(b => b.id === selectedBranchId);
+              if (!branch?.allowTufting) return '(Not Allowed)';
+              if (isDayRestricted(selectedBranchId, selectedDate, 'tufting')) return '(Disabled)';
+              return '';
+            })()}
           </button>
         </div>
 
-        {/* If tufting not supported show hint */}
+        {/* If activity not allowed show hint */}
         {selectedActivity === 'tufting' && (() => {
           const branch = branches.find(b => b.id === selectedBranchId);
-          if (branch && branch.supportsTufting === false) {
-            return <div className="text-center text-sm text-red-600 mb-4">Tufting is not available for the selected branch ({branch.name}).</div>;
+          if (branch && !branch.allowTufting) {
+            return <div className="text-center text-sm text-red-600 mb-4">Tufting is not allowed for the selected branch ({branch.name}).</div>;
+          }
+          return null;
+        })()}
+        
+        {selectedActivity === 'slime' && (() => {
+          const branch = branches.find(b => b.id === selectedBranchId);
+          if (branch && !branch.allowSlime) {
+            return <div className="text-center text-sm text-red-600 mb-4">Slime activities are not allowed for the selected branch ({branch.name}).</div>;
           }
           return null;
         })()}

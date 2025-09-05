@@ -3,6 +3,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { CartProvider } from './contexts/CartContext';
 import Header from './components/Layout/Header';
+import AdminHeader from './components/Layout/AdminHeader';
+import ManagerHeader from './components/Layout/ManagerHeader';
+import { useAuth } from './contexts/AuthContext';
+import Ourstoryhero from './components/Home/Ourstoryhero';
 import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -34,11 +38,23 @@ function App() {
     <AuthProvider>
       <DataProvider>
         <CartProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Header />
-            <main className="min-h-screen">
-              <Routes>
+          <Router>
+            <AppShell />
+          </Router>
+        </CartProvider>
+      </DataProvider>
+    </AuthProvider>
+  );
+}
+
+const AppShell: React.FC = () => {
+  const { user } = useAuth();
+  const header = user?.role === 'admin' ? <AdminHeader /> : user?.role === 'branch_manager' ? <ManagerHeader /> : <Header />;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {header}
+      <main className="min-h-screen">
+        <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -50,6 +66,7 @@ function App() {
                 <Route path="/ourstory" element={<OurStoryPage />} />
                 <Route path="/contact" element={<ContactUsPage />} />
                 <Route path="/activities" element={<ActivitiesPage />} />
+                <Route path="/ourstoryhero" element={<Ourstoryhero />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/art-making-activity.html" element={<ArtMakingActivityPage />} />
             <Route path="/slime-play.html" element={<SlimePlayPage />} />
@@ -91,14 +108,10 @@ function App() {
                   } 
                 />
               </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-        </CartProvider>
-      </DataProvider>
-    </AuthProvider>
+      </main>
+      <Footer />
+    </div>
   );
-}
+};
 
 export default App;

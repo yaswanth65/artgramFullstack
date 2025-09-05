@@ -31,156 +31,224 @@ router.get('/', asyncHandler(async (req, res): Promise<void> => {
   res.json(sessions);
 }));
 
-// Get sessions for next 10 days for a branch (ensures they exist)
-router.get('/next-10-days/:branchId', asyncHandler(async (req, res): Promise<void> => {
-  const { branchId } = req.params;
-  const { activity } = req.query as { activity?: 'slime' | 'tufting' };
+// Create a new session (admin/manager only)
+router.post('/', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
+  const { 
+    branchId, 
+    date, 
+    activity, 
+    time, 
+    label, 
+    totalSeats, 
+    type, 
+    ageGroup, 
+    price, 
+    notes 
+  } = req.body;
 
-  // Resolve branchId (accepts ObjectId or slug like 'hyderabad')
-  const resolveBranch = async (idOrSlug: string) => {
-    // If it's a valid ObjectId, try that first
-    if (mongoose.isValidObjectId(idOrSlug)) {
-      const b = await Branch.findById(idOrSlug).lean();
-      if (b) return b;
-    }
-    // Try to resolve by location or name containing the slug
-    const slug = String(idOrSlug).toLowerCase();
-    const byLocation = await Branch.findOne({ location: new RegExp(`^${slug}$`, 'i') }).lean();
-    if (byLocation) return byLocation;
-    const byName = await Branch.findOne({ name: new RegExp(slug, 'i') }).lean();
-    if (byName) return byName;
-    return null;
-  };
-
-  const branch = await resolveBranch(String(branchId));
+  // Validate branch permissions
+  const branch = await Branch.findById(branchId);
   if (!branch) {
     res.status(404).json({ message: 'Branch not found' });
     return;
   }
-  const branchObjectId = new mongoose.Types.ObjectId(String((branch as any)._id));
-  const branchLocation = (branch.location || '').toLowerCase();
-  const supportsTufting = branchLocation !== 'vijayawada';
-  const allowMonday = branchLocation === 'vijayawada';
 
-  // Generate next 10 days (YYYY-MM-DD in local timezone)
-  const dates: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const date = new Date();
-    date.setHours(12, 0, 0, 0); // avoid TZ boundary issues
-    date.setDate(date.getDate() + i);
-    dates.push(date.toISOString().split('T')[0]);
+  // Check if branch allows this activity
+  if (activity === 'slime' && !branch.allowSlime) {
+    res.status(400).json({ message: 'This branch does not allow slime activities' });
+    return;
   }
 
-  // Find existing sessions for this branch in window
-  const existingSessions = await Session.find({
-    branchId: branchObjectId,
-    date: { $in: dates },
-    ...(activity && { activity })
-  }).lean();
+  if (activity === 'tufting' && !branch.allowTufting) {
+    res.status(400).json({ message: 'This branch does not allow tufting activities' });
+    return;
+  }
 
-  const existingByDateActivity = new Set(existingSessions.map(s => `${s.date}::${s.activity}`));
+  // Check if session is on Monday and branch allows it
+  const sessionDate = new Date(date);
+  const dayOfWeek = sessionDate.getDay();
+  if (dayOfWeek === 1 && !branch.allowMonday) {
+    res.status(400).json({ message: 'This branch is closed on Mondays' });
+    return;
+  }
 
-  const defaultSessions: any[] = [];
-
-  for (const date of dates) {
-    const dow = new Date(date).getDay();
-    const isMonday = dow === 1;
-    const active = allowMonday ? true : !isMonday;
-
-    // Slime defaults
-    if ((!activity || activity === 'slime') && !existingByDateActivity.has(`${date}::slime`)) {
-      defaultSessions.push(
-        {
-          branchId: branchObjectId,
-          date,
-          activity: 'slime',
-          time: '10:00',
-          label: '10:00 AM',
-          totalSeats: 15,
-          bookedSeats: 0,
-          availableSeats: 15,
-          type: 'Slime Play & Demo',
-          ageGroup: '3+',
-          isActive: active,
-          notes: 'Auto-created'
-        },
-        {
-          branchId: branchObjectId,
-          date,
-          activity: 'slime',
-          time: '11:30',
-          label: '11:30 AM',
-          totalSeats: 15,
-          bookedSeats: 0,
-          availableSeats: 15,
-          type: 'Slime Play & Making',
-          ageGroup: '8+',
-          isActive: active,
-          notes: 'Auto-created'
-        },
-        {
-          branchId: branchObjectId,
-          date,
-          activity: 'slime',
-          time: '16:00',
-          label: '4:00 PM',
-          totalSeats: 15,
-          bookedSeats: 0,
-          availableSeats: 15,
-          type: 'Slime Play & Making',
-          ageGroup: '8+',
-          isActive: active,
-          notes: 'Auto-created'
-        }
-      );
-    }
-
-    // Tufting defaults (branch-dependent)
-    if ((!activity || activity === 'tufting') && supportsTufting && !existingByDateActivity.has(`${date}::tufting`)) {
-      defaultSessions.push(
-        {
-          branchId: branchObjectId,
-          date,
-          activity: 'tufting',
-          time: '12:00',
-          label: '12:00 PM',
-          totalSeats: 8,
-          bookedSeats: 0,
-          availableSeats: 8,
-          type: 'Small Tufting',
-          ageGroup: '15+',
-          isActive: active,
-          notes: 'Auto-created'
-        },
-        {
-          branchId: branchObjectId,
-          date,
-          activity: 'tufting',
-          time: '15:00',
-          label: '3:00 PM',
-          totalSeats: 8,
-          bookedSeats: 0,
-          availableSeats: 8,
-          type: 'Medium Tufting',
-          ageGroup: '15+',
-          isActive: active,
-          notes: 'Auto-created'
-        }
-      );
+  // If user is a branch_manager, ensure they can only create sessions for their branch
+  const user = req.user;
+  if (user.role === 'branch_manager') {
+    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+    
+    if (branchId !== managerBranchId) {
+      res.status(403).json({ message: 'Managers can only create sessions for their assigned branch' });
+      return;
     }
   }
 
-  if (defaultSessions.length) {
-    await Session.insertMany(defaultSessions);
+  const session = await Session.create({
+    branchId: new mongoose.Types.ObjectId(String(branchId)),
+    date,
+    activity,
+    time,
+    label: label || time,
+    totalSeats,
+    bookedSeats: 0,
+    availableSeats: totalSeats,
+    type,
+    ageGroup,
+    price,
+    isActive: true,
+    notes,
+    createdBy: req.user?.id
+  });
+
+  const populatedSession = await Session.findById(session._id)
+    .populate('branchId', 'name location allowSlime allowTufting allowMonday');
+
+  res.status(201).json(populatedSession);
+}));
+
+// Get sessions for a specific branch with date range (no auto-creation)
+router.get('/branch/:branchId', asyncHandler(async (req, res): Promise<void> => {
+  const { branchId } = req.params;
+  const { startDate, endDate, activity } = req.query;
+  
+  const filter: any = { branchId: new mongoose.Types.ObjectId(String(branchId)) };
+  
+  if (startDate && endDate) {
+    filter.date = { $gte: startDate, $lte: endDate };
   }
+  
+  if (activity) {
+    filter.activity = activity;
+  }
+  
+  const sessions = await Session.find(filter)
+    .sort({ date: 1, time: 1 })
+    .populate('branchId', 'name location allowSlime allowTufting allowMonday');
+    
+  res.json(sessions);
+}));
 
-  const allSessions = await Session.find({
-    branchId: branchObjectId,
-    date: { $in: dates },
-    ...(activity && { activity })
-  }).sort({ date: 1, time: 1 });
+// Get sessions for the next 10 days for a branch (no auto-creation)
+router.get('/next-10-days/:branchId', asyncHandler(async (req, res): Promise<void> => {
+  const { branchId } = req.params;
+  const { activity } = req.query;
 
-  res.json(allSessions);
+  const today = new Date();
+  const end = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000);
+  const startDate = today.toISOString().split('T')[0];
+  const endDate = end.toISOString().split('T')[0];
+
+  const filter: any = {
+    branchId: new mongoose.Types.ObjectId(String(branchId)),
+    date: { $gte: startDate, $lte: endDate }
+  };
+  if (activity) filter.activity = activity;
+
+  const sessions = await Session.find(filter)
+    .sort({ date: 1, time: 1 })
+    .populate('branchId', 'name location allowSlime allowTufting allowMonday');
+
+  res.json(sessions);
+}));
+
+// Update a session (admin/manager only)
+router.put('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  // Validate branch permissions if activity is being changed
+  if (updates.activity || updates.branchId) {
+    const session = await Session.findById(id);
+    if (!session) {
+      res.status(404).json({ message: 'Session not found' });
+      return;
+    }
+    
+    const branchId = updates.branchId || session.branchId;
+    const activity = updates.activity || session.activity;
+    
+    const branch = await Branch.findById(branchId);
+    if (!branch) {
+      res.status(404).json({ message: 'Branch not found' });
+      return;
+    }
+    
+    if (activity === 'slime' && !branch.allowSlime) {
+      res.status(400).json({ message: 'This branch does not allow slime activities' });
+      return;
+    }
+    
+    if (activity === 'tufting' && !branch.allowTufting) {
+      res.status(400).json({ message: 'This branch does not allow tufting activities' });
+      return;
+    }
+    
+    // Check Monday restriction
+    const sessionDate = new Date(updates.date || session.date);
+    if (sessionDate.getDay() === 1 && !branch.allowMonday) {
+      res.status(400).json({ message: 'This branch is closed on Mondays' });
+      return;
+    }
+
+    // If user is a branch_manager, ensure they can only update sessions for their branch
+    const user = req.user;
+    if (user.role === 'branch_manager') {
+      const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+      const sessionBranchId = session.branchId?.toString();
+      
+      if (sessionBranchId !== managerBranchId) {
+        res.status(403).json({ message: 'Managers can only update sessions for their assigned branch' });
+        return;
+      }
+    }
+  }
+  
+  const updatedSession = await Session.findByIdAndUpdate(id, updates, { 
+    new: true, 
+    runValidators: true 
+  }).populate('branchId', 'name location allowSlime allowTufting allowMonday');
+  
+  if (!updatedSession) {
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+  
+  res.json(updatedSession);
+}));
+
+// Delete a session (admin/manager only)
+router.delete('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
+  const { id } = req.params;
+  
+  const session = await Session.findById(id);
+  if (!session) {
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+  
+  // If user is a branch_manager, ensure they can only delete sessions for their branch
+  const user = req.user;
+  if (user.role === 'branch_manager') {
+    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
+    const sessionBranchId = session.branchId?.toString();
+    
+    if (sessionBranchId !== managerBranchId) {
+      res.status(403).json({ message: 'Managers can only delete sessions for their assigned branch' });
+      return;
+    }
+  }
+  
+  // Check if session has bookings
+  const bookingCount = await Booking.countDocuments({ sessionId: id });
+  if (bookingCount > 0) {
+    res.status(400).json({ 
+      message: `Cannot delete session with ${bookingCount} existing booking(s)` 
+    });
+    return;
+  }
+  
+  await Session.findByIdAndDelete(id);
+  res.json({ message: 'Session deleted successfully' });
 }));
 
 // Get specific session by ID with registered users
@@ -238,62 +306,6 @@ router.get('/:id/users', protect, asyncHandler(async (req, res): Promise<void> =
   });
 }));
 
-// Create new session (Admin/Manager only)
-router.post('/', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
-  const { branchId } = req.body;
-  const user = req.user;
-  
-  // If user is a manager, ensure they can only create sessions for their branch
-  if (user.role === 'branch_manager' || user.role === 'manager') {
-    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
-    
-    if (branchId !== managerBranchId) {
-      res.status(403).json({ message: 'Managers can only create sessions for their assigned branch' });
-      return;
-    }
-  }
-  
-  const sessionData = {
-    ...req.body,
-    createdBy: req.user._id,
-    availableSeats: req.body.totalSeats - (req.body.bookedSeats || 0)
-  };
-
-  const session = await Session.create(sessionData);
-  res.status(201).json(session);
-}));
-
-// Update session (Admin/Manager only)
-router.put('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
-  const session = await Session.findById(req.params.id);
-  if (!session) {
-    res.status(404).json({ message: 'Session not found' });
-    return;
-  }
-
-  const user = req.user;
-  
-  // If user is a manager, ensure they can only update sessions for their branch
-  if (user.role === 'branch_manager' || user.role === 'manager') {
-    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
-    const sessionBranchId = session.branchId?.toString();
-    
-    if (sessionBranchId !== managerBranchId) {
-      res.status(403).json({ message: 'Managers can only update sessions for their assigned branch' });
-      return;
-    }
-  }
-
-  // Update fields
-  Object.assign(session, req.body);
-
-  // Recalculate available seats
-  session.availableSeats = Math.max(0, session.totalSeats - session.bookedSeats);
-
-  await session.save();
-  res.json(session);
-}));
-
 // Update session seat count (for booking/cancellation)
 router.patch('/:id/seats', protect, asyncHandler(async (req, res): Promise<void> => {
   const { seatsChange } = req.body; // positive for booking, negative for cancellation
@@ -322,40 +334,6 @@ router.patch('/:id/seats', protect, asyncHandler(async (req, res): Promise<void>
 
   await session.save();
   res.json(session);
-}));
-
-// Delete session (Admin/Manager only)
-router.delete('/:id', protect, adminOrBranchManager, asyncHandler(async (req, res): Promise<void> => {
-  const session = await Session.findById(req.params.id);
-  if (!session) {
-    res.status(404).json({ message: 'Session not found' });
-    return;
-  }
-
-  const user = req.user;
-  
-  // If user is a manager, ensure they can only delete sessions for their branch
-  if (user.role === 'branch_manager' || user.role === 'manager') {
-    const managerBranchId = user.branchId?._id?.toString() || user.branchId?.toString();
-    const sessionBranchId = session.branchId?.toString();
-    
-    if (sessionBranchId !== managerBranchId) {
-      res.status(403).json({ message: 'Managers can only delete sessions for their assigned branch' });
-      return;
-    }
-  }
-
-  // Check if there are any bookings for this session
-  const bookingsCount = await Booking.countDocuments({ sessionId: session._id, status: 'active' });
-  if (bookingsCount > 0) {
-    res.status(400).json({
-      message: `Cannot delete session with ${bookingsCount} active bookings. Cancel bookings first.`
-    });
-    return;
-  }
-
-  await Session.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Session deleted successfully' });
 }));
 
 // Bulk update sessions for a date (Admin/Manager only)

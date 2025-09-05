@@ -44,9 +44,12 @@ interface DataContextType {
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: string) => Promise<void>;
-  addBranch: (branch: Omit<Branch, 'id' | 'createdAt'>) => Promise<void>;
+  addBranch: (branch: Omit<Branch, 'id' | 'createdAt'>) => Promise<Branch | void>;
   updateBranch: (branch: Branch) => Promise<void>;
   deleteBranch: (id: string) => Promise<void>;
+  createSession: (session: any) => Promise<void>;
+  updateSession: (session: any) => Promise<void>;
+  deleteSession: (id: string) => Promise<void>;
   addTrackingUpdate: (orderId: string, update: Omit<TrackingUpdate, 'id'>) => Promise<void>;
   // session slots persistence (in-memory + localStorage)
   updateSlotsForDate: (branchId: string, date: string, slots: { slime: Slot[]; tufting: Slot[] }) => Promise<void>;
@@ -58,6 +61,10 @@ interface DataContextType {
   getBranchById: (id?: string) => Branch | null;
   // version/timestamp to notify consumers when slots change
   slotsVersion: number;
+  // day restrictions functionality
+  getDayRestrictions: (branchId: string) => {[date: string]: {slime: boolean, tufting: boolean}} | null;
+  updateDayRestrictions: (branchId: string, restrictions: {[date: string]: {slime: boolean, tufting: boolean}}) => Promise<void>;
+  isDayRestricted: (branchId: string, date: string, activity: 'slime' | 'tufting') => boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -627,10 +634,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             phone: b.phone || '',
             email: b.email || '',
             razorpayKey: b.razorpayKey,
-            supportsSlime: true,
-            supportsTufting: (b.location || '').toLowerCase() !== 'vijayawada',
+            supportsSlime: b.allowSlime !== false,
+            supportsTufting: b.allowTufting !== false,
+            allowSlime: b.allowSlime !== false,
+            allowTufting: b.allowTufting !== false,
+            allowMonday: b.allowMonday === true,
             managerId: b.managerId || '',
-            isActive: true,
+            isActive: b.isActive !== false,
+            stripeAccountId: b.stripeAccountId || `acct_${b._id}`,
             createdAt: b.createdAt || new Date().toISOString()
           }));
           setBranches(mapped);
@@ -674,10 +685,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
 
     // Sessions
+    // Only fetch the global /sessions endpoint for admin or branch_manager roles.
+    // Customers should use branch-specific endpoints (/sessions/branch/:branchId)
+    // which do not auto-create default slots.
     (async () => {
       try {
-        console.log('🕐 Fetching sessions...');
-        const res = await fetch(`${apiBase}/sessions`);
+        if (!user || (user.role !== 'admin' && user.role !== 'branch_manager')) {
+          console.log('🔒 Skipping global sessions fetch for non-admin users');
+          return;
+        }
+
+        console.log('🕐 Fetching sessions (admin/manager)...');
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(`${apiBase}/sessions`, { headers });
         if (res.ok) {
           const data = await res.json();
           console.log('✅ Sessions fetched:', data?.length || 0);
@@ -970,12 +991,49 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user, selectedBranch]);
 
   const addBranch = async (branchData: Omit<Branch, 'id' | 'createdAt'>) => {
-    const newBranch: Branch = {
-      ...branchData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    setBranches(prev => [...prev, newBranch]);
+    const apiBase = '/api';
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`${apiBase}/branches`, { method: 'POST', headers, body: JSON.stringify(branchData) });
+      if (res.ok) {
+        const created = await res.json();
+        const mapped: Branch = {
+          id: created._id || created.id || Date.now().toString(),
+          name: created.name,
+          location: created.location,
+          address: created.address || branchData.address || '',
+          phone: created.phone || branchData.phone || '',
+          email: created.email || branchData.email || '',
+          razorpayKey: created.razorpayKey,
+          supportsSlime: created.allowSlime !== undefined ? created.allowSlime : true,
+          supportsTufting: created.allowTufting !== undefined ? created.allowTufting : true,
+          managerId: created.managerId || branchData.managerId || '',
+          isActive: created.isActive !== undefined ? created.isActive : true,
+          stripeAccountId: created.stripeAccountId || branchData.stripeAccountId || `acct_${Date.now()}`,
+          createdAt: created.createdAt || new Date().toISOString()
+        };
+        setBranches(prev => {
+          const next = [...prev, mapped];
+          try { localStorage.setItem('branches', JSON.stringify(next)); } catch { }
+          try { window.dispatchEvent(new Event('app_data_updated')); } catch { }
+          return next;
+        });
+        return mapped;
+      }
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to create branch on server');
+    } catch (error) {
+      // Fallback to local creation
+      const newBranch: Branch = {
+        ...branchData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setBranches(prev => [...prev, newBranch]);
+      return newBranch;
+    }
   };
 
   const updateBranch = async (branch: Branch) => {
@@ -984,6 +1042,83 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteBranch = async (id: string) => {
     setBranches(prev => prev.filter(b => b.id !== id));
+  };
+
+  // Session CRUD functions
+  const createSession = async (sessionData: any) => {
+    const apiBase = '/api';
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const response = await fetch(`${apiBase}/sessions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(sessionData)
+      });
+      
+      if (response.ok) {
+        const newSession = await response.json();
+        setSessions(prev => [...prev, newSession]);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create session');
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
+  };
+
+  const updateSession = async (sessionData: any) => {
+    const apiBase = '/api';
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const response = await fetch(`${apiBase}/sessions/${sessionData._id || sessionData.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(sessionData)
+      });
+      
+      if (response.ok) {
+        const updatedSession = await response.json();
+        setSessions(prev => prev.map(s => s._id === updatedSession._id ? updatedSession : s));
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update session');
+      }
+    } catch (error) {
+      console.error('Error updating session:', error);
+      throw error;
+    }
+  };
+
+  const deleteSession = async (id: string) => {
+    const apiBase = '/api';
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const response = await fetch(`${apiBase}/sessions/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+      
+      if (response.ok) {
+        setSessions(prev => prev.filter(s => s._id !== id && s.id !== id));
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete session');
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      throw error;
+    }
   };
 
   const addTrackingUpdate = async (orderId: string, update: Omit<TrackingUpdate, 'id'>) => {
@@ -1107,6 +1242,45 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Day restrictions functionality
+  const [dayRestrictions, setDayRestrictions] = useState<Record<string, {[date: string]: {slime: boolean, tufting: boolean}}>>(() => {
+    try {
+      const raw = localStorage.getItem('dayRestrictions');
+      if (raw) return JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    return {};
+  });
+
+  const persistDayRestrictions = (state: Record<string, {[date: string]: {slime: boolean, tufting: boolean}}>) => {
+    try {
+      localStorage.setItem('dayRestrictions', JSON.stringify(state));
+    } catch {
+      // ignore
+    }
+  };
+
+  const getDayRestrictions = (branchId: string) => {
+    return dayRestrictions[branchId] || null;
+  };
+
+  const updateDayRestrictions = async (branchId: string, restrictions: {[date: string]: {slime: boolean, tufting: boolean}}) => {
+    setDayRestrictions(prev => {
+      const next = { ...prev, [branchId]: restrictions };
+      persistDayRestrictions(next);
+      return next;
+    });
+  };
+
+  const isDayRestricted = (branchId: string, date: string, activity: 'slime' | 'tufting'): boolean => {
+    const branchRestrictions = dayRestrictions[branchId];
+    if (!branchRestrictions) return false;
+    const dateRestrictions = branchRestrictions[date];
+    if (!dateRestrictions) return false;
+    return dateRestrictions[activity] || false;
+  };
+
   const getBranchAvailability = (branchId: string) => {
     return branchAvailability[branchId] || null;
   };
@@ -1171,6 +1345,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addBranch,
       updateBranch,
       deleteBranch,
+      createSession,
+      updateSession,
+      deleteSession,
       addTrackingUpdate
       ,
       updateSlotsForDate,
@@ -1179,7 +1356,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getBranchAvailability,
       updateBranchAvailability
       ,
-      slotsVersion
+      slotsVersion,
+      // day restrictions
+      getDayRestrictions,
+      updateDayRestrictions,
+      isDayRestricted
     }}>
       {children}
     </DataContext.Provider>

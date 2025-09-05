@@ -22,7 +22,7 @@ const EventsPage = () => {
       shortDesc:
         "Make birthdays unforgettable with themed art parties, slime making, and creative activities for all ages.",
       description:
-        "Transform your child's special day into an artistic adventure! Our birthday party packages include personalized themes, age-appropriate art activities, and memorable takeaways. From canvas painting to pottery wheels, we ensure every guest leaves with a masterpiece and beautiful memories.",
+        "Artgram is the ultimate destination for birthdays, get-togethers, and corporate events. Whether you're planning a cozy gathering or a grand celebration, we offer tailored packages to suit every occasion. Enjoy a private room with captivating activities, exquisite food with buffet setup and stunning decor. With capacity to accommodate up to 60 people, Artgram perfectly suits your venue needs. Thoughtful return gifts and extra attractions like face painting, temporary tattoos, or hair braiding are available. Whatever your vision, Artgram ensures a seamless, joyful experience for you and your guests!",
       features: [
         "Customized themes",
         "All materials included",
@@ -67,6 +67,7 @@ const EventsPage = () => {
             "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=300&h=200&fit=crop",
         },
       ],
+      cardImage: "https://res.cloudinary.com/dwb3vztcv/video/upload/v1756496537/Baby_Girl_Birthday_Animation_Ready_iz8kjw.mp4", // Birthday GIF
     },
     {
       id: 2,
@@ -75,7 +76,7 @@ const EventsPage = () => {
       shortDesc:
         "Team building activities with art workshops, collaborative projects, and stress-relief creative sessions.",
       description:
-        "Boost team morale and creativity with our corporate art workshops. Perfect for team building, stress relief, and fostering innovation. Our facilitators guide groups through collaborative projects that enhance communication and build stronger workplace relationships.",
+        "At Artgram, we offer unique field art activities, team-building games, and delicious food in a vibrant, inspiring setting. Whether you're looking to boost team spirit, spark innovation, or simply enjoy a fun day out, we've got you covered.\n\n🎨 Hands-on Art Experiences\n🎯 One-of-a-kind Games & Team Challenges\n🍽 Curated Menus with Delicious Food\n💬 Laughter, Love & Lasting Memories",
       features: [
         "Team building focus",
         "Flexible scheduling",
@@ -120,6 +121,7 @@ const EventsPage = () => {
             "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=300&h=200&fit=crop",
         },
       ],
+      cardImage: "https://res.cloudinary.com/dwb3vztcv/video/upload/v1756497860/Corporate_Event_Video_Ready_od27oz.mp4", // Corporate GIF
     },
     {
       id: 3,
@@ -128,7 +130,7 @@ const EventsPage = () => {
       shortDesc:
         "Community workshops featuring guest artists, new techniques, and collaborative art projects.",
       description:
-        "Join our regular community workshops to learn new techniques, meet fellow art enthusiasts, and create beautiful pieces. From watercolor basics to advanced sculpting, our expert instructors provide personalized guidance for all skill levels.",
+        "Join our regular community workshops to learn new techniques, meet fellow art enthusiasts, and create beautiful pieces. From watercolor basics to advanced sculpting, our expert instructors provide personalized guidance for all skill levels.\n\nHey, fellow artists — you are special and so is your talent. Our studio is available for rent if you'd like to lead your own workshop at our venue. We provide the space, handle cleaning, and can help you reach a wider audience. Contact us to learn more and book the studio for your next class.",
       features: [
         "Expert instructors",
         "All skill levels",
@@ -172,6 +174,7 @@ const EventsPage = () => {
             "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=300&h=200&fit=crop",
         },
       ],
+      cardImage: "https://res.cloudinary.com/dwb3vztcv/video/upload/v1756497941/Art_Workshop_Video_Ready_odqhow.mp4", // Workshop GIF
     },
     {
       id: 4,
@@ -222,6 +225,7 @@ const EventsPage = () => {
             "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=300&h=200&fit=crop",
         },
       ],
+      cardImage: "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756498884/ChatGPT_Image_Aug_30_2025_01_50_35_AM_ezg4cr.png", // Kitty Party GIF
     },
     {
       id: 5,
@@ -230,7 +234,7 @@ const EventsPage = () => {
       shortDesc:
         "Celebrate new beginnings with gentle art activities and memorable keepsakes for expecting mothers.",
       description:
-        "Celebrate the upcoming arrival with our special baby shower art parties. Create personalized keepsakes, decorate onesies, and make beautiful memories with art activities designed for expecting mothers and their loved ones.",
+        "Looking for a baby shower that’s anything but ordinary? At Artgram, we turn special moments into colorful memories with a creative celebration you and your guests will actually remember.\n\nInteractive activities, games, quiz, photo booth and much more. Painting onesies, take-home totes, or mom-and-me masterpieces — anything! We have got you covered with creative and unique ideas. Contact us to celebrate a baby shower for you or your special friend today!\n\nStep away from the routine and into a day filled with creativity, laughter, and connection.",
       features: [
         "Gentle activities",
         "Keepsake creation",
@@ -275,7 +279,54 @@ const EventsPage = () => {
             "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop",
         },
       ],
+      cardImage: "https://res.cloudinary.com/dwb3vztcv/video/upload/v1756499345/7800249-uhd_3840_2160_25fps_swxg1h.mp4", // Baby Shower GIF
     },
+    {
+      id: 6,
+      icon: "🏫",
+      title: "School Outings",
+      shortDesc:
+        "Creative, safe, and educational art outings for school groups in an inspiring outdoor setting.",
+      description:
+        "Take your students beyond the classroom and into a world of color, creativity, and imagination with a school day outing at Artgram. We offer a fun-filled, safe, and thoughtfully designed experience where children can explore art in its most joyful form. Our space encourages creative freedom, hands-on learning, and playful discovery in a vibrant outdoor setting that kids absolutely love.\n\nThroughout the day, students participate in a range of engaging activities — from painting and clay modelling to slime play and craft-making — all supervised and designed for learning and fun.",
+      features: [
+        "Curriculum-linked activities",
+        "Safe & supervised",
+        "Group rates",
+        "Hands-on learning",
+        "Outdoor play",
+      ],
+      images: [
+        "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=500&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1529257414776-196f5fe8b2c0?w=500&h=300&fit=crop",
+      ],
+      feedbacks: [],
+      videos: [],
+      cardImage: "https://res.cloudinary.com/df2mieky2/image/upload/v1757006573/Gemini_Generated_Image_k33memk33memk33m_tmour7.png",
+    },
+
+    {
+      id: 7,
+      icon: "🏺",
+      title: "Workshops",
+      shortDesc:
+        "Rent our studio to host your own workshop — we handle space, cleaning, and promotion support.",
+      description:
+        "Hey, fellow artists! You are special and so is your talent. We are thrilled to let you know our studio is available for rent so you can lead workshops at our venue. We provide the space, take care of cleaning, and help you reach a wider audience. Contact us to learn more about availability, rates, and how we can support your event.",
+      features: [
+        "Space rental",
+        "Audience promotion support",
+        "Cleaning & logistics",
+        "Flexible booking",
+      ],
+      images: [
+        "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&h=300&fit=crop",
+      ],
+      feedbacks: [],
+      videos: [],
+      cardImage: "https://res.cloudinary.com/df2mieky2/image/upload/v1757006572/Gemini_Generated_Image_bb8slbb8slbb8slb_ayygtp.png",
+    },
+
   ];
 
   const nextImage = () => {
@@ -339,10 +390,10 @@ const EventsPage = () => {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-800">
+            <h1 className="mb-4 text-5xl font-black text-gray-800" style={{color: '#7F55B1'}}>
               Our Events
-            </h2>
-            <p className="text-lg text-gray-600">
+            </h1>
+            <p className="text-lg text-black-600">
               Choose from our variety of creative experiences
             </p>
           </div>
@@ -615,54 +666,73 @@ const EventCard = ({ event, onClick }) => {
   return (
     <div className="group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2">
       <div className="relative">
-        <div className="h-48  p-8" style={{backgroundColor: '#9B7EBD'}}>
-          <div className="flex h-full flex-col justify-between">
-            <div className="text-right">
-              <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
-                Popular
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-3xl backdrop-blur-sm">
-                {event.icon}
-              </div>
-              <div className="text-right"></div>
-            </div>
-          </div>
+  {/* Video/Image Section */}
+  <div className="h-48 overflow-hidden">
+    {event.cardImage.endsWith('.mp4') || event.cardImage.endsWith('.webm') ? (
+      <video
+        src={event.cardImage}
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+    ) : (
+      <img
+        src={event.cardImage}
+        alt={event.title}
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+    )}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+    
+    <div className="absolute top-4 right-4">
+      <div className=" pl-3 pb-1 ">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/90 text-2xl backdrop-blur-sm">
+        {event.icon}
+      </div>
+    </div>
+      <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-purple-700 backdrop-blur-sm">
+        Popular
+      </span>
+    </div>
+    
+    
+  </div>
+
+  <div className="p-6">
+    <h4 className="mb-3 text-2xl font-bold text-gray-800">
+      {event.title}
+    </h4>
+    <p className="mb-6 leading-relaxed text-gray-600">
+      {event.shortDesc}
+    </p>
+
+    <div className="flex items-center justify-between ">
+      <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="flex items-center gap-2"> {/* Increased gap from 1 to 2 */}
+          <Calendar className="h-4 w-4 flex-shrink-0" /> {/* Added flex-shrink-0 */}
+          <span className="whitespace-nowrap">Flexible</span> {/* Prevent text wrapping */}
         </div>
-
-        <div className="p-8">
-          <h4 className="mb-3 text-2xl font-bold text-gray-800">
-            {event.title}
-          </h4>
-          <p className="mb-6 leading-relaxed text-gray-600">
-            {event.shortDesc}
-          </p>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>Flexible</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>Groups</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 text-yellow-500">
-              <Star className="h-4 w-4 fill-current" />
-              <span className="text-sm font-medium text-gray-700">4.9</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2"> {/* Increased gap from 1 to 2 */}
+          <Users className="h-4 w-4 flex-shrink-0" /> {/* Added flex-shrink-0 */}
+          <span className="whitespace-nowrap">Groups</span> {/* Prevent text wrapping */}
         </div>
       </div>
+
+      <div className="flex items-center gap-1 text-yellow-500">
+        <Star className="h-4 w-4 fill-current flex-shrink-0" /> {/* Added flex-shrink-0 */}
+        <span className="text-sm font-medium text-gray-700 whitespace-nowrap">4.9</span> {/* Prevent text wrapping */}
+      </div>
+    </div>
+  </div>
+</div>
 
       <div className="border-t bg-gray-50 p-6">
         <button
           onClick={onClick}
-          className="w-full rounded-xl  py-3 font-semibold text-white transition-all hover:shadow-lg transform hover:scale-105" style={{backgroundColor: '#7F55B1'}}
+          className="w-full rounded-xl py-3 font-semibold text-white transition-all hover:shadow-lg transform hover:scale-105" 
+          style={{backgroundColor: '#7F55B1'}}
         >
           View Details
         </button>

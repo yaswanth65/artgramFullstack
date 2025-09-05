@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 
 const SalesAnalytics: React.FC = () => {
-  const { orders, bookings, branches, events, products } = useData();
+  const { orders, bookings, branches, events, products, sessions } = useData();
   const [dateRange, setDateRange] = useState('30'); // days
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [reportType, setReportType] = useState('overview');
@@ -145,6 +145,34 @@ const SalesAnalytics: React.FC = () => {
       date: event.date
     };
   }).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+
+  // Activity (slime / tufting) performance
+  const activityMetrics = (activity: string) => {
+    const activitySessions = sessions.filter((s: any) => s.activity === activity && new Date(s.date) >= startDate && new Date(s.date) <= endDate && (selectedBranch === 'all' || s.branchId === selectedBranch));
+    const activityBookings = filteredBookings.filter((b: any) => b.activity === activity);
+
+    const totalSessions = activitySessions.length;
+    const totalBookingsActivity = activityBookings.length;
+    const seatsSold = activityBookings.reduce((sum: number, b: any) => sum + (b.seats || 0), 0);
+    const totalSeats = activitySessions.reduce((sum: number, s: any) => sum + (s.totalSeats || 0), 0);
+    const activityRevenue = activityBookings.reduce((sum: number, b: any) => sum + (b.totalAmount || 0), 0);
+    const occupancy = totalSeats > 0 ? (seatsSold / totalSeats) * 100 : 0;
+    const avgPricePerSeat = seatsSold > 0 ? activityRevenue / seatsSold : 0;
+
+    // daily series for this activity
+    const daily: any[] = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const dayBookings = activityBookings.filter(b => (b.createdAt || b.date || '').toString().startsWith(dateStr));
+      const dayRevenue = dayBookings.reduce((sum: number, b: any) => sum + (b.totalAmount || 0), 0);
+      daily.push({ date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), revenue: dayRevenue, bookings: dayBookings.length });
+    }
+
+    return { totalSessions, totalBookingsActivity, seatsSold, totalSeats, activityRevenue, occupancy, avgPricePerSeat, daily };
+  };
+
+  const slime = activityMetrics('slime');
+  const tufting = activityMetrics('tufting');
 
   const COLORS = ['#ea580c', '#f97316', '#fb923c', '#fdba74', '#fed7aa', '#fff7ed'];
 
@@ -333,6 +361,83 @@ const SalesAnalytics: React.FC = () => {
             <Line type="monotone" dataKey="bookings" stroke="#8b5cf6" strokeWidth={2} name="Bookings" />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Activity Analytics: Slime & Tufting */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Slime Analytics */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">Slime Sessions Analytics</h3>
+            <Filter className="h-5 w-5 text-gray-600" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Sessions</p>
+              <p className="text-xl font-bold">{slime.totalSessions}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Bookings</p>
+              <p className="text-xl font-bold">{slime.totalBookingsActivity}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Seats Sold</p>
+              <p className="text-xl font-bold">{slime.seatsSold}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Occupancy</p>
+              <p className="text-xl font-bold">{slime.occupancy.toFixed(0)}%</p>
+            </div>
+          </div>
+          <div style={{ width: '100%', height: 180 }}>
+            <ResponsiveContainer>
+              <AreaChart data={slime.daily}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`₹${value}`, 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" stroke="#f97316" fill="#f97316" fillOpacity={0.2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Tufting Analytics */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">Tufting Sessions Analytics</h3>
+            <Filter className="h-5 w-5 text-gray-600" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Sessions</p>
+              <p className="text-xl font-bold">{tufting.totalSessions}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Bookings</p>
+              <p className="text-xl font-bold">{tufting.totalBookingsActivity}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Seats Sold</p>
+              <p className="text-xl font-bold">{tufting.seatsSold}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">Occupancy</p>
+              <p className="text-xl font-bold">{tufting.occupancy.toFixed(0)}%</p>
+            </div>
+          </div>
+          <div style={{ width: '100%', height: 180 }}>
+            <ResponsiveContainer>
+              <AreaChart data={tufting.daily}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`₹${value}`, 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* Performance Tables */}

@@ -385,72 +385,81 @@ async function seedDatabase() {
   const products = await Product.insertMany(productData);
     console.log(`Created ${products.length} products`);
 
-    console.log('Creating sessions...');
     // 5. Create sessions for next 30 days for each branch
-  const sessions: any[] = [];
-    const today = new Date();
-    const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
+    // NOTE: Auto-creating large numbers of sessions is a dev convenience only.
+    // To avoid accidental insertion in development or CI, session seeding is
+    // opt-in via the SEED_SESSIONS environment variable. Set SEED_SESSIONS=true
+    // when you intentionally want sessions created by the seed script.
+    const shouldSeedSessions = String(process.env.SEED_SESSIONS || '').toLowerCase() === 'true';
+    const sessions: any[] = [];
+    if (shouldSeedSessions) {
+      console.log('Creating sessions... (SEED_SESSIONS=true)');
+      const today = new Date();
+      const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
 
-    for (let branch of branches) {
-      for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        
-        // Create slime sessions (3-4 per day)
-        const slimeSessionCount = getRandomInt(3, 4);
-        for (let i = 0; i < slimeSessionCount; i++) {
-          const timeSlot = getRandomElement(sessionTimes);
-          const sessionType = getRandomElement(sessionTypes.slime);
-          const totalSeats = getRandomInt(8, 15);
-          const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.7));
+      for (let branch of branches) {
+        for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
           
-          const session = new Session({
-            branchId: branch._id,
-            date: dateStr,
-            activity: 'slime',
-            time: timeSlot.time,
-            label: timeSlot.label,
-            totalSeats,
-            bookedSeats,
-            availableSeats: totalSeats - bookedSeats,
-            type: sessionType.type,
-            ageGroup: sessionType.ageGroup,
-            price: sessionType.price,
-            isActive: true,
-            createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
-            notes: `${sessionType.type} session for ${sessionType.ageGroup} age group`
-          });
-          await session.save();
-          sessions.push(session);
-        }
-        
-        // Create tufting sessions (2-3 per day)
-        const tuftingSessionCount = getRandomInt(2, 3);
-        for (let i = 0; i < tuftingSessionCount; i++) {
-          const timeSlot = getRandomElement(sessionTimes);
-          const sessionType = getRandomElement(sessionTypes.tufting);
-          const totalSeats = getRandomInt(6, 10); // Smaller groups for tufting
-          const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.6));
+          // Create slime sessions (3-4 per day)
+          const slimeSessionCount = getRandomInt(3, 4);
+          for (let i = 0; i < slimeSessionCount; i++) {
+            const timeSlot = getRandomElement(sessionTimes);
+            const sessionType = getRandomElement(sessionTypes.slime);
+            const totalSeats = getRandomInt(8, 15);
+            const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.7));
+            
+            const session = new Session({
+              branchId: branch._id,
+              date: dateStr,
+              activity: 'slime',
+              time: timeSlot.time,
+              label: timeSlot.label,
+              totalSeats,
+              bookedSeats,
+              availableSeats: totalSeats - bookedSeats,
+              type: sessionType.type,
+              ageGroup: sessionType.ageGroup,
+              price: sessionType.price,
+              isActive: true,
+              createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
+              notes: `${sessionType.type} session for ${sessionType.ageGroup} age group`
+            });
+            await session.save();
+            sessions.push(session);
+          }
           
-          const session = new Session({
-            branchId: branch._id,
-            date: dateStr,
-            activity: 'tufting',
-            time: timeSlot.time,
-            label: timeSlot.label,
-            totalSeats,
-            bookedSeats,
-            availableSeats: totalSeats - bookedSeats,
-            type: sessionType.type,
-            ageGroup: sessionType.ageGroup,
-            price: sessionType.price,
-            isActive: true,
-            createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
-            notes: `${sessionType.type} workshop for ${sessionType.ageGroup} age group`
-          });
-          await session.save();
-          sessions.push(session);
+          // Create tufting sessions (2-3 per day)
+          const tuftingSessionCount = getRandomInt(2, 3);
+          for (let i = 0; i < tuftingSessionCount; i++) {
+            const timeSlot = getRandomElement(sessionTimes);
+            const sessionType = getRandomElement(sessionTypes.tufting);
+            const totalSeats = getRandomInt(6, 10); // Smaller groups for tufting
+            const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.6));
+            
+            const session = new Session({
+              branchId: branch._id,
+              date: dateStr,
+              activity: 'tufting',
+              time: timeSlot.time,
+              label: timeSlot.label,
+              totalSeats,
+              bookedSeats,
+              availableSeats: totalSeats - bookedSeats,
+              type: sessionType.type,
+              ageGroup: sessionType.ageGroup,
+              price: sessionType.price,
+              isActive: true,
+              createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
+              notes: `${sessionType.type} workshop for ${sessionType.ageGroup} age group`
+            });
+            await session.save();
+            sessions.push(session);
+          }
         }
       }
+    } else {
+      console.log('Skipping session seeding (set SEED_SESSIONS=true to enable)');
     }
 
     console.log('Creating bookings...');

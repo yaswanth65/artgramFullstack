@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { createRazorpayOrder, initiatePayment } from '../../utils/razorpay';
+import { getActiveBranchesForActivity, getBranchLocationOptions } from '../../utils/branchFilters';
 
 
 
@@ -53,8 +54,10 @@ const TuftingActivityPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fullscreenVideoRef = useRef<HTMLVideoElement | null>(null);
   const [muted, setMuted] = useState(true);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
 
   const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
   const { branches } = useData();
@@ -94,6 +97,50 @@ const TuftingActivityPage = () => {
       return () => clearTimeout(timer);
     }
   }, [location.hash, location.pathname]);
+
+  // Fullscreen video helpers
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && videoFullscreen) closeFullscreen();
+    };
+    if (videoFullscreen) {
+      document.addEventListener('keydown', onKey);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [videoFullscreen]);
+
+  const openFullscreen = () => {
+    setVideoFullscreen(true);
+    setTimeout(() => {
+      const el = fullscreenVideoRef.current;
+      if (!el) return;
+      try {
+        const anyEl = el as HTMLElement & { webkitRequestFullscreen?: () => void; msRequestFullscreen?: () => void };
+        if (anyEl.requestFullscreen) anyEl.requestFullscreen();
+        else if (anyEl.webkitRequestFullscreen) anyEl.webkitRequestFullscreen();
+        else if (anyEl.msRequestFullscreen) anyEl.msRequestFullscreen();
+      } catch {/* ignore */}
+      el.play().catch(() => {});
+    }, 50);
+  };
+
+  const closeFullscreen = () => {
+    setVideoFullscreen(false);
+    try {
+      const doc = document as Document & { webkitExitFullscreen?: () => void; msExitFullscreen?: () => void };
+      if (document.fullscreenElement) {
+        if (doc.exitFullscreen) doc.exitFullscreen();
+        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+        else if (doc.msExitFullscreen) doc.msExitFullscreen();
+      }
+    } catch {/* ignore */}
+  };
 
   // Effect to generate the next 10 days for date selection
   useEffect(() => {
@@ -142,27 +189,33 @@ const TuftingActivityPage = () => {
     if (!booking.location || !booking.date) return;
     const branchMap: Record<string, string> = { downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore', hyderabad: 'hyderabad', bangalore: 'bangalore', vijayawada: 'vijayawada' };
     const branchId = branchMap[booking.location] || booking.location;
-    const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+  const apiBase = (import.meta as { env?: Record<string,string> }).env?.VITE_API_URL || '/api';
 
     (async () => {
       try {
         const res = await fetch(`${apiBase}/sessions/next-10-days/${branchId}?activity=tufting`);
         if (res.ok) {
-          const sessions = await res.json();
-          const forDate = sessions.filter((s: any) => s.date === booking.date && s.isActive).map((s: any) => ({
-            time: s.time,
-            label: s.label || s.time,
-            available: s.availableSeats,
-            total: s.totalSeats,
-            status: s.availableSeats <= 0 ? 'sold-out' : s.availableSeats <= Math.max(1, Math.round(s.totalSeats * 0.25)) ? 'filling-fast' : 'available',
-            type: s.type,
-            age: s.ageGroup
-          }));
+          const sessions: Array<{ date:string; isActive:boolean; time:string; label?:string; availableSeats:number; totalSeats:number; type:string; ageGroup:string; }> = await res.json();
+          const forDate = sessions
+            .filter((s) => s.date === booking.date && s.isActive)
+            .map((s) => ({
+              time: s.time,
+              label: s.label || s.time,
+              available: s.availableSeats,
+              total: s.totalSeats,
+              status: s.availableSeats <= 0
+                ? 'sold-out'
+                : s.availableSeats <= Math.max(1, Math.round(s.totalSeats * 0.25))
+                  ? 'filling-fast'
+                  : 'available',
+              type: s.type,
+              age: s.ageGroup
+            }));
           setTuftingSlots(forDate);
           return;
         }
-      } catch (e) {
-        // fall back below
+      } catch {
+        // fallback below if fetch fails
       }
       const saved = getSlotsForDate(branchId, booking.date);
       if (saved && Array.isArray(saved.tufting)) {
@@ -178,7 +231,7 @@ const TuftingActivityPage = () => {
   return (
   <div onClick={handleUserInteraction}>
       {/* Hero Section with Video Background */}
-       <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
+  <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
   <div className="absolute inset-0 z-10">
     <video
       ref={videoRef}
@@ -187,7 +240,8 @@ const TuftingActivityPage = () => {
       loop
       playsInline
       muted={!userInteracted || muted}
-      className="absolute w-auto min-w-full min-h-full max-w-none opacity-70"
+      className="absolute w-auto min-w-full min-h-full max-w-none opacity-70 cursor-pointer"
+      onClick={openFullscreen}
     />
 
     {/* 🔊 Mute/Unmute button */}
@@ -230,6 +284,30 @@ const TuftingActivityPage = () => {
    
 </section>
 
+      {videoFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
+          <div className="absolute inset-0">
+            <video
+              ref={fullscreenVideoRef}
+              src="https://res.cloudinary.com/dwb3vztcv/video/upload/v1755546792/TUFTING_LANSCAPE_pm5v9h.mp4"
+              autoPlay
+              loop
+              playsInline
+              muted={muted}
+              className="w-full h-full object-contain md:object-cover"
+              controls
+            />
+          </div>
+          <button
+            onClick={closeFullscreen}
+            className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-full font-semibold tracking-wide"
+            aria-label="Close fullscreen video"
+          >
+            CLOSE ✕
+          </button>
+        </div>
+      )}
+
       
 
       {/* What is Tufting Section with Mini Carousel */}
@@ -271,7 +349,7 @@ const TuftingActivityPage = () => {
         <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
           <div className="text-3xl mb-2">🧵</div>
           <h3 className="text-lg font-bold mb-1 text-gray-800">
-            Guided by Experts
+            Guided session 
           </h3>
           <div className="flex items-center gap-3 group">
   {/* Bullet */}
@@ -409,7 +487,7 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.location)}
             >
               <div className="flex flex-wrap gap-3">
-                {branches.filter(b => b.supportsTufting !== false).map((b) => ({ id: b.id, name: b.name.includes('Vijayawada') ? '🏬 Vijayawada' : b.name, detail: b.location })) .map((l) => {
+                {getActiveBranchesForActivity(branches, 'tufting').map((b) => ({ id: b.id, name: b.name.includes('Vijayawada') ? '🏬 Vijayawada' : b.name, detail: b.location })) .map((l) => {
                   const selected = booking.location === l.id;
                   return (
                     <button
@@ -608,7 +686,8 @@ const TuftingActivityPage = () => {
                         const branch = getBranchById(booking.location);
                         const order = await createRazorpayOrder(amount);
                         await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Artgram', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
-                          const bookingPayload: any = {
+                          interface BookingPayload { customerId:string; customerName:string; customerEmail:string; customerPhone:string; branchId:string; date:string; time:string; seats:number; totalAmount:number; paymentStatus:string; paymentIntentId:string; activity:'tufting'; packageType:string; sessionId?:string; eventId?:string }
+                          const bookingPayload: BookingPayload = {
                               customerId: user.id,
                               customerName: user.name,
                               customerEmail: user.email || '',

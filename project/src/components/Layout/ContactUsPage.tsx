@@ -73,8 +73,8 @@ const ContactUsPage = () => {
               name="Hyderabad"
               address="#NO.8-2-686/K/1 AND 8-2686/K/2, 5TH FLOOR, KIMTEE SQUARE, ROAD NO-12, BANJARA HILLS, CIRCLE 37, HYDERABAD 500034"
               phone="+917766012299"
-              openTime="9:00 AM"
-              closeTime="9:00 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("917766012299", "Hi, I am interested in ArtGram activities in Hyderabad!")}
             />
             <BranchCard
@@ -82,8 +82,8 @@ const ContactUsPage = () => {
               name="Bangalore"
               address="#418, 4TH FLOOR, JB ARCADE, 27TH MAIN ROAD, HSR LAYOUT, SECTOR 1, BENGALURU 560102"
               phone="+919216345672"
-              openTime="9:30 AM"
-              closeTime="9:30 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("919216345672", "Hi, I am interested in ArtGram activities in Bangalore!")}
             />
             <BranchCard
@@ -91,8 +91,8 @@ const ContactUsPage = () => {
               name="Vijayawada"
               address="#40-6-11, 2ND FLOOR, MEENAKSHI TOWERS HOTEL, MURALI FORTUNE ROAD, MOGALRAJPURAM, OPP. SUBWAY 520010"
               phone="+919686846100"
-              openTime="10:00 AM"
-              closeTime="8:00 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("919686846100", "Hi, I am interested in ArtGram activities in Vijayawada!")}
             />
              <BranchCard
@@ -101,8 +101,8 @@ const ContactUsPage = () => {
               address="Nilavoor Road
 Yelagiri Hills - 635853, Tamil Nadu"
               phone="+919566351199"
-               openTime="9:30 AM"
-              closeTime="9:30 PM"
+               openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("919566351199", "Hi, I am interested in ArtGram activities in Vijayawada!")}
             />
             <BranchCard
@@ -112,8 +112,8 @@ Yelagiri Hills - 635853, Tamil Nadu"
 Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hall, Trimurtee Nagar, Nagpur, Maharashtra 440022
 "
               phone="+91880630693"
-               openTime="9:30 AM"
-              closeTime="9:30 PM"
+               openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("918806320693", "Hi, I am interested in ArtGram activities in Vijayawada!")}
             />
           </div>
@@ -312,8 +312,8 @@ Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hal
                 <div>
                   <strong>Business Hours:</strong>
                   <ul className="list-disc list-inside mt-1 text-gray-700">
-                    <li>Mon - Sat: 10:00 AM - 8:00 PM</li>
-                    <li>Sun: 10:00 AM - 6:00 PM</li>
+                    <li>Mon - Sun: 11:00 AM - 7:00 PM</li>
+                   
                   </ul>
                 </div>
               </div>

@@ -51,16 +51,6 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: process.env.NODE_ENV === 'production'
-      ? 'Something went wrong!'
-      : err.message
-  });
-});
-
 app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/branches', branchRoutes);
@@ -69,6 +59,16 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/cart', cartRoutes);
+
+// Error handling middleware (must be after routes)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production'
+      ? 'Something went wrong!'
+      : err.message
+  });
+});
 
 const PORT = process.env.PORT || 3001;
 

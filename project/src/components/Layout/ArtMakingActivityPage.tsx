@@ -4,6 +4,28 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 export default function ArtMakingActivityPage() {
+  // Map art forms to cloud image URLs (replace with your actual URLs)
+  const artFormImages: Record<string, string> = {
+    "Mosaic art": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821152/Mosaic_art_oh4evo.jpg",
+    "Piggy banks": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821430/PIGGY_BANKS_w9qebo.jpg",
+    "Welcome boards": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756820965/Welcome_boards_qawqq6.jpg",
+    "Glass painting": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822002/GLASS_PAINTING_lakjo7.jpg",
+    "Rangoli stencils": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822880/RANGOLI_STENCILS_d2vawy.jpg",
+    "Letter arts": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821577/LETTER_ARTS_g7x9to.jpg",
+    "Spin art": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821436/SPIN_ART_gazxfz.jpg",
+    "Key holders": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756820335/key_gi1xur.jpg",
+    "Name boards": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821637/NAME_BOARDS_e7wpmm.jpg",
+    "Acrylic pour": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756985501/Acrylic_pour_w4zy8f.jpg",
+    "Block printing": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821959/BLOCK_PAINTING_w7azus.jpg",
+    "Clutch painting": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821988/CLUTCH_PAINTING_ompdoo.jpg",
+    "Mandalas": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822165/MANDALAS_qs7bte.jpg",
+    "Couple boards": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822113/COUPLE_BOARDS_fmehkr.jpg",
+    "Pichwai arts": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821918/PICHWAI_ddmqia.jpg",
+    "Madhubani": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821954/MADHUBANI_ly7yvd.jpg",
+    "Tissue art": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822143/TISSUE_ART_uw1kad.jpg",
+    "Home decor crafts": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756822687/HOME_DECOR_byfohg.jpg",
+    "Gods painting": "https://res.cloudinary.com/dwb3vztcv/image/upload/v1756821934/GODS_PAINTING_nfbrdc.jpg",
+  };
   const [isVisible, setIsVisible] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const location = useLocation();
@@ -313,17 +335,20 @@ export default function ArtMakingActivityPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {artFormsKids.map((art, index) => (
                 <div
                   key={art}
-                  className="group bg-gradient-to-br from-white to-gray-50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200"
+                  className="group bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200"
                 >
                   <div className="text-center">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full mx-auto mb-2 md:mb-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-white text-base md:text-lg">🎨</span>
-                    </div>
-                    <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors duration-300 text-sm md:text-base">
+                    <img
+                      src={artFormImages[art]}
+                      alt={art}
+                      className="w-32 h-32 object-cover rounded-xl mx-auto mb-4 border"
+                      onError={e => { e.currentTarget.src = '/placeholder.svg'; }}
+                    />
+                    <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors duration-300 text-base md:text-lg">
                       {art}
                     </h4>
                   </div>
@@ -343,17 +368,20 @@ export default function ArtMakingActivityPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {artFormsAdults.map((art, index) => (
                 <div
                   key={art}
-                  className="group bg-gradient-to-br from-white to-gray-50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200"
+                  className="group bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200"
                 >
                   <div className="text-center">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full mx-auto mb-2 md:mb-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-white text-base md:text-lg">🎨</span>
-                    </div>
-                    <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors duration-300 text-sm md:text-base">
+                    <img
+                      src={artFormImages[art]}
+                      alt={art}
+                      className="w-32 h-32 object-cover rounded-xl mx-auto mb-4 border"
+                      onError={e => { e.currentTarget.src = '/placeholder.svg'; }}
+                    />
+                    <h4 className="font-semibold text-gray-800 group-hover:text-purple-600 transition-colors duration-300 text-base md:text-lg">
                       {art}
                     </h4>
                   </div>

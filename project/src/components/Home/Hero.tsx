@@ -70,7 +70,7 @@ const HomePage = () => {
 
   return (
     <div style={{ fontFamily: "'Poppins', sans-serif" }}>
-      {/* Hero Section with Carousel */}
+      {/* Hero Section with Carousel 
       <header className="relative w-full max-w-6xl mx-auto mt-4 md:mt-8 px-4">
         <div className="relative w-full aspect-[4/3] md:aspect-video bg-white-200 rounded-xl md:rounded-2xl shadow-lg overflow-hidden">
           <img
@@ -80,7 +80,7 @@ const HomePage = () => {
             className="w-full h-full object-cover transition-opacity duration-500"
           />
           
-          {/* Carousel Navigation - Hidden on mobile, visible on larger screens */}
+        
           <button
             onClick={prevSlide}
             className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white rounded-full p-2 transition-all duration-300"
@@ -119,7 +119,7 @@ const HomePage = () => {
             </svg>
           </button>
 
-          {/* Mobile navigation - swipe area indicators */}
+          
           <div className="md:hidden absolute inset-0 flex justify-between items-center z-10">
             <div 
               className="h-full w-1/4 flex items-center justify-start opacity-0 active:opacity-20 active:bg-gray-400 transition-opacity"
@@ -131,7 +131,7 @@ const HomePage = () => {
             ></div>
           </div>
 
-          {/* Carousel Indicators */}
+          
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
             {carouselImages.map((_, index) => (
               <button
@@ -145,6 +145,7 @@ const HomePage = () => {
           </div>
         </div>
       </header>
+      */}
 
       {/* The rest of your components remain the same */}
       {/* About Section */}
@@ -169,13 +170,13 @@ const HomePage = () => {
             <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent" style={{color: '#F49BAB'}}>
               From Inspiration to Impact
             </h3>
-            <p className="mb-4 text-lg leading-relaxed text-gray-700">
+            <p className="mb-4 text-lg leading-relaxed text-gray-700  text-justify">
               Artgram began with a dream — to make art accessible, joyful, and
               part of everyday life. What started as a small initiative has
               grown into a vibrant community, nurturing creativity across all
               ages.
             </p>
-            <p className="text-lg leading-relaxed text-gray-700">
+            <p className="text-lg leading-relaxed text-gray-700  text-justify">
               We believe that art is not just a hobby but a way to communicate,
               heal, and evolve. Through our programs and events, we've touched
               hundreds of lives, empowering individuals to create fearlessly.
@@ -270,21 +271,21 @@ const HomePage = () => {
               </a>
             </div>
 
-            <div className="text-center lg:text-left">
-              <h2 className="text-4xl font-black  bg-clip-text text-transparent mb-6" style={{color: '#7F55B1'}}>
-                Events at Artgram
-              </h2>
-              <p className="mb-4 text-lg leading-relaxed text-gray-700">
-                Artgram is the ultimate destination for birthdays,
-                get-togethers, and corporate events. Whether you're planning a
-                cozy gathering or a grand celebration, we offer tailored
-                packages to suit every occasion.
-              </p>
-              <p className="text-lg font-semibold text-gray-800">
-                Whatever your vision, Artgram ensures a seamless, joyful
-                experience for you and your guests!
-              </p>
-            </div>
+           <div className="text-center lg:text-left">
+  <h2 className="text-4xl font-black  bg-clip-text text-transparent mb-6" style={{color: '#7F55B1'}}>
+    Events at Artgram
+  </h2>
+  <p className="mb-4 text-lg leading-relaxed text-gray-700 text-justify">
+    Artgram is the ultimate destination for birthdays,
+    get-togethers, and corporate events. Whether you're planning a
+    cozy gathering or a grand celebration, we offer tailored
+    packages to suit every occasion.
+  </p>
+  <p className="text-lg font-semibold text-gray-800 " >
+    Whatever your vision, Artgram ensures a seamless, joyful
+    experience for you and your guests!
+  </p>
+</div>
           </div>
           {/* Event Cards */}
           <div className="flex flex-wrap justify-center gap-4 pt-4">
@@ -438,8 +439,8 @@ const HomePage = () => {
               name="Hyderabad"
               address="#NO.8-2-686/K/1 AND 8-2686/K/2, 5TH FLOOR, KIMTEE SQUARE, ROAD NO-12, BANJARA HILLS, CIRCLE 37, HYDERABAD 500034"
               phone="+917766012299"
-              openTime="9:00 AM"
-              closeTime="9:00 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
              
               onWhatsApp={() => openWhatsApp("917766012299", "Hi, I am interested in ArtGram activities in Hyderabad!")}
             />
@@ -448,8 +449,8 @@ const HomePage = () => {
               name="Bangalore"
               address="#418, 4TH FLOOR, JB ARCADE, 27TH MAIN ROAD, HSR LAYOUT, SECTOR 1, BENGALURU 560102"
               phone="+919216345672"
-              openTime="9:30 AM"
-              closeTime="9:30 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("919216345672", "Hi, I am interested in ArtGram activities in Bangalore!")}
             />
             <BranchCard
@@ -457,8 +458,8 @@ const HomePage = () => {
               name="Vijayawada"
               address="#40-6-11, 2ND FLOOR, MEENAKSHI TOWERS HOTEL, MURALI FORTUNE ROAD, MOGALRAJPURAM, OPP. SUBWAY 520010"
               phone="+919686846100"
-              openTime="10:00 AM"
-              closeTime="8:00 PM"
+              openTime="11:00 AM"
+              closeTime="7:00 PM"
               onWhatsApp={() => openWhatsApp("919686846100", "Hi, I am interested in ArtGram activities in Vijayawada!")}
             />
        
@@ -468,20 +469,19 @@ const HomePage = () => {
               address="Nilavoor Road
 Yelagiri Hills - 635853, Tamil Nadu"
               phone="+919566351199"
-               openTime="9:30 AM"
-              closeTime="9:30 PM"
-              onWhatsApp={() => openWhatsApp("919566351199", "Hi, I am interested in ArtGram activities in Vijayawada!")}
+               openTime="11:00 AM"
+              closeTime="7:00 PM"
+              onWhatsApp={() => openWhatsApp("919566351199", "Hi, I am interested in ArtGram activities in Yelagiri!")}
             />
             <BranchCard
               img="https://im.whatshot.in/img/2020/Aug/istock-1139387103-cropped-1597665160.jpg"
               name="Nagpur"
-              address="Kidzee Planet
-Plot No. 18, Gajanan Mandir Road, Ring Road, Renghe Layout, Behind Bhagwaati Hall, Trimurtee Nagar, Nagpur, Maharashtra 440022
+              address="Plot no. 18, 2nd floor, above Planet Kidzee, Rhenge Layout, Gajanan Mandir Road, Trimurti Nagar, Nagpur 440022
 "
               phone="+91880630693"
-               openTime="9:30 AM"
-              closeTime="9:30 PM"
-              onWhatsApp={() => openWhatsApp("918806320693", "Hi, I am interested in ArtGram activities in Vijayawada!")}
+               openTime="11:00 AM"
+              closeTime="7:00 PM"
+              onWhatsApp={() => openWhatsApp("918806320693", "Hi, I am interested in ArtGram activities in Nagpur!")}
             />
           </div>
         </div>

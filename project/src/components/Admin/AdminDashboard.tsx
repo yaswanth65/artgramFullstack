@@ -6,10 +6,10 @@ import SalesAnalytics from './SalesAnalytics';
 import BranchManagement from './BranchManagement';
 import ManagerManagement from './ManagerManagement';
 import ProductManagement from './ProductManagement';
-import SessionManagement from './SessionManagement';
 import EnhancedSessionManagement from './EnhancedSessionManagement';
 import PaymentTracking from './PaymentTracking';
 import OrderManagement from './OrderManagement';
+import EnhancedQRVerification from '../Manager/EnhancedQRVerification';
 import { 
   Users,
   Edit,
@@ -26,7 +26,8 @@ import {
   X,
   Eye,
   EyeOff,
-  ShoppingCart
+  ShoppingCart,
+  QrCode
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -696,6 +697,7 @@ const AdminDashboard: React.FC = () => {
               { id: 'products', label: 'Products', icon: Package },
               { id: 'sessions', label: 'Sessions', icon: Calendar },
               { id: 'payments', label: 'Payments', icon: CreditCard },
+              { id: 'qr-verification', label: 'QR Verification', icon: QrCode },
               { id: 'cms', label: 'Content Management', icon: Settings },
               { id: 'branches', label: 'Branches', icon: MapPin },
               { id: 'managers', label: 'Managers', icon: Users }
@@ -724,6 +726,7 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'products' && <ProductManagement />}
           {activeTab === 'sessions' && <EnhancedSessionManagement />}
           {activeTab === 'payments' && <PaymentTracking />}
+          {activeTab === 'qr-verification' && <EnhancedQRVerification />}
           {activeTab === 'cms' && renderCMSManagement()}
           {activeTab === 'branches' && <BranchManagement />}
           {activeTab === 'managers' && <ManagerManagement />}

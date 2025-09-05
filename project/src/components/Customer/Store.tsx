@@ -145,37 +145,16 @@ const Store: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-slate-50 via-purple-50 to-rose-50 ">
       {/* Hero Header */}
-      <section className="relative  overflow-hidden" style={{backgroundColor: '#7F55B1'}}>
+      <section
+  className="relative overflow-hidden bg-no-repeat bg-cover bg-center"
+  style={{
+    backgroundImage: "url('https://res.cloudinary.com/dwb3vztcv/image/upload/v1756495970/Art_and_slime_DIY_KITS_1_ak4ljm.png')",height: '350px',
+    backgroundColor: "#7F55B1", // fallback color
+  }}
+>
         {/* Background Elements */}
-        <div className="absolute inset-0">
-          {[...Array(6)].map((_, i) => (
-            <div 
-              key={i}
-              className="absolute w-24 h-24 rounded-full bg-white/5 backdrop-blur-sm animate-pulse"
-              style={{
-                left: `${15 + (i * 15)}%`,
-                top: `${20 + (i % 2) * 40}%`,
-                animationDelay: `${i * 0.5}s`,
-                animationDuration: `${3 + i}s`
-              }}
-            />
-          ))}
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-          <div className={`text-center transition-all duration-1000 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}>
-            <div className="mb-4">
-              <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-white via-purple-200 to-rose-200 bg-clip-text text-transparent mb-1">
-                Art & Slime DIY Kits
-              </h1>
-              <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-pink-200 mx-auto rounded-full mb-6" />
-            </div>
-            <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed">
-              Curated premium kits and materials to bring your creativity to life at home!
-            </p>
-          </div>
-        </div>
+        
+        
       </section>
       {/* Main Content */}
       <section className="py-16">

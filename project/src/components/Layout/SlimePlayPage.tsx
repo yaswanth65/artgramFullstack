@@ -6,13 +6,16 @@ import { useData } from '../../contexts/DataContext';
 import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { createRazorpayOrder, initiatePayment } from '../../utils/razorpay';
+import { getActiveBranchesForActivity } from '../../utils/branchFilters';
 
 export default function SlimePlayPage() {
   const location = useLocation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fullscreenVideoRef = useRef<HTMLVideoElement | null>(null);
   const [muted, setMuted] = useState(true);
   const [userInteracted, setUserInteracted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
   type BookingData = {
     location: string | null;
     date: string | null;
@@ -93,12 +96,12 @@ export default function SlimePlayPage() {
       sessionId: undefined,
     },
   ]);
-  const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
+  const { getSlotsForDate, createBooking, slotsVersion, getBranchById, branches } = useData();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Map booking location codes to branch ids used in DataContext (stable ref)
-  const branchMapRef = useRef<Record<string, string>>({ downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore' });
+  const branchMapRef = useRef<Record<'downtown' | 'mall' | 'park', string>>({ downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore' });
 
   // Load dynamic slots from backend API when location or date changes
   useEffect(() => {
@@ -106,20 +109,22 @@ export default function SlimePlayPage() {
     
     const fetchSessions = async () => {
       try {
-  const branchId = bookingData.location ? (branchMapRef.current as any)[bookingData.location] : undefined;
-        const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+  const branchId = (bookingData.location && ['downtown','mall','park'].includes(bookingData.location))
+    ? branchMapRef.current[bookingData.location as 'downtown'|'mall'|'park']
+    : undefined;
+  const apiBase = (import.meta as { env?: Record<string,string> }).env?.VITE_API_URL || '/api';
         
         // Get next 10 days sessions for this branch
         const response = await fetch(`${apiBase}/sessions/next-10-days/${branchId}?activity=slime`);
         
         if (response.ok) {
-          const sessions = await response.json();
+          const sessions: Array<{ _id:string; date:string; isActive:boolean; time:string; label?:string; availableSeats:number; totalSeats:number; type:string; ageGroup:string; }> = await response.json();
           
           // Filter sessions for the selected date
-          const sessionsForDate = sessions.filter((s: any) => s.date === bookingData.date && s.isActive);
+          const sessionsForDate = sessions.filter((s) => s.date === bookingData.date && s.isActive);
           
           // Convert to the format expected by the frontend
-          const slots = sessionsForDate.map((s: any) => ({
+          const slots = sessionsForDate.map((s) => ({
             time: s.time,
             label: s.label || s.time,
             status: s.availableSeats <= 0 ? 'sold-out' : 
@@ -152,7 +157,9 @@ export default function SlimePlayPage() {
       } catch (error) {
         console.error('Error fetching sessions:', error);
         // Fallback to DataContext
-    const branchId = bookingData.location ? (branchMapRef.current as any)[bookingData.location] : undefined;
+    const branchId = (bookingData.location && ['downtown','mall','park'].includes(bookingData.location))
+      ? branchMapRef.current[bookingData.location as 'downtown'|'mall'|'park']
+      : undefined;
     const saved = branchId && bookingData.date ? getSlotsForDate(branchId, bookingData.date) : null;
         if (saved && saved.slime && Array.isArray(saved.slime)) {
           setTimeSlots(saved.slime.map(s => ({
@@ -215,6 +222,69 @@ export default function SlimePlayPage() {
     }
   }, [location.hash, location.pathname]);
 
+  // ESC to exit fullscreen & lock body scroll when fullscreen
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && videoFullscreen) {
+        closeFullscreen();
+      }
+    };
+    if (videoFullscreen) {
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', onKey);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [videoFullscreen]);
+
+  const openFullscreen = () => {
+    setVideoFullscreen(true);
+    setTimeout(() => {
+      const el = fullscreenVideoRef.current;
+      if (el) {
+        try {
+          // Attempt native fullscreen when supported
+          const anyEl = el as HTMLElement & {
+            webkitRequestFullscreen?: () => Promise<void> | void;
+            msRequestFullscreen?: () => Promise<void> | void;
+          };
+          if (anyEl.requestFullscreen) anyEl.requestFullscreen();
+          else if (anyEl.webkitRequestFullscreen) anyEl.webkitRequestFullscreen();
+          else if (anyEl.msRequestFullscreen) anyEl.msRequestFullscreen();
+      } catch {
+              // ignore fullscreen errors
+            }
+        el.play().catch(() => {});
+      }
+    }, 50);
+  };
+
+  const closeFullscreen = () => {
+    setVideoFullscreen(false);
+    const el = fullscreenVideoRef.current;
+    if (el) {
+      try { el.pause(); } catch {/* ignore pause error */}
+    }
+    // Exit native fullscreen if active
+    try {
+      const doc = document as Document & {
+        webkitExitFullscreen?: () => Promise<void> | void;
+        msExitFullscreen?: () => Promise<void> | void;
+      };
+      if (document.fullscreenElement) {
+        if (doc.exitFullscreen) doc.exitFullscreen();
+        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+        else if (doc.msExitFullscreen) doc.msExitFullscreen();
+      }
+  } catch {
+      // ignore native fullscreen exit errors
+    }
+  };
+
   // Booking flow functions
   const nextStep = (step: number) => setCurrentStep(step);
   const prevStep = (step: number) => setCurrentStep(step);
@@ -271,7 +341,10 @@ export default function SlimePlayPage() {
         // Find the selected session
         const selectedSlot = timeSlots.find(slot => slot.time === bookingData.time);
         
-        const bookingPayload: any = {
+        interface BookingPayload {
+          customerId: string; customerName: string; customerEmail: string; customerPhone: string; branchId: string; date?: string; time?: string; seats: number; totalAmount: number; paymentStatus: string; paymentIntentId: string; packageType: string; activity: 'slime'; sessionId?: string; eventId?: string;
+        }
+        const bookingPayload: BookingPayload = {
           customerId: user.id,
           customerName: user.name,
           customerEmail: (user as User).email || '',
@@ -342,7 +415,7 @@ export default function SlimePlayPage() {
       onClick={handleUserInteraction}
     >
       {/* Hero Section */}
-      <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
+  <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
   <div className="absolute inset-0 z-10">
     <video
       ref={videoRef}
@@ -351,11 +424,12 @@ export default function SlimePlayPage() {
       loop
       playsInline
       muted={!userInteracted || muted}
-      className="absolute w-auto min-w-full min-h-full max-w-none opacity-70"
+  className="absolute w-auto min-w-full min-h-full max-w-none opacity-70 cursor-pointer"
+  onClick={openFullscreen}
     />
 
     {/* 🔊 Mute/Unmute button */}
-    <button 
+  <button 
       onClick={() => {
         if (videoRef.current) {
           videoRef.current.muted = !videoRef.current.muted;
@@ -389,6 +463,30 @@ export default function SlimePlayPage() {
 
  
 </section>
+
+      {videoFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
+          <div className="absolute inset-0">
+            <video
+              ref={fullscreenVideoRef}
+              src="https://res.cloudinary.com/df2mieky2/video/upload/v1755029444/HYDERABAD_Slime_xa1l3x.mp4"
+              autoPlay
+              loop
+              playsInline
+              muted={muted}
+              className="w-full h-full object-contain md:object-cover"
+              controls
+            />
+          </div>
+          <button
+            onClick={closeFullscreen}
+            className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-full font-semibold tracking-wide"
+            aria-label="Close fullscreen video"
+          >
+            CLOSE ✕
+          </button>
+        </div>
+      )}
 
 
 
@@ -430,7 +528,7 @@ export default function SlimePlayPage() {
             </span>
           </h4>
           <p className="text-sm text-gray-600 leading-tight mt-1">
-            Touch different colours and textures, slime throwing, jumping, magnetic slime and much more!
+            Experience with different colours and textures, slime throwing, jumping, magnetic slime and much more!
           </p>
         </div>
       </div>
@@ -452,8 +550,7 @@ export default function SlimePlayPage() {
             </span>
           </h4>
           <p className="text-sm text-gray-600 leading-tight mt-1">
-            Hands-on experience for 8+ years. In some sessions, 8+ kits/adults can make their own slime. 
-            Not available in all sessions — please check while booking.
+            Live slime making by our staff. Approx 200ml of fresh slime will be given to each kid to take home after they customise it with charms, scent and colour.
           </p>
         </div>
       </div>
@@ -462,7 +559,7 @@ export default function SlimePlayPage() {
       {/* Slime Making */}
       <div className="bg-white rounded-2xl p-4 md:p-5 flex items-start gap-4">
         <img
-          src="https://res.cloudinary.com/df2mieky2/image/upload/v1754831672/DSC07792_xxy5w1.jpg"
+          src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1756750758/IMG_5433_k4ojb6.jpg"
           alt="Slime Making"
           className="w-14 h-14 md:w-16 md:h-16 object-cover rounded-lg border"
         />
@@ -674,12 +771,19 @@ export default function SlimePlayPage() {
               <div>
                 <h3 className="text-2xl font-bold  text-center mb-6" style={{color: '#7F55B1'}}>Step 1: Choose Location</h3>
                 <div className="flex gap-5 flex-wrap justify-center mb-5">
-                  {['downtown', 'mall', 'park'].map(id => (
-                    <div key={id} onClick={() => selectLocation(id)} className={`border-2 rounded-xl p-6 text-center cursor-pointer transition-all min-w-48 ${bookingData.location === id ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'border-gray-200 hover:border-green-400 hover:bg-green-50'}`}>
-                      <div className="font-bold text-lg mb-1">{getLocationName(id)}</div>
-                      {id === 'mall' && <div className="text-xs "style={{color: '#7F55B1'}}>No Session on Mondays</div>}
-                    </div>
-                  ))}
+                  {getActiveBranchesForActivity(branches, 'slime').map(branch => {
+                    // Map branch to legacy location format for backward compatibility
+                    const locationId = branch.location.toLowerCase().includes('hyderabad') ? 'downtown' : 
+                                     branch.location.toLowerCase().includes('vijayawada') ? 'mall' : 
+                                     branch.location.toLowerCase().includes('bangalore') ? 'park' : branch.id;
+                    
+                    return (
+                      <div key={locationId} onClick={() => selectLocation(locationId)} className={`border-2 rounded-xl p-6 text-center cursor-pointer transition-all min-w-48 ${bookingData.location === locationId ? 'border-green-400 bg-green-100 -translate-y-1 shadow-lg' : 'border-gray-200 hover:border-green-400 hover:bg-green-50'}`}>
+                        <div className="font-bold text-lg mb-1">{branch.location}</div>
+                        {!branch.allowMonday && <div className="text-xs" style={{color: '#7F55B1'}}>No Session on Mondays</div>}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex justify-end mt-6">
                   <button disabled={!bookingData.location} onClick={() => nextStep(2)} className="bg-green-400 text-black px-8 py-2 rounded-full font-semibold hover:bg-blue-500 hover:text-white transition-colors disabled:bg-gray-300">Next</button>

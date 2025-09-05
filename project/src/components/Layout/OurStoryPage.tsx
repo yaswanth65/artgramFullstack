@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import Hero from "../Home/Hero";
+import Ourstoryhero from "../Home/Ourstoryhero";
 
 const OurStoryPage = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -12,7 +14,7 @@ const OurStoryPage = () => {
     {
       year: "May 2023",
       title: "Artgram's Inception",
-      description: "ArtGram starts in Vijayawada",
+      description: "Artgram starts in Vijayawada",
       icon: "🌱",
       color: "from-green-400 to-emerald-500",
     },
@@ -110,100 +112,7 @@ const OurStoryPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50">
       {/* Hero Story Section */}
-           <section className="relative min-h-screen flex items-center bg-[#7F55B1] overflow-hidden">
-  {/* Animated Background Elements */}
-  <div className="absolute inset-0 overflow-hidden">
-    {/* Floating elements */}
-    {[...Array(12)].map((_, i) => (
-      <div 
-        key={i}
-        className="absolute text-2xl opacity-30 animate-float"
-        style={{
-          left: `${5 + (i * 8)}%`,
-          top: `${10 + (i % 5) * 20}%`,
-          animationDelay: `${i * 0.7}s`,
-          animationDuration: `${6 + (i % 3)}s`
-        }}
-      >
-        {i % 3 === 0 ? '🌸' : i % 3 === 1 ? '✨' : '⭐'}
-      </div>
-    ))}
-    
-    {/* Soft bubbles */}
-    {[...Array(8)].map((_, i) => (
-      <div 
-        key={`bubble-${i}`}
-        className="absolute rounded-full bg-[#9B7EBD]/40 backdrop-blur-sm animate-float"
-        style={{
-          width: `${40 + (i * 12)}px`,
-          height: `${40 + (i * 12)}px`,
-          left: `${80 - (i * 8)}%`,
-          top: `${15 + (i % 4) * 25}%`,
-          animationDelay: `${i * 0.5}s`,
-          animationDuration: `${8 + (i % 4)}s`
-        }}
-      />
-    ))}
-  </div>
-
-  <div className="relative z-10 max-w-7xl mx-auto px-6">
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      {/* Image with frame */}
-      <div className={`transition-all duration-1000 delay-300 ${
-        isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
-      }`}>
-        <div className="relative group pt-8">
-          {/* Frame effect */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-[#9B7EBD] to-[#F49BAB] rounded-3xl opacity-70 blur-md group-hover:opacity-90 transition-opacity duration-500" />
-          <div className="absolute -inset-2 bg-white/50 rounded-3xl backdrop-blur-sm" />
-          
-          <img
-            src="https://res.cloudinary.com/df2mieky2/image/upload/q_auto,f_auto,w_800/v1754830108/Screenshot_2025-08-10_181702_urntu7.png"
-            alt="A vibrant Artgram studio space with people creating art"
-            className="relative max-w-[400px] w-full mx-auto rounded-2xl shadow-lg transform group-hover:scale-105 transition-all duration-500 border-4 border-white"
-          />
-         </div>
-      </div>
-
-      {/* Content */}
-      <div className={`space-y-8 transition-all duration-1000 ${
-        isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
-      }`}>
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="text-4xl">👋</div>
-            <h1 className="text-5xl font-bold text-white mb-2">
-              Our Sweet Story
-            </h1>
-          </div>
-          
-          <div className="w-20 h-1 bg-gradient-to-r from-[#F49BAB] to-[#9B7EBD] rounded-full mb-6" />
-          
-          <h2 className="text-3xl font-semibold text-white leading-relaxed">
-            From a Spark of Passion <span className="text-[#F49BAB]">to a Creative Community</span>
-          </h2>
-        </div>
-        
-        <div className="space-y-6 text-lg text-white/90 leading-relaxed">
-          <p>
-            Artgram is the ultimate destination for birthdays, get-togethers, and corporate events. Whether you're planning a cozy gathering or a grand celebration, we offer tailored packages to suit every occasion. 
-          </p>
-          
-          <div className="flex items-start gap-3 p-4 bg-[#fdf7f6]/90 rounded-xl border border-[#9B7EBD]/40 text-[#7F55B1]">
-            <div className="text-2xl mt-1">🎉</div>
-            <p>
-              Enjoy a private room with captivating activities, exquisite food with a buffet setup, and stunning décor. With capacity to accommodate 60 people, Artgram perfectly suits your venue destination needs.
-            </p>
-          </div>
-          
-          <p>
-            From thoughtful return gifts to extra attractions like face painting, tattoos, or hair braiding, we have you covered. Whatever your vision, Artgram ensures a seamless, joyful experience for you and your guests!
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+          <Ourstoryhero/>
 
 
 
@@ -311,6 +220,7 @@ const OurStoryPage = () => {
             </div>
 
             <div className="relative z-10">
+              <h2 className="text-4xl font-bold mb-6">Interested in Franchise? </h2>
               <div className="text-6xl mb-6">🤝</div>
               <h2 className="text-4xl font-bold mb-6">
                 Become a Part of Our Story

@@ -3,6 +3,7 @@ import asyncHandler from '../utils/asyncHandler';
 import Booking from '../models/Booking';
 import Session from '../models/Session';
 import { protect } from '../middleware/auth';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get('/', protect, asyncHandler(async (req, res) => {
   }
 
   // Managers can see bookings for their own branch (or provided branchId if same)
-  if (user.role === 'manager' || user.role === 'branch_manager') {
+  if (user.role === 'branch_manager') {
     const managerBranchId = (user as any).branchId || branchId;
     if (!managerBranchId) {
       return res.status(400).json({ message: 'Branch ID required for manager' });
@@ -53,29 +54,32 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     seats,
     packageType,
     specialRequests,
-    qrCode: `QR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    paymentStatus: 'completed' // Assuming payment is handled before booking creation
+    qrCode: `QR-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`,
+    paymentStatus: 'pending' // Changed from 'completed' - should be set after payment confirmation
   };
 
   if (sessionId) {
-    // New session-based booking
-    const session = await Session.findById(sessionId);
+    // New session-based booking - use atomic update to prevent race conditions
+    const session = await Session.findOneAndUpdate(
+      { 
+        _id: sessionId, 
+        isActive: true,
+        availableSeats: { $gte: seats } 
+      },
+      { 
+        $inc: { 
+          bookedSeats: seats, 
+          availableSeats: -seats 
+        } 
+      },
+      { new: true }
+    );
+
     if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
+      return res.status(400).json({ 
+        message: 'Session not found, inactive, or not enough seats available' 
+      });
     }
-
-    if (!session.isActive) {
-      return res.status(400).json({ message: 'Session is not active' });
-    }
-
-    if (session.availableSeats < seats) {
-      return res.status(400).json({ message: 'Not enough seats available' });
-    }
-
-    // Update session seat count
-    session.bookedSeats += seats;
-    session.availableSeats = session.totalSeats - session.bookedSeats;
-    await session.save();
 
     bookingData = {
       ...bookingData,
@@ -110,7 +114,7 @@ router.patch('/:id/cancel', protect, asyncHandler(async (req, res) => {
   }
 
   // Check ownership (users can only cancel their own bookings, admins can cancel any)
-  if (req.user.role !== 'admin' && booking.customerId !== req.user._id.toString()) {
+  if (req.user.role !== 'admin' && booking.customerId?.toString() !== req.user._id.toString()) {
     return res.status(403).json({ message: 'Not authorized to cancel this booking' });
   }
 
@@ -122,14 +126,17 @@ router.patch('/:id/cancel', protect, asyncHandler(async (req, res) => {
   booking.status = 'cancelled';
   await booking.save();
 
-  // If booking has sessionId, update session seat count
+  // If booking has sessionId, update session seat count atomically
   if (booking.sessionId) {
-    const session = await Session.findById(booking.sessionId);
-    if (session) {
-      session.bookedSeats = Math.max(0, session.bookedSeats - (booking.seats || 1));
-      session.availableSeats = session.totalSeats - session.bookedSeats;
-      await session.save();
-    }
+    await Session.findByIdAndUpdate(
+      booking.sessionId,
+      { 
+        $inc: { 
+          bookedSeats: -(booking.seats || 1), 
+          availableSeats: booking.seats || 1 
+        } 
+      }
+    );
   }
 
   res.json({ message: 'Booking cancelled successfully', booking });

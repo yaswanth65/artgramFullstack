@@ -21,7 +21,8 @@ const Header: React.FC = () => {
 
   // simple class helpers
   // make nav option text use the requested purple color and a slightly darker hover
-  const linkBase = 'text-black hover:text-[#6B4396] px-3 py-2 rounded-md';
+  // Added uppercase so all nav options display in capital letters
+  const linkBase = 'text-black hover:text-[#6B4396] px-3 py-2 rounded-md uppercase';
   const activeLink = 'text-[#7F55B1] font-semibold';
   const isActive = (paths: string[]) => paths.includes(location.pathname);
 
@@ -43,8 +44,8 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('click', handler);
   }, []);
 
-  // Show cart icon only when user is logged in
-  const showCartIcon = Boolean(user);
+  // Show cart icon for all users (guest + logged-in)
+  const showCartIcon = true;
   const cartCount = totalItems;
 
   return (
@@ -55,13 +56,14 @@ const Header: React.FC = () => {
     <div className="flex items-center justify-between h-16 sm:h-[86px]">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center no-underline">
-      <img src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755159745/ARTGRAM_LOGO_zdhftc.png" alt="ArtGram Logo" className="h-10 sm:h-14 w-auto" />
-      <span className="ml-3 text-2xl font-bold hidden sm:inline" style={ {color: '#7F55B1'}}>ArtGram</span>
+              <img src="https://res.cloudinary.com/dwb3vztcv/image/upload/v1755159745/ARTGRAM_LOGO_zdhftc.png" alt="ArtGram Logo" className="h-10 sm:h-14 w-auto" />
+              {/* Show name also on mobile (slightly smaller) */}
+              <span className="ml-3 font-bold text-xl sm:text-2xl" style={{ color: '#7F55B1' }}>Artgram</span>
             </Link>
             
           </div>
           <div className="hidden md:flex md:items-center md:gap-4">
-            <Link to="/" className={`${linkBase} ${isActive(['/', '/index.html']) ? activeLink : ''}`}>Home</Link>
+            <Link to="/" className={`${linkBase} ${isActive(['/', '/index.html']) ? activeLink : ''}`}>HOME</Link>
             <div className="relative" ref={desktopDropdownRef}>
               <button
                 type="button"
@@ -70,7 +72,7 @@ const Header: React.FC = () => {
                 onClick={() => setDesktopDropdownOpen((v) => !v)}
                 className={`${linkBase} inline-flex items-center`}
               >
-                Activities
+                ACTIVITIES
                 <svg className="ml-1 h-4 w-4 transition-transform" style={{ transform: desktopDropdownOpen ? 'rotate(180deg)' : 'none' }} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 12a1 1 0 0 1-.707-.293l-4-4A1 1 0 1 1 6.707 6.293L10 9.586l3.293-3.293A1 1 0 1 1 14.707 7.707l-4 4A1 1 0 0 1 10 12z" clipRule="evenodd" />
                 </svg>
@@ -104,38 +106,38 @@ const Header: React.FC = () => {
 </div>
               )}
             </div>
-            <Link to="/events" className={`${linkBase} ${isActive(['/events']) ? activeLink : ''}`}>Events</Link>
-            <Link to="/store" className={`${linkBase} ${isActive(['/store']) ? activeLink : ''}`}>Store</Link>
-            <Link to="/ourstory" className={`${linkBase} ${isActive(['/ourstory']) ? activeLink : ''}`}>Our Story</Link>
-            <Link to="/contact" className={`${linkBase} ${isActive(['/contact']) ? activeLink : ''}`}>Contact</Link>
+            <Link to="/events" className={`${linkBase} ${isActive(['/events']) ? activeLink : ''}`}>EVENTS</Link>
+            <Link to="/store" className={`${linkBase} ${isActive(['/store']) ? activeLink : ''}`}>STORE</Link>
+            <Link to="/ourstory" className={`${linkBase} ${isActive(['/ourstory']) ? activeLink : ''}`}>OUR STORY</Link>
+            <Link to="/contact" className={`${linkBase} ${isActive(['/contact']) ? activeLink : ''}`}>CONTACT</Link>
           </div>
 
           <div className="flex items-center gap-3">
-      {/* small-screen icons moved here so logo stays visible */}
-      <div className="flex items-center gap-2 md:hidden">
-        <button aria-label="Open menu" onClick={() => setOpen((v) => !v)} className="p-1 rounded-md text-[#7F55B1] hover:bg-gray-100 focus:outline-none">
-          <span className="text-xl leading-none">⋮</span>
-        </button>
-        <button aria-label="Open menu" onClick={() => setOpen(true)} className="p-1 rounded-md text-[#7F55B1] hover:bg-gray-100 focus:outline-none font-semibold text-sm">
-          Aa
-        </button>
-      </div>
 
-      {/* Cart Icon - Only show when user is logged in */}
+      {/* Cart Icon - visible for guests and logged users */}
       {showCartIcon && (
-        <Link to="/cart" className="ml-0 sm:ml-4 inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
-          <span className="ml-2 text-gray-600">🛒</span>
-          {!isLoading && cartCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center bg-rose-600 text-white text-xs px-2 py-1 rounded-full">
-              {cartCount}
+        <Link to="/cart" className="ml-0 sm:ml-2 inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md text-slate-900 hover:text-rose-600 no-underline">
+          <span className="text-lg" role="img" aria-label="cart">🛒</span>
+          {!isLoading && (
+            <span className="text-xs font-medium text-gray-700">
+              {cartCount > 0 ? cartCount : 0}
             </span>
           )}
         </Link>
       )}
 
             {!user && (
-  <Link to="/login" className="ml-2 inline-block rounded-full text-white px-3 py-1 text-sm sm:px-4 sm:py-2 font-semibold transition-all no-underline bg-[#7F55B1] hover:bg-[#6B4396]">Login</Link>
-)}
+              <Link to="/login" className="ml-2 inline-block rounded-full text-white px-3 py-1 text-sm sm:px-4 sm:py-2 font-semibold transition-all no-underline bg-[#7F55B1] hover:bg-[#6B4396]">LOGIN</Link>
+            )}
+
+            {/* Mobile menu toggle moved to right side (after Login / Dashboard) */}
+            <button
+              aria-label="Toggle menu"
+              onClick={() => setOpen(v => !v)}
+              className="md:hidden ml-1 inline-flex items-center justify-center p-2 rounded-md text-[#7F55B1] hover:bg-gray-100 focus:outline-none"
+            >
+              <span className="text-2xl leading-none">⋮</span>
+            </button>
 
 
             {user && (
@@ -153,7 +155,7 @@ const Header: React.FC = () => {
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#6B4396')}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#7F55B1')}
     >
-      Dashboard
+  DASHBOARD
     </Link>
 
     <button
@@ -164,7 +166,7 @@ const Header: React.FC = () => {
       className="ml-2 inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 text-gray-700 px-3 py-2 font-semibold hover:bg-gray-100 transition-all"
     >
       <LogOut className="w-4 h-4" />
-      Logout
+  <span className="uppercase">LOGOUT</span>
     </button>
   </>
 )}
@@ -177,7 +179,7 @@ const Header: React.FC = () => {
       {open && (
         <div id="mobile-menu" className="md:hidden border-t border-gray-100 bg-white">
           <div className="px-4 py-3 space-y-1">
-            <Link to="/" className={`${linkBase} block ${isActive(['/', '/index.html']) ? activeLink : ''}`}>Home</Link>
+            <Link to="/" className={`${linkBase} block ${isActive(['/', '/index.html']) ? activeLink : ''}`}>HOME</Link>
             <div className="pt-2">
               <button
                 aria-haspopup="true"
@@ -186,7 +188,7 @@ const Header: React.FC = () => {
                 onClick={() => setMobileDropdownOpen((v) => !v)}
                 className={`${linkBase} inline-flex items-center w-full justify-between`}
               >
-                Activities
+                ACTIVITIES
                 <svg className="ml-1 h-4 w-4 transition-transform" style={{ transform: mobileDropdownOpen ? 'rotate(180deg)' : 'none' }} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 12a1 1 0 0 1-.707-.293l-4-4A1 1 0 1 1 6.707 6.293L10 9.586l3.293-3.293A1 1 0 1 1 14.707 7.707l-4 4A1 1 0 0 1 10 12z" clipRule="evenodd" />
                 </svg>
@@ -199,16 +201,49 @@ const Header: React.FC = () => {
                 </div>
               )}
             </div>
-            <Link to="/events" className={`${linkBase} block ${isActive(['/events']) ? activeLink : ''}`}>Events</Link>
-            <Link to="/store" className={`${linkBase} block ${isActive(['/store']) ? activeLink : ''}`}>Store</Link>
-            <Link to="/ourstory" className={`${linkBase} block ${isActive(['/ourstory']) ? activeLink : ''}`}>Our Story</Link>
-            <Link to="/contact" className={`${linkBase} block ${isActive(['/contact']) ? activeLink : ''}`}>Contact</Link>
+            <Link to="/events" className={`${linkBase} block ${isActive(['/events']) ? activeLink : ''}`}>EVENTS</Link>
+            <Link to="/store" className={`${linkBase} block ${isActive(['/store']) ? activeLink : ''}`}>STORE</Link>
+            <Link to="/ourstory" className={`${linkBase} block ${isActive(['/ourstory']) ? activeLink : ''}`}>OUR STORY</Link>
+            <Link to="/contact" className={`${linkBase} block ${isActive(['/contact']) ? activeLink : ''}`}>CONTACT</Link>
+
+            {/* Dashboard / Auth Actions */}
+            {!user && (
+              <Link to="/login" className={`${linkBase} block ${isActive(['/login']) ? activeLink : ''}`}>LOGIN</Link>
+            )}
+            {user && (
+              <>
+                <Link
+                  to={user.role === 'admin' ? '/admin' : user.role === 'branch_manager' ? '/manager' : '/dashboard'}
+                  className={`${linkBase} block ${isActive(['/admin','/manager','/dashboard']) ? activeLink : ''}`}
+                >
+                  DASHBOARD
+                </Link>
+                {/* Quick role specific shortcuts */}
+                {user.role === 'admin' && (
+                  <div className="mt-2 pl-3 space-y-1 text-sm border-l border-purple-200">
+                    <Link to="/admin#sessions" className="block hover:text-[#6B4396] no-underline">Manage Sessions</Link>
+                    <Link to="/admin#products" className="block hover:text-[#6B4396] no-underline">Products</Link>
+                    <Link to="/admin#analytics" className="block hover:text-[#6B4396] no-underline">Analytics</Link>
+                  </div>
+                )}
+                {user.role === 'branch_manager' && (
+                  <div className="mt-2 pl-3 space-y-1 text-sm border-l border-purple-200">
+                    <Link to="/manager#sessions" className="block hover:text-[#6B4396] no-underline">Sessions</Link>
+                    <Link to="/manager#qr" className="block hover:text-[#6B4396] no-underline">QR Verify</Link>
+                  </div>
+                )}
+                <button
+                  onClick={() => { logout(); setOpen(false); navigate('/'); }}
+                  className="mt-3 w-full text-left px-3 py-2 rounded-md bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium"
+                ><span className="uppercase">LOGOUT</span></button>
+              </>
+            )}
             
-            {/* Mobile Cart Link - Only show when user is logged in */}
+            {/* Mobile Cart Link */}
             {showCartIcon && (
               <div className="mt-3">
                 <Link to="/cart" className="block text-sm text-gray-700">
-                  Cart {!isLoading && cartCount > 0 && <span className="ml-1 text-xs text-red-600">({cartCount})</span>}
+                  CART {!isLoading && <span className="ml-1 text-xs text-red-600">({cartCount > 0 ? cartCount : 0})</span>}
                 </Link>
               </div>
             )}

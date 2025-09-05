@@ -35,6 +35,10 @@ export interface Branch {
   // which activities this branch runs
   supportsSlime?: boolean;
   supportsTufting?: boolean;
+  // New activity permissions
+  allowSlime?: boolean;
+  allowTufting?: boolean;
+  allowMonday?: boolean;
   managerId: string;
   isActive: boolean;
   createdAt: string;
