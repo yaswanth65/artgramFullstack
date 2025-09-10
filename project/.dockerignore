@@ -1,0 +1,64 @@
+# Node modules will be installed in container
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs (will be built in container)
+dist
+build
+out
+lib
+coverage
+
+# Documentation
+README.md
+TESTING_GUIDE.md
+codebase.md
+
+# Test files
+*.test.ts
+*.test.js
+test-*
+scripts/
+public/test-auth.html
+
+# Development Docker files
+docker-compose*.yml
+Dockerfile.dev
+
+# Cache directories
+.cache
+.parcel-cache
+.next
+
+# Logs
+logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

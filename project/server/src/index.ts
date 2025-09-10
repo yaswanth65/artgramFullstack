@@ -5,6 +5,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import authRoutes from './routes/auth';
 import branchRoutes from './routes/branches';
 import orderRoutes from './routes/orders';
@@ -19,12 +20,21 @@ dotenv.config();
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
 
 // CORS configuration - restrict to specific origins in production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://your-production-domain.com', 'https://craft-factory.com']
+    ? (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : true)
     : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true,
   optionsSuccessStatus: 200
@@ -62,6 +72,17 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files
+  app.use(express.static(path.join(__dirname, '../public')));
+  
+  // Handle React Router - send all non-API requests to index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+  });
+}
+
 // Error handling middleware (must be after routes)
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -72,7 +93,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
 mongoose.connect(process.env.MONGO_URI || '')
   .then(() => {
