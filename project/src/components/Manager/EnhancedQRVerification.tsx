@@ -75,47 +75,67 @@ const EnhancedQRVerification: React.FC = () => {
       filtered = filtered.filter(booking => !booking.isVerified);
     }
 
-    // Date filter
+    // Date filter - consider booking.verifiedAt when present, otherwise fall back to booking.date
+    const parseBookingDate = (booking: any): Date | null => {
+      if (booking.verifiedAt) {
+        const d = new Date(booking.verifiedAt);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      if (booking.date) {
+        // booking.date may be YYYY-MM-DD or a full string; try to create a Date
+        const d = new Date(booking.date);
+        if (!isNaN(d.getTime())) return d;
+        // try adding time portion if only date present
+        const d2 = new Date(`${booking.date}T00:00:00`);
+        return isNaN(d2.getTime()) ? null : d2;
+      }
+      return null;
+    };
+
     if (dateFilter !== 'all') {
       if (dateFilter === 'custom' && selectedDate) {
         filtered = filtered.filter(booking => {
-          if (booking.verifiedAt) {
-            return new Date(booking.verifiedAt).toISOString().split('T')[0] === selectedDate;
-          }
-          return false;
+          const bd = parseBookingDate(booking);
+          if (!bd) return false;
+          return bd.toISOString().split('T')[0] === selectedDate;
         });
       } else {
         const now = new Date();
-        const filterDate = new Date();
-        
         switch (dateFilter) {
-          case 'today':
+          case 'today': {
+            const start = new Date();
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 1);
+            filtered = filtered.filter(booking => {
+              const bd = parseBookingDate(booking);
+              if (!bd) return false;
+              return bd >= start && bd < end;
+            });
+            break;
+          }
+          case 'week': {
+            const filterDate = new Date();
+            filterDate.setDate(now.getDate() - 7);
             filterDate.setHours(0, 0, 0, 0);
             filtered = filtered.filter(booking => {
-              if (booking.verifiedAt) {
-                return new Date(booking.verifiedAt) >= filterDate;
-              }
-              return false;
+              const bd = parseBookingDate(booking);
+              if (!bd) return false;
+              return bd >= filterDate;
             });
             break;
-          case 'week':
-            filterDate.setDate(now.getDate() - 7);
-            filtered = filtered.filter(booking => {
-              if (booking.verifiedAt) {
-                return new Date(booking.verifiedAt) >= filterDate;
-              }
-              return false;
-            });
-            break;
-          case 'month':
+          }
+          case 'month': {
+            const filterDate = new Date();
             filterDate.setMonth(now.getMonth() - 1);
+            filterDate.setHours(0, 0, 0, 0);
             filtered = filtered.filter(booking => {
-              if (booking.verifiedAt) {
-                return new Date(booking.verifiedAt) >= filterDate;
-              }
-              return false;
+              const bd = parseBookingDate(booking);
+              if (!bd) return false;
+              return bd >= filterDate;
             });
             break;
+          }
         }
       }
     }

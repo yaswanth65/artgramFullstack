@@ -34,7 +34,7 @@ interface DataContextType {
   updateCMSContent: (content: CMSContent) => Promise<void>;
   deleteCMSContent: (id: string) => Promise<void>;
   addCMSContent: (content: Omit<CMSContent, 'id' | 'updatedAt'>) => Promise<void>;
-  addManager: (manager: Omit<User, 'id' | 'createdAt'>) => Promise<void>;
+  addManager: (manager: Omit<User, 'id' | 'createdAt'> & { password?: string; temporaryPassword?: string }) => Promise<void>;
   updateManager: (manager: User) => Promise<void>;
   deleteManager: (id: string) => Promise<void>;
   addEvent: (event: Omit<Event, 'id' | 'createdAt'>) => Promise<void>;
@@ -80,6 +80,9 @@ export const useData = () => {
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // branches are defined below as branchesState
   const { user, loading: authLoading } = useAuth();
+
+  // API base used by frontend to call the server
+  const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
 
   const [events, setEvents] = useState<Event[]>([
     {
@@ -182,32 +185,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
 
-  const [managers, setManagers] = useState<User[]>([
-    {
-      id: '10',
-  email: 'hyderabad@artgram.com',
-      name: 'Hyderabad Branch Manager',
-      role: 'branch_manager',
-      branchId: 'hyderabad',
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '11',
-  email: 'vijayawada@artgram.com',
-      name: 'Vijayawada Branch Manager',
-      role: 'branch_manager',
-      branchId: 'vijayawada',
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '12',
-  email: 'bangalore@artgram.com',
-      name: 'Bangalore Branch Manager',
-      role: 'branch_manager',
-      branchId: 'bangalore',
-      createdAt: '2024-01-01T00:00:00Z'
-    }
-  ]);
+  const [managers, setManagers] = useState<User[]>([]);
 
   const [cmsContent, setCmsContent] = useState<CMSContent[]>([
     {
@@ -462,13 +440,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCmsContent(prev => prev.filter(c => c.id !== id));
   };
 
-  const addManager = async (managerData: Omit<User, 'id' | 'createdAt'>) => {
-    const newManager: User = {
-      ...managerData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    setManagers(prev => [...prev, newManager]);
+  const addManager = async (managerData: Omit<User, 'id' | 'createdAt'> & { password?: string; temporaryPassword?: string }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiBase}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          name: managerData.name,
+          email: managerData.email,
+          password: managerData.password || managerData.temporaryPassword || 'TempPass123!',
+          role: 'branch_manager',
+          branchId: managerData.branchId,
+          phone: managerData.phone,
+          address: managerData.address
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const newManager: User = {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+          branchId: result.user.branchId,
+          phone: result.user.phone,
+          address: result.user.address,
+          createdAt: result.user.createdAt
+        };
+        setManagers(prev => [...prev, newManager]);
+        console.log('✅ Manager created successfully:', newManager);
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to create manager:', error);
+        throw new Error(error.message || 'Failed to create manager');
+      }
+    } catch (error) {
+      console.error('Error creating manager:', error);
+      // Fallback to local state only
+      const newManager: User = {
+        ...managerData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setManagers(prev => [...prev, newManager]);
+      throw error;
+    }
   };
 
   const updateManager = async (manager: User) => {
@@ -650,6 +671,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('❌ Error fetching branches:', error);
+      }
+    })();
+
+    // Managers - fetch from backend (admin only). Use local fallback when offline.
+    (async () => {
+      try {
+        console.log('👥 Fetching managers from backend...');
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(`${apiBase}/users?role=branch_manager`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          console.log('✅ Managers fetched:', data?.length || 0);
+          const mapped = data.map((u: any) => ({
+            id: u._id || u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            branchId: typeof u.branchId === 'object' && u.branchId?._id ? u.branchId._id : (u.branchId || ''),
+            createdAt: u.createdAt
+          }));
+          setManagers(mapped);
+        } else {
+          console.warn('⚠️ Failed to fetch managers, using local fallback');
+          // fallback to demo managers if available
+          setManagers(prev => prev.length ? prev : [
+            { id: '10', email: 'hyderabad@artgram.com', name: 'Hyderabad Branch Manager', role: 'branch_manager', branchId: 'hyderabad', createdAt: '2024-01-01T00:00:00Z' },
+            { id: '11', email: 'vijayawada@artgram.com', name: 'Vijayawada Branch Manager', role: 'branch_manager', branchId: 'vijayawada', createdAt: '2024-01-01T00:00:00Z' },
+            { id: '12', email: 'bangalore@artgram.com', name: 'Bangalore Branch Manager', role: 'branch_manager', branchId: 'bangalore', createdAt: '2024-01-01T00:00:00Z' }
+          ]);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching managers:', error);
+        setManagers([
+          { id: '10', email: 'hyderabad@artgram.com', name: 'Hyderabad Branch Manager', role: 'branch_manager', branchId: 'hyderabad', createdAt: '2024-01-01T00:00:00Z' },
+          { id: '11', email: 'vijayawada@artgram.com', name: 'Vijayawada Branch Manager', role: 'branch_manager', branchId: 'vijayawada', createdAt: '2024-01-01T00:00:00Z' },
+          { id: '12', email: 'bangalore@artgram.com', name: 'Bangalore Branch Manager', role: 'branch_manager', branchId: 'bangalore', createdAt: '2024-01-01T00:00:00Z' }
+        ]);
       }
     })();
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { sendManagerInvite, generateTemporaryPassword } from '../../utils/emailService';
+import { sendManagerInvite } from '../../utils/emailService';
 import { 
   Users, 
   Mail, 
@@ -30,42 +30,79 @@ const ManagerManagement: React.FC = () => {
   const [newManager, setNewManager] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'branch_manager' as const,
     branchId: ''
   });
 
   const handleAddManager = async () => {
-    if (newManager.name && newManager.email && newManager.branchId) {
-      // Generate temporary password
-      const temporaryPassword = generateTemporaryPassword();
-      
-      // Add manager with temporary password
-      const managerWithPassword = {
-        ...newManager,
-        temporaryPassword,
-        mustChangePassword: true
-      };
-      
-      await addManager(managerWithPassword);
-      
-      // Send invitation email
-      const branch = branches.find(b => b.id === newManager.branchId);
-      const emailSent = await sendManagerInvite({
-        name: newManager.name,
-        email: newManager.email,
-        branchName: branch?.name || 'Unknown Branch',
-        temporaryPassword,
-        loginUrl: `${window.location.origin}/login`
-      });
-      
-      if (emailSent) {
-        // Show success notification
+    if (newManager.name && newManager.email && newManager.password && newManager.branchId) {
+      try {
+        // Add manager with provided password
+        await addManager(newManager);
+        
+        // Send invitation email
+        const branch = branches.find(b => b.id === newManager.branchId);
+        const emailSent = await sendManagerInvite({
+          name: newManager.name,
+          email: newManager.email,
+          branchName: branch?.name || 'Unknown Branch',
+          temporaryPassword: newManager.password,
+          loginUrl: `${window.location.origin}/login`
+        });
+        
+        if (emailSent) {
+          // Show success notification
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-family: Arial, sans-serif;
+            max-width: 350px;
+          `;
+          notification.innerHTML = `
+            <div style="display: flex; align-items: center;">
+              <span style="margin-right: 10px;">✅</span>
+              <div>
+                <div style="font-weight: bold;">Manager Added Successfully!</div>
+                <div style="font-size: 14px; opacity: 0.9;">Login credentials sent to ${newManager.email}</div>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 5000);
+        }
+        
+        setNewManager({
+          name: '',
+          email: '',
+          password: '',
+          role: 'branch_manager',
+          branchId: ''
+        });
+        setShowAddModal(false);
+      } catch (error) {
+        console.error('Error adding manager:', error);
+        // Show error notification
         const notification = document.createElement('div');
         notification.style.cssText = `
           position: fixed;
           top: 20px;
           right: 20px;
-          background: #10b981;
+          background: #ef4444;
           color: white;
           padding: 15px 20px;
           border-radius: 8px;
@@ -76,10 +113,10 @@ const ManagerManagement: React.FC = () => {
         `;
         notification.innerHTML = `
           <div style="display: flex; align-items: center;">
-            <span style="margin-right: 10px;">✅</span>
+            <span style="margin-right: 10px;">❌</span>
             <div>
-              <div style="font-weight: bold;">Manager Added Successfully!</div>
-              <div style="font-size: 14px; opacity: 0.9;">Login credentials sent to ${newManager.email}</div>
+              <div style="font-weight: bold;">Failed to Add Manager</div>
+              <div style="font-size: 14px; opacity: 0.9;">${error instanceof Error ? error.message : 'Please try again'}</div>
             </div>
           </div>
         `;
@@ -92,14 +129,6 @@ const ManagerManagement: React.FC = () => {
           }
         }, 5000);
       }
-      
-      setNewManager({
-        name: '',
-        email: '',
-        role: 'branch_manager',
-        branchId: ''
-      });
-      setShowAddModal(false);
     }
   };
 
@@ -233,6 +262,19 @@ const ManagerManagement: React.FC = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="manager@artgram.com"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                <input
+                  type="password"
+                  value={newManager.password}
+                  onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter secure password"
+                  minLength={6}
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
               </div>
 
               <div>

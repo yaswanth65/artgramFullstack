@@ -95,8 +95,12 @@ const ManagerSessionManagement: React.FC = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       console.log(`🔄 Manager fetching sessions for branch ${branchId}, activity ${selectedActivity}`);
+      
+      // Use the same endpoint as admin for consistency and live updates
+      const startDate = next10Days[0];
+      const endDate = next10Days[next10Days.length - 1];
       const response = await fetch(
-        `${apiBase}/sessions/next-10-days/${branchId}?activity=${selectedActivity}`,
+        `${apiBase}/sessions/branch/${branchId}?startDate=${startDate}&endDate=${endDate}&activity=${selectedActivity}`,
         { headers }
       );
       
@@ -136,11 +140,39 @@ const ManagerSessionManagement: React.FC = () => {
         }
       } else {
         console.error('❌ Failed to fetch sessions:', response.status, response.statusText);
-        showToastMessage('Failed to fetch sessions');
+        
+        // Try to load from cache if backend fails
+        try {
+          const cached = localStorage.getItem(`manager_sessions_${branchId}_${selectedActivity}`);
+          if (cached) {
+            const cachedData = JSON.parse(cached);
+            setSessions(cachedData);
+            showToastMessage('Loaded cached sessions data');
+            console.log('📦 Loaded sessions from cache');
+          } else {
+            showToastMessage('Failed to fetch sessions and no cached data available');
+          }
+        } catch (error) {
+          showToastMessage('Failed to fetch sessions');
+        }
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);
-      showToastMessage('Network error fetching sessions');
+      
+      // Try to load from cache on network error
+      try {
+        const cached = localStorage.getItem(`manager_sessions_${branchId}_${selectedActivity}`);
+        if (cached) {
+          const cachedData = JSON.parse(cached);
+          setSessions(cachedData);
+          showToastMessage('Network error - loaded cached sessions');
+          console.log('📦 Network error, loaded sessions from cache');
+        } else {
+          showToastMessage('Network error and no cached data available');
+        }
+      } catch (cacheError) {
+        showToastMessage('Error fetching sessions');
+      }
     } finally {
       setLoading(false);
     }
@@ -263,6 +295,18 @@ const ManagerSessionManagement: React.FC = () => {
     if (branchId) {
       fetchNext10DaysSessions();
     }
+  }, [branchId, selectedActivity]);
+
+  // Auto-refresh sessions every 30 seconds for live updates
+  useEffect(() => {
+    if (!branchId) return;
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing manager sessions...');
+      fetchNext10DaysSessions();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
   }, [branchId, selectedActivity]);
 
   useEffect(() => {

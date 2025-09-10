@@ -2,12 +2,13 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useData } from '../../contexts/DataContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { createRazorpayOrder, initiatePayment } from '../../utils/razorpay';
-import { getActiveBranchesForActivity, getBranchLocationOptions } from '../../utils/branchFilters';
-
-
+import { useData } from "../../contexts/DataContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { createRazorpayOrder, initiatePayment } from "../../utils/razorpay";
+import {
+  getActiveBranchesForActivity,
+  getBranchLocationOptions,
+} from "../../utils/branchFilters";
 
 // Define gallery images to be used in the carousel and the gallery section
 const galleryImages = [
@@ -20,12 +21,21 @@ const galleryImages = [
 ];
 
 const TuftingActivityPage = () => {
-  // The booking process now starts with the location step.
-  const [step, setStep] = useState("location");
+  // The booking process now starts with the date step.
+  const [step, setStep] = useState("date");
   // State for storing available dates
   const [dates, setDates] = useState<Date[]>([]);
   // Types
-  type TuftingSlot = { time: string; label?: string; available?: number; total?: number; status?: string; price?: number; type?: string; age?: string };
+  type TuftingSlot = {
+    time: string;
+    label?: string;
+    available?: number;
+    total?: number;
+    status?: string;
+    price?: number;
+    type?: string;
+    age?: string;
+  };
   type BookingSession = { id: string; price: number; label: string } | null;
   type BookingData = {
     date: string;
@@ -59,7 +69,8 @@ const TuftingActivityPage = () => {
   const [userInteracted, setUserInteracted] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
 
-  const { getSlotsForDate, createBooking, slotsVersion, getBranchById } = useData();
+  const { getSlotsForDate, createBooking, slotsVersion, getBranchById } =
+    useData();
   const { branches } = useData();
   const { user } = useAuth();
   const [tuftingSlots, setTuftingSlots] = useState<TuftingSlot[]>([]);
@@ -84,15 +95,18 @@ const TuftingActivityPage = () => {
         scrollTimer = setTimeout(() => {}, 1000);
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => { window.removeEventListener('scroll', handleScroll); if (scrollTimer) clearTimeout(scrollTimer); };
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
+    };
   }, [userInteracted]);
 
   useEffect(() => {
     if (location.hash) {
       const timer = setTimeout(() => {
-        const el = document.getElementById(location.hash.replace('#', ''));
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        const el = document.getElementById(location.hash.replace("#", ""));
+        if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 200);
       return () => clearTimeout(timer);
     }
@@ -101,17 +115,17 @@ const TuftingActivityPage = () => {
   // Fullscreen video helpers
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && videoFullscreen) closeFullscreen();
+      if (e.key === "Escape" && videoFullscreen) closeFullscreen();
     };
     if (videoFullscreen) {
-      document.addEventListener('keydown', onKey);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", onKey);
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
     };
   }, [videoFullscreen]);
 
@@ -121,11 +135,16 @@ const TuftingActivityPage = () => {
       const el = fullscreenVideoRef.current;
       if (!el) return;
       try {
-        const anyEl = el as HTMLElement & { webkitRequestFullscreen?: () => void; msRequestFullscreen?: () => void };
+        const anyEl = el as HTMLElement & {
+          webkitRequestFullscreen?: () => void;
+          msRequestFullscreen?: () => void;
+        };
         if (anyEl.requestFullscreen) anyEl.requestFullscreen();
         else if (anyEl.webkitRequestFullscreen) anyEl.webkitRequestFullscreen();
         else if (anyEl.msRequestFullscreen) anyEl.msRequestFullscreen();
-      } catch {/* ignore */}
+      } catch {
+        /* ignore */
+      }
       el.play().catch(() => {});
     }, 50);
   };
@@ -133,13 +152,18 @@ const TuftingActivityPage = () => {
   const closeFullscreen = () => {
     setVideoFullscreen(false);
     try {
-      const doc = document as Document & { webkitExitFullscreen?: () => void; msExitFullscreen?: () => void };
+      const doc = document as Document & {
+        webkitExitFullscreen?: () => void;
+        msExitFullscreen?: () => void;
+      };
       if (document.fullscreenElement) {
         if (doc.exitFullscreen) doc.exitFullscreen();
         else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
         else if (doc.msExitFullscreen) doc.msExitFullscreen();
       }
-    } catch {/* ignore */}
+    } catch {
+      /* ignore */
+    }
   };
 
   // Effect to generate the next 10 days for date selection
@@ -157,7 +181,9 @@ const TuftingActivityPage = () => {
   // Effect for the auto-playing image carousel
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % galleryImages.length);
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % galleryImages.length
+      );
     }, 4000); // Change image every 4 seconds
     return () => clearInterval(timer);
   }, []);
@@ -179,23 +205,62 @@ const TuftingActivityPage = () => {
   );
 
   // Handler for input changes to keep state updated
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { id, value } = e.target as HTMLInputElement | HTMLSelectElement;
     setBooking((prev) => ({ ...prev, [id]: value } as BookingData));
   };
 
   // Load tufting slots when booking.location or booking.date changes
   useEffect(() => {
-    if (!booking.location || !booking.date) return;
-    const branchMap: Record<string, string> = { downtown: 'hyderabad', mall: 'vijayawada', park: 'bangalore', hyderabad: 'hyderabad', bangalore: 'bangalore', vijayawada: 'vijayawada' };
+    console.log("🔥 Tufting sessions useEffect triggered with:", {
+      location: booking.location,
+      date: booking.date,
+    });
+    if (!booking.location || !booking.date) {
+      console.log("❌ Missing location or date, clearing slots");
+      setTuftingSlots([]); // Clear slots if no location/date selected
+      return;
+    }
+
+    const branchMap: Record<string, string> = {
+      downtown: "hyderabad",
+      mall: "vijayawada",
+      park: "bangalore",
+      hyderabad: "hyderabad",
+      bangalore: "bangalore",
+      vijayawada: "vijayawada",
+    };
     const branchId = branchMap[booking.location] || booking.location;
-  const apiBase = (import.meta as { env?: Record<string,string> }).env?.VITE_API_URL || '/api';
+    const apiBase =
+      (import.meta as { env?: Record<string, string> }).env?.VITE_API_URL ||
+      "/api";
 
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/sessions/next-10-days/${branchId}?activity=tufting`);
+        console.log(
+          `Fetching tufting sessions for branch: ${branchId}, date: ${booking.date}`
+        );
+
+        const res = await fetch(
+          `${apiBase}/sessions/next-10-days/${branchId}?activity=tufting`
+        );
         if (res.ok) {
-          const sessions: Array<{ date:string; isActive:boolean; time:string; label?:string; availableSeats:number; totalSeats:number; type:string; ageGroup:string; }> = await res.json();
+          const sessions: Array<{
+            _id: string;
+            date: string;
+            isActive: boolean;
+            time: string;
+            label?: string;
+            availableSeats: number;
+            totalSeats: number;
+            type: string;
+            ageGroup: string;
+          }> = await res.json();
+
+          console.log(`Received ${sessions.length} tufting sessions from API`);
+
           const forDate = sessions
             .filter((s) => s.date === booking.date && s.isActive)
             .map((s) => ({
@@ -203,86 +268,126 @@ const TuftingActivityPage = () => {
               label: s.label || s.time,
               available: s.availableSeats,
               total: s.totalSeats,
-              status: s.availableSeats <= 0
-                ? 'sold-out'
-                : s.availableSeats <= Math.max(1, Math.round(s.totalSeats * 0.25))
-                  ? 'filling-fast'
-                  : 'available',
-              type: s.type,
-              age: s.ageGroup
+              status:
+                s.availableSeats <= 0
+                  ? "sold-out"
+                  : s.availableSeats <=
+                    Math.max(1, Math.round(s.totalSeats * 0.25))
+                  ? "filling-fast"
+                  : "available",
+              type: s.type || "Tufting Session",
+              age: s.ageGroup || "15+ years",
+              sessionId: s._id,
             }));
+
+          console.log(`Found ${forDate.length} sessions for selected date`);
           setTuftingSlots(forDate);
           return;
+        } else {
+          console.error(
+            "Failed to fetch tufting sessions:",
+            res.status,
+            res.statusText
+          );
+          setTuftingSlots([]);
         }
-      } catch {
-        // fallback below if fetch fails
-      }
-      const saved = getSlotsForDate(branchId, booking.date);
-      if (saved && Array.isArray(saved.tufting)) {
-        setTuftingSlots(saved.tufting as TuftingSlot[]);
+      } catch (error) {
+        console.error("Error fetching tufting sessions:", error);
+        setTuftingSlots([]);
       }
     })();
-  }, [booking.location, booking.date, getSlotsForDate, slotsVersion]);
+  }, [booking.location, booking.date]);
 
   // Check if all required fields for the final step are filled
   const canProceedToBook =
-    booking.customerName && booking.customerPhone && booking.customerEmail && booking.quantity;
+    booking.customerName &&
+    booking.customerPhone &&
+    booking.customerEmail &&
+    booking.quantity;
 
   return (
-  <div onClick={handleUserInteraction}>
+    <div onClick={handleUserInteraction}>
       {/* Hero Section with Video Background */}
-  <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
-  <div className="absolute inset-0 z-10">
-    <video
-      ref={videoRef}
-      src="https://res.cloudinary.com/dwb3vztcv/video/upload/v1755546792/TUFTING_LANSCAPE_pm5v9h.mp4"
-      autoPlay
-      loop
-      playsInline
-      muted={!userInteracted || muted}
-      className="absolute w-auto min-w-full min-h-full max-w-none opacity-70 cursor-pointer"
-      onClick={openFullscreen}
-    />
+      <section className="relative h-[70vh] bg-black flex items-center justify-center text-center text-white overflow-hidden">
+        <div className="absolute inset-0 z-10">
+          <video
+            ref={videoRef}
+            src="https://res.cloudinary.com/dwb3vztcv/video/upload/v1755546792/TUFTING_LANSCAPE_pm5v9h.mp4"
+            autoPlay
+            loop
+            playsInline
+            muted={!userInteracted || muted}
+            className="absolute w-auto min-w-full min-h-full max-w-none opacity-70 cursor-pointer"
+            onClick={openFullscreen}
+          />
 
-    {/* 🔊 Mute/Unmute button */}
-    <button 
-      onClick={() => {
-        if (videoRef.current) {
-          videoRef.current.muted = !videoRef.current.muted;
-          setMuted(videoRef.current.muted);
-        }
-      }}
-      className="absolute bottom-6 right-6 z-20 bg-black/50 hover:bg-black/70 rounded-full p-3 backdrop-blur-sm transition-all duration-300"
-      aria-label={muted ? "Unmute video" : "Mute video"}
-    >
-      {muted ? (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-        </svg>
-      ) : (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a7.975 7.975 0 015.657 2.343m0 0a7.975 7.975 0 010 11.314m-11.314 0a7.975 7.975 0 010-11.314m0 0a7.975 7.975 0 015.657-2.343" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-        </svg>
-      )}
-    </button>
-  </div>
+          {/* 🔊 Mute/Unmute button */}
+          <button
+            onClick={() => {
+              if (videoRef.current) {
+                videoRef.current.muted = !videoRef.current.muted;
+                setMuted(videoRef.current.muted);
+              }
+            }}
+            className="absolute bottom-6 right-6 z-20 bg-black/50 hover:bg-black/70 rounded-full p-3 backdrop-blur-sm transition-all duration-300"
+            aria-label={muted ? "Unmute video" : "Mute video"}
+          >
+            {muted ? (
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                  clipRule="evenodd"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.536 8.464a5 5 0 010 7.072M12 6a7.975 7.975 0 015.657 2.343m0 0a7.975 7.975 0 010 11.314m-11.314 0a7.975 7.975 0 010-11.314m0 0a7.975 7.975 0 015.657-2.343"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
 
-  {/* 🔲 Gradient overlay */}
-  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-0" />
+        {/* 🔲 Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-0" />
 
-  {/* Center content (if you want text here later) */}
-  <div className="relative z-20 max-w-4xl text-center">
-    {/* You can add a heading/intro text here if needed */}
-  </div>
+        {/* Center content (if you want text here later) */}
+        <div className="relative z-20 max-w-4xl text-center">
+          {/* You can add a heading/intro text here if needed */}
+        </div>
 
-  {/* 🔘 Button pinned to bottom center */}
-  <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20">
-    
-  </div>
-   
-</section>
+        {/* 🔘 Button pinned to bottom center */}
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20"></div>
+      </section>
 
       {videoFullscreen && (
         <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
@@ -308,116 +413,127 @@ const TuftingActivityPage = () => {
         </div>
       )}
 
-      
-
       {/* What is Tufting Section with Mini Carousel */}
-     <section className="py-16 bg-gray-50">
-  <div className="container mx-auto px-4">
-    
-    {/* Title */}
-    <div className="text-center mb-10">
-      <h2 className="text-3xl md:text-4xl font-black mb-2" style={{ color: '#7F55B1' }}>
-        🤔 What is Tufting?
-      </h2>
-      <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-        A modern twist on rug making — use a tufting gun to punch yarn into fabric
-        and create your own textured art.
-      </p>
-    </div>
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          {/* Title */}
+          <div className="text-center mb-10">
+            <h2
+              className="text-3xl md:text-4xl font-black mb-2"
+              style={{ color: "#7F55B1" }}
+            >
+              🤔 What is Tufting?
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
+              A modern twist on rug making — use a tufting gun to punch yarn
+              into fabric and create your own textured art.
+            </p>
+          </div>
 
-    <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Feature Cards */}
+            <div className="flex flex-col space-y-5">
+              <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
+                <div className="text-3xl mb-2">🎨</div>
+                <h3 className="text-lg font-bold mb-1 text-gray-800">
+                  Tufting Fun & Creativity
+                </h3>
+                <div className="flex items-center gap-3 group">
+                  {/* Bullet */}
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-300 rounded-full group-hover:scale-150 transition-transform duration-300" />
 
-      {/* Feature Cards */}
-      <div className="flex flex-col space-y-5">
-        <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
-          <div className="text-3xl mb-2">🎨</div>
-          <h3 className="text-lg font-bold mb-1 text-gray-800">
-            Tufting Fun & Creativity
-          </h3>
-          <div className="flex items-center gap-3 group">
-  {/* Bullet */}
-  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-300 rounded-full group-hover:scale-150 transition-transform duration-300" />
-  
-  {/* Text */}
-  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
-    Make rugs, coasters, charms or wall art with colorful yarn and a tufting gun.
-  </p>
-</div>
+                  {/* Text */}
+                  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
+                    Make rugs, coasters, charms or wall art with colorful yarn
+                    and a tufting gun.
+                  </p>
+                </div>
+              </div>
 
+              <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
+                <div className="text-3xl mb-2">🧵</div>
+                <h3 className="text-lg font-bold mb-1 text-gray-800">
+                  Guided session
+                </h3>
+                <div className="flex items-center gap-3 group">
+                  {/* Bullet */}
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full group-hover:scale-150 transition-transform duration-300" />
+
+                  {/* Text */}
+                  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
+                    Step-by-step help with plenty of colors to choose from.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
+                <div className="text-3xl mb-2">🏠</div>
+                <h3 className="text-lg font-bold mb-1 text-gray-800">
+                  Take Home Your Art
+                </h3>
+                <div className="flex items-center gap-3 group">
+                  {/* Bullet */}
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full group-hover:scale-150 transition-transform duration-300" />
+
+                  {/* Text */}
+                  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
+                    Leave with a unique piece that reflects your style.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Carousel */}
+            <div className="relative w-full aspect-[4/3] bg-gray-200 rounded-xl shadow-lg overflow-hidden">
+              <img
+                key={currentImageIndex}
+                src={galleryImages[currentImageIndex]}
+                alt="Tufting creation"
+                className="w-full h-full object-cover animate-fade-in"
+              />
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+                {galleryImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      currentImageIndex === index
+                        ? "bg-white scale-110"
+                        : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
-          <div className="text-3xl mb-2">🧵</div>
-          <h3 className="text-lg font-bold mb-1 text-gray-800">
-            Guided session 
-          </h3>
-          <div className="flex items-center gap-3 group">
-  {/* Bullet */}
-  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full group-hover:scale-150 transition-transform duration-300" />
-  
-  {/* Text */}
-  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
-    Step-by-step help with plenty of colors to choose from.
-  </p>
-</div>
-        </div>
-
-        <div className="p-5 bg-white rounded-xl shadow-md hover:shadow-lg transition">
-          <div className="text-3xl mb-2">🏠</div>
-          <h3 className="text-lg font-bold mb-1 text-gray-800">
-            Take Home Your Art 
-          </h3>
-           <div className="flex items-center gap-3 group">
-  {/* Bullet */}
-  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-rose-400 rounded-full group-hover:scale-150 transition-transform duration-300" />
-  
-  {/* Text */}
-  <p className="text-gray-600 text-sm md:text-base group-hover:text-gray-900 transition-colors duration-300">
-    Leave with a unique piece that reflects your style.
-  </p>
-</div>
-        </div>
-      </div>
-
-      {/* Carousel */}
-      <div className="relative w-full aspect-[4/3] bg-gray-200 rounded-xl shadow-lg overflow-hidden">
-        <img
-          key={currentImageIndex}
-          src={galleryImages[currentImageIndex]}
-          alt="Tufting creation"
-          className="w-full h-full object-cover animate-fade-in"
-        />
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-          {galleryImages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                currentImageIndex === index ? 'bg-white scale-110' : 'bg-white/50'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
+      </section>
 
       {/* Gallery Section */}
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-bold text-center mb-10" style={{ color: '#7F55B1' }}>
+          <h2
+            className="text-3xl font-bold text-center mb-10"
+            style={{ color: "#7F55B1" }}
+          >
             🖼️ Tufting Gallery - Customer Creations
           </h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {galleryImages.map((src) => (
-              <div key={src} className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+              <div
+                key={src}
+                className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+              >
                 <img
                   src={src}
                   alt="Tufting creation by a student"
                   className="w-full h-[250px] object-cover"
-                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => { const t = e.currentTarget as HTMLImageElement; t.onerror = null; t.src = 'https://placehold.co/400x250/f9699c/white?text=Art' }}
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                    const t = e.currentTarget as HTMLImageElement;
+                    t.onerror = null;
+                    t.src =
+                      "https://placehold.co/400x250/f9699c/white?text=Art";
+                  }}
                 />
               </div>
             ))}
@@ -426,11 +542,7 @@ const TuftingActivityPage = () => {
       </section>
 
       {/* Booking Section */}
-     <section
-        id="tufting-booking"
-        className="py-16"
-        
-      >
+      <section id="tufting-booking" className="py-16">
         <div className="mx-auto max-w-6xl px-4">
           <div className="backdrop-blur bg-white/95 rounded-3xl p-8 shadow-2xl">
             <h2 className="text-2xl font-extrabold text-center mb-8 text-purple-600">
@@ -446,31 +558,77 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.date)}
             >
               <div className="flex flex-wrap gap-2">
-                  {dates.map((d, i) => {
-                  const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-                  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-                  const label = i === 0 ? "TODAY" : i === 1 ? "TOM" : dayNames[d.getDay()];
+                {dates.map((d, i) => {
+                  const dayNames = [
+                    "SUN",
+                    "MON",
+                    "TUE",
+                    "WED",
+                    "THU",
+                    "FRI",
+                    "SAT",
+                  ];
+                  const monthNames = [
+                    "JAN",
+                    "FEB",
+                    "MAR",
+                    "APR",
+                    "MAY",
+                    "JUN",
+                    "JUL",
+                    "AUG",
+                    "SEP",
+                    "OCT",
+                    "NOV",
+                    "DEC",
+                  ];
+                  const label =
+                    i === 0 ? "TODAY" : i === 1 ? "TOM" : dayNames[d.getDay()];
                   const iso = d.toISOString().split("T")[0];
                   const selected = booking.date === iso;
-                    return (
+                  const isMonday = d.getDay() === 1;
+
+                  // Check if selected branch allows Monday sessions
+                  const selectedBranch = branches.find(
+                    (b) => b.id === booking.location
+                  );
+                  const isDisabled = isMonday && !selectedBranch?.allowMonday;
+
+                  return (
                     <button
                       key={iso}
                       onClick={() => {
+                        if (isDisabled) return;
                         if (!user) {
-                          navigate('/login', { state: { from: window.location.pathname } });
+                          navigate("/login", {
+                            state: { from: window.location.pathname },
+                          });
                           return;
                         }
                         setBooking((b) => ({ ...b, date: iso }));
                       }}
                       className={`min-w-[100px] text-center rounded-lg border-2 px-4 py-3 transition-all ${
-                        selected
+                        isDisabled
+                          ? "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
+                          : selected
                           ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5"
                           : "border-gray-300 bg-white hover:-translate-y-0.5"
                       }`}
+                      disabled={isDisabled}
                     >
                       <div className="text-xs font-semibold">{label}</div>
-                      <div className="text-xl font-extrabold">{d.getDate()}</div>
+                      <div className="text-xl font-extrabold">
+                        {d.getDate()}
+                      </div>
                       <div className="text-xs">{monthNames[d.getMonth()]}</div>
+                      {isDisabled && (
+                        <div
+                          className="text-xs mt-1"
+                          style={{ color: "#7F55B1" }}
+                        >
+                          Closed
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -487,23 +645,37 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.location)}
             >
               <div className="flex flex-wrap gap-3">
-                {getActiveBranchesForActivity(branches, 'tufting').map((b) => ({ id: b.id, name: b.name.includes('Vijayawada') ? '🏬 Vijayawada' : b.name, detail: b.location })) .map((l) => {
-                  const selected = booking.location === l.id;
-                  return (
-                    <button
-                      key={l.id}
-                      onClick={() => setBooking((b) => ({ ...b, location: l.id }))}
-                      className={`min-w-[200px] text-center rounded-xl border-2 px-6 py-5 transition-all ${
-                        selected
-                          ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5 shadow"
-                          : "border-gray-300 bg-white hover:-translate-y-0.5"
-                      }`}
-                    >
-                      <div className="font-bold">{l.name}</div>
-                      <div className="text-sm opacity-80">{l.detail}</div>
-                    </button>
-                  );
-                })}
+                {getActiveBranchesForActivity(branches, "tufting").map(
+                  (branch) => {
+                    const selected = booking.location === branch.id;
+                    return (
+                      <button
+                        key={branch.id}
+                        onClick={() =>
+                          setBooking((b) => ({ ...b, location: branch.id }))
+                        }
+                        className={`min-w-[200px] text-center rounded-xl border-2 px-6 py-5 transition-all ${
+                          selected
+                            ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5 shadow"
+                            : "border-gray-300 bg-white hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className="font-bold">{branch.location}</div>
+                        <div className="text-sm opacity-80">
+                          {branch.address}
+                        </div>
+                        {!branch.allowMonday && (
+                          <div
+                            className="text-xs mt-1"
+                            style={{ color: "#7F55B1" }}
+                          >
+                            Closed Mondays
+                          </div>
+                        )}
+                      </button>
+                    );
+                  }
+                )}
               </div>
             </TuftStep>
 
@@ -530,13 +702,19 @@ const TuftingActivityPage = () => {
                       }`}
                     >
                       <div className="text-2xl mb-1">
-                        {s.id === "beginner" ? "🌟" : s.id === "advanced" ? "🎨" : "👑"}
+                        {s.id === "beginner"
+                          ? "🌟"
+                          : s.id === "advanced"
+                          ? "🎨"
+                          : "👑"}
                       </div>
                       <div className="font-bold">{s.label}</div>
-                      <div className="text-sm opacity-80">
-                        02 - 04 Hr 
-                      </div>
-                      <div className={`mt-2 font-bold ${selected ? "text-white" : "text-red-600"}`}>
+                      <div className="text-sm opacity-80">02 - 04 Hr</div>
+                      <div
+                        className={`mt-2 font-bold ${
+                          selected ? "text-white" : "text-red-600"
+                        }`}
+                      >
                         ₹ {s.price}
                       </div>
                     </div>
@@ -555,33 +733,47 @@ const TuftingActivityPage = () => {
               canNext={Boolean(booking.time)}
             >
               <div className="flex flex-wrap gap-2">
-                {(tuftingSlots && tuftingSlots.length > 0 ? tuftingSlots.map((slot) => ({ t: slot.time, label: slot.label || slot.time, cls: slot.available === 0 ? 'sold-out' : 'available' })) : [
-                  { t: "09:00", label: "9:00 AM", cls: "available" },
-                  { t: "11:30", label: "11:30 AM", cls: "available" },
-                  { t: "14:00", label: "2:00 PM", cls: "available" },
-                  { t: "16:30", label: "4:30 PM", cls: "available" },
-                  { t: "19:00", label: "7:00 PM", cls: "filling-fast" },
-                ]).map((slot) => {
-                  const selected = booking.time === slot.t;
-                  return (
-                    <div
-                      key={slot.t}
-                      onClick={() => setBooking((b) => ({ ...b, time: slot.t }))}
-                      className={`min-w-[120px] text-center rounded-lg border-2 px-4 py-3 transition-all cursor-pointer ${
-                        selected
-                          ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5"
-                          : slot.cls === "filling-fast"
-                          ? "border-orange-400"
-                          : "border-gray-300 bg-white hover:-translate-y-0.5"
-                      }`}
-                    >
-                      <div className="font-bold">{slot.label}</div>
-                      <div className="text-xs opacity-80">
-                        {slot.cls === "filling-fast" ? "Filling Fast" : "Available"}
+                {tuftingSlots && tuftingSlots.length > 0 ? (
+                  tuftingSlots.map((slot) => {
+                    const selected = booking.time === slot.time;
+                    return (
+                      <div
+                        key={slot.time}
+                        onClick={() =>
+                          slot.status !== "sold-out" &&
+                          setBooking((b) => ({ ...b, time: slot.time }))
+                        }
+                        className={`min-w-[120px] text-center rounded-lg border-2 px-4 py-3 transition-all cursor-pointer ${
+                          selected
+                            ? "border-purple-600 bg-purple-600 text-white -translate-y-0.5"
+                            : slot.status === "sold-out"
+                            ? "border-red-300 bg-red-100 cursor-not-allowed opacity-60"
+                            : slot.status === "filling-fast"
+                            ? "border-orange-400 hover:-translate-y-0.5"
+                            : "border-gray-300 bg-white hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className="font-bold">{slot.label}</div>
+                        <div className="text-xs opacity-80">
+                          {slot.status === "sold-out"
+                            ? "Sold Out"
+                            : slot.status === "filling-fast"
+                            ? "Filling Fast"
+                            : `${slot.available}/${slot.total} Available`}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="w-full text-center py-8">
+                    <p className="text-gray-500 text-lg">
+                      No tufting sessions available for the selected date.
+                    </p>
+                    <p className="text-gray-400 text-sm mt-2">
+                      Please choose a different date or contact us.
+                    </p>
+                  </div>
+                )}
               </div>
             </TuftStep>
 
@@ -595,7 +787,9 @@ const TuftingActivityPage = () => {
             >
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold mb-1">Full Name *</label>
+                  <label className="block font-semibold mb-1">
+                    Full Name *
+                  </label>
                   <input
                     id="customerName"
                     type="text"
@@ -607,7 +801,9 @@ const TuftingActivityPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Phone Number *</label>
+                  <label className="block font-semibold mb-1">
+                    Phone Number *
+                  </label>
                   <input
                     id="customerPhone"
                     type="tel"
@@ -619,7 +815,9 @@ const TuftingActivityPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Email Address *</label>
+                  <label className="block font-semibold mb-1">
+                    Email Address *
+                  </label>
                   <input
                     id="customerEmail"
                     type="email"
@@ -631,7 +829,9 @@ const TuftingActivityPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Number of Participants *</label>
+                  <label className="block font-semibold mb-1">
+                    Number of Participants *
+                  </label>
                   <select
                     id="quantity"
                     value={booking.quantity}
@@ -639,7 +839,9 @@ const TuftingActivityPage = () => {
                     className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600/30 focus:border-purple-600"
                     required
                   >
-                    <option value="" disabled>Select quantity</option>
+                    <option value="" disabled>
+                      Select quantity
+                    </option>
                     <option value="1">1 Person</option>
                     <option value="2">2 People</option>
                     <option value="3">3 People</option>
@@ -653,71 +855,125 @@ const TuftingActivityPage = () => {
               {booking.quantity && booking.session && (
                 <div
                   className="mt-6 rounded-2xl p-6 text-white"
-                  style={{ background: "linear-gradient(135deg, #9b59b6, #e91e63)" }}
+                  style={{
+                    background: "linear-gradient(135deg, #9b59b6, #e91e63)",
+                  }}
                 >
                   <h5 className="font-bold mb-2">📋 Tufting Booking Summary</h5>
                   <div className="text-sm space-y-1">
-                    <div><strong>Date:</strong> {booking.date ? new Date(booking.date).toLocaleDateString('en-GB') : ""}</div>
-                    <div><strong>Location:</strong> <span className="capitalize">{booking.location}</span></div>
-                    <div><strong>Session:</strong> {booking.session.label}</div>
-                    <div><strong>Time:</strong> {booking.time}</div>
-                    <div><strong>Participants:</strong> {booking.quantity}</div>
+                    <div>
+                      <strong>Date:</strong>{" "}
+                      {booking.date
+                        ? new Date(booking.date).toLocaleDateString("en-GB")
+                        : ""}
+                    </div>
+                    <div>
+                      <strong>Location:</strong>{" "}
+                      <span className="capitalize">
+                        {branches.find((b) => b.id === booking.location)
+                          ?.location || booking.location}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Session:</strong> {booking.session.label}
+                    </div>
+                    <div>
+                      <strong>Time:</strong> {booking.time}
+                    </div>
+                    <div>
+                      <strong>Participants:</strong> {booking.quantity}
+                    </div>
                   </div>
                   <div className="mt-3 text-center font-extrabold text-xl">
                     Total Amount: ₹{total.toLocaleString()}
                   </div>
                   <button
                     className={`mt-3 w-full rounded-full font-bold py-3 transition-all ${
-                        canProceedToBook
-                        ? 'bg-yellow-400 text-slate-800 hover:-translate-y-0.5'
-                        : 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      canProceedToBook
+                        ? "bg-yellow-400 text-slate-800 hover:-translate-y-0.5"
+                        : "bg-gray-400 text-gray-700 cursor-not-allowed"
                     }`}
                     onClick={async () => {
                       if (!canProceedToBook) {
-                        alert('Please fill in all required fields.');
+                        alert("Please fill in all required fields.");
                         return;
                       }
                       if (!user) {
-                        navigate('/login', { state: { from: window.location.pathname } });
+                        navigate("/login", {
+                          state: { from: window.location.pathname },
+                        });
                         return;
                       }
-                      const amount = booking.session ? booking.session.price * Number(booking.quantity) : 0;
+                      const amount = booking.session
+                        ? booking.session.price * Number(booking.quantity)
+                        : 0;
                       try {
                         const branch = getBranchById(booking.location);
                         const order = await createRazorpayOrder(amount);
-                        await initiatePayment({ amount: order.amount / 100, currency: order.currency, name: 'Artgram', description: 'Tufting Booking', order_id: order.id, key: branch?.razorpayKey, handler: async (response) => {
-                          interface BookingPayload { customerId:string; customerName:string; customerEmail:string; customerPhone:string; branchId:string; date:string; time:string; seats:number; totalAmount:number; paymentStatus:string; paymentIntentId:string; activity:'tufting'; packageType:string; sessionId?:string; eventId?:string }
-                          const bookingPayload: BookingPayload = {
+                        await initiatePayment({
+                          amount: order.amount / 100,
+                          currency: order.currency,
+                          name: "Artgram",
+                          description: "Tufting Booking",
+                          order_id: order.id,
+                          key: branch?.razorpayKey,
+                          handler: async (response) => {
+                            interface BookingPayload {
+                              customerId: string;
+                              customerName: string;
+                              customerEmail: string;
+                              customerPhone: string;
+                              branchId: string;
+                              date: string;
+                              time: string;
+                              seats: number;
+                              totalAmount: number;
+                              paymentStatus: string;
+                              paymentIntentId: string;
+                              activity: "tufting";
+                              packageType: string;
+                              sessionId?: string;
+                              eventId?: string;
+                            }
+                            const bookingPayload: BookingPayload = {
                               customerId: user.id,
                               customerName: user.name,
-                              customerEmail: user.email || '',
-                              customerPhone: booking.customerPhone || '',
+                              customerEmail: user.email || "",
+                              customerPhone: booking.customerPhone || "",
                               branchId: booking.location,
                               date: booking.date,
                               time: booking.time,
                               seats: Number(booking.quantity),
                               totalAmount: amount,
-                              paymentStatus: 'completed',
+                              paymentStatus: "completed",
                               paymentIntentId: response.razorpay_payment_id,
-                              activity: 'tufting',
-                              packageType: booking.session?.id || 'standard'
-                          };
-                          
-                          // Try to find session ID if available (for new API integration)
-                          // This would require updating tufting slots fetching as well
-                          
-                          // Fallback to legacy eventId for now
-                          if (!bookingPayload.sessionId) {
-                            bookingPayload.eventId = `tuft-${Date.now()}`;
-                          }
-                          
-                          await createBooking(bookingPayload);
-                          alert('Tufting booked! Check your dashboard.');
-                          navigate('/dashboard');
-                        }, prefill: { name: user.name, email: user.email || '', contact: '' }, theme: { color: '#9b59b6' }, modal: { ondismiss: () => {} } });
+                              activity: "tufting",
+                              packageType: booking.session?.id || "standard",
+                            };
+
+                            // Try to find session ID if available (for new API integration)
+                            // This would require updating tufting slots fetching as well
+
+                            // Fallback to legacy eventId for now
+                            if (!bookingPayload.sessionId) {
+                              bookingPayload.eventId = `tuft-${Date.now()}`;
+                            }
+
+                            await createBooking(bookingPayload);
+                            alert("Tufting booked! Check your dashboard.");
+                            navigate("/dashboard");
+                          },
+                          prefill: {
+                            name: user.name,
+                            email: user.email || "",
+                            contact: "",
+                          },
+                          theme: { color: "#9b59b6" },
+                          modal: { ondismiss: () => {} },
+                        });
                       } catch (err) {
-                        console.error('Payment failed', err);
-                        alert('Payment failed. Try again.');
+                        console.error("Payment failed", err);
+                        alert("Payment failed. Try again.");
                       }
                     }}
                     disabled={!canProceedToBook}
@@ -744,7 +1000,15 @@ type TuftStepProps = {
   children: React.ReactNode;
 };
 
-const TuftStep: React.FC<TuftStepProps> = ({ title, color, isVisible, onBack, onNext, canNext, children }) => {
+const TuftStep: React.FC<TuftStepProps> = ({
+  title,
+  color,
+  isVisible,
+  onBack,
+  onNext,
+  canNext,
+  children,
+}) => {
   if (!isVisible) return null;
   return (
     <div className="mb-6 bg-white rounded-2xl p-5 shadow">
@@ -765,10 +1029,11 @@ const TuftStep: React.FC<TuftStepProps> = ({ title, color, isVisible, onBack, on
             <button
               onClick={onNext}
               disabled={!canNext}
-              className={`px-4 py-1.5 rounded-full font-semibold transition-all ${canNext
-                ? "text-white hover:-translate-y-px"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+              className={`px-4 py-1.5 rounded-full font-semibold transition-all ${
+                canNext
+                  ? "text-white hover:-translate-y-px"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
               style={{ backgroundColor: canNext ? color : undefined }}
             >
               Next →

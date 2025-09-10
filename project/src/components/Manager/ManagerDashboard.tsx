@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ManagerSessionManagement from './ManagerSessionManagement';
+import ManagerOverview from './ManagerOverview';
 import EnhancedQRVerification from './EnhancedQRVerification';
 import {
   QrCode,
-  Package,
   TrendingUp,
   Calendar,
-  Eye,
-  // CheckCircle,
   // AlertCircle
 } from 'lucide-react';
 import type { Order, Booking, Branch, Event as CustomEvent } from '../../types';
@@ -112,171 +110,6 @@ const ManagerDashboard: React.FC = () => {
   // Determine manager branchId even if branches haven't loaded yet
   const effectiveBranchId = user?.branchId || branches.find(b => b.managerId === user?.id)?.id || undefined;
 
-  // Filter data for manager's branch using effectiveBranchId
-  const branchOrders = effectiveBranchId ? orders.filter(order => order.branchId === effectiveBranchId) : orders;
-  const branchBookings = effectiveBranchId ? bookings.filter(booking => booking.branchId === effectiveBranchId) : bookings;
-  const branchEvents = effectiveBranchId ? customEvents.filter((event: CustomEvent) => event.branchId === effectiveBranchId) : customEvents;
-
-  // Calculate analytics (removed revenue calculation for manager dashboard)
-  const totalBookings = branchBookings.length;
-  const pendingOrders = branchOrders.filter(order => order.orderStatus === 'pending').length;
-
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Branch Info */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-2">
-          {branches.find(b => b.id === effectiveBranchId)?.name || 'Branch Manager Dashboard'}
-        </h2>
-        <p className="opacity-90">{branches.find(b => b.id === effectiveBranchId)?.location}</p>
-      </div>
-
-      {/* Analytics Cards - Removed revenue for manager */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-              <p className="text-2xl font-bold text-gray-900">{totalBookings}</p>
-            </div>
-            <Calendar className="h-8 w-8 text-blue-600" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-              <p className="text-2xl font-bold text-gray-900">{pendingOrders}</p>
-            </div>
-            <Package className="h-8 w-8 text-orange-600" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Events</p>
-              <p className="text-2xl font-bold text-gray-900">{branchEvents.length}</p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-purple-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Orders</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {branchOrders.slice(0, 5).map((order) => {
-                const getStatusColor = (status: string) => {
-                  switch (status) {
-                    case 'delivered': return 'bg-green-100 text-green-800';
-                    case 'out_for_delivery': return 'bg-blue-100 text-blue-800';
-                    case 'in_transit': return 'bg-indigo-100 text-indigo-800';
-                    case 'shipped': return 'bg-purple-100 text-purple-800';
-                    case 'packed': return 'bg-cyan-100 text-cyan-800';
-                    case 'processing': return 'bg-yellow-100 text-yellow-800';
-                    case 'payment_confirmed': return 'bg-emerald-100 text-emerald-800';
-                    case 'cancelled': return 'bg-red-100 text-red-800';
-                    default: return 'bg-gray-100 text-gray-800';
-                  }
-                };
-
-                const orderStatusOptions = [
-                  { value: 'pending', label: 'Pending' },
-                  { value: 'payment_confirmed', label: 'Payment Confirmed' },
-                  { value: 'processing', label: 'Processing' },
-                  { value: 'packed', label: 'Packed' },
-                  { value: 'shipped', label: 'Shipped' },
-                  { value: 'in_transit', label: 'In Transit' },
-                  { value: 'out_for_delivery', label: 'Out for Delivery' },
-                  { value: 'delivered', label: 'Delivered' },
-                  { value: 'cancelled', label: 'Cancelled' }
-                ];
-                
-                return (
-                  <tr key={order.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{order.id.slice(0, 8)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="font-medium text-gray-900">{order.customerName || `Customer #${order.customerId.slice(0, 6)}`}</div>
-                      <div className="text-xs text-gray-600">{order.customerEmail || '—'}</div>
-                      <div className="text-xs text-gray-600">{order.customerPhone || '—'}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {order.shippingAddress ? `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.zipCode}` : '—'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ₹{order.totalAmount.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.orderStatus)}`}>
-                        {orderStatusOptions.find(opt => opt.value === order.orderStatus)?.label || order.orderStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                        title="View Only - Order management moved to Admin"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Customer Details (branch scoped) */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Customer Details</h3>
-        <div className="space-y-3">
-          {[
-            ...branchOrders.map(o => ({ id: o.customerId, name: o.customerName, email: o.customerEmail, phone: o.customerPhone })),
-            ...branchBookings.map(b => ({ id: b.customerId, name: b.customerName, email: b.customerEmail, phone: b.customerPhone }))
-          ]
-            .filter((v, i, arr) => v.id && arr.findIndex(x => x.id === v.id) === i)
-            .slice(0, 8)
-            .map(c => (
-              <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{c.name || `Customer #${c.id?.slice(0, 6)}`}</p>
-                  <p className="text-xs text-gray-600">{c.email || '—'}</p>
-                </div>
-                <div className="text-sm text-gray-600">{c.phone || '—'}</div>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -355,7 +188,13 @@ const ManagerDashboard: React.FC = () => {
 
         {/* Tab Content - Updated to use enhanced QR verification */}
         <div>
-          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'overview' && (
+            <ManagerOverview 
+              effectiveBranchId={effectiveBranchId}
+              branches={branches}
+              setActiveTab={setActiveTab}
+            />
+          )}
           {activeTab === 'sessions' && <ManagerSessionManagement />}
           {activeTab === 'qr' && <EnhancedQRVerification />}
         </div>

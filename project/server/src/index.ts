@@ -12,6 +12,7 @@ import bookingRoutes from './routes/bookings';
 import productRoutes from './routes/products';
 import sessionRoutes from './routes/sessions';
 import cartRoutes from './routes/cart';
+import userRoutes from './routes/users';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware (must be after routes)
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
