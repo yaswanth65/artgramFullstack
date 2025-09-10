@@ -11,8 +11,8 @@ COPY vite.config.ts ./
 COPY postcss.config.js ./
 COPY tailwind.config.js ./
 
-# Install frontend dependencies
-RUN npm ci --only=production
+# Install frontend dependencies (including devDependencies so Vite is available to build)
+RUN npm ci
 
 # Copy frontend source code
 COPY src/ ./src/
@@ -33,14 +33,17 @@ WORKDIR /app/server
 COPY server/package*.json ./
 COPY server/tsconfig.json ./
 
-# Install backend dependencies
-RUN npm ci --only=production
+# Install backend dependencies (including devDependencies so tsc is available to build)
+RUN npm ci
 
 # Copy backend source code
 COPY server/src/ ./src/
 
 # Build backend TypeScript to JavaScript
 RUN npm run build
+
+# Remove devDependencies from node_modules to keep the final image slim
+RUN npm prune --production
 
 # Production stage
 FROM node:18-alpine as production
