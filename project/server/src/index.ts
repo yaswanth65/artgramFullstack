@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth';
 import branchRoutes from './routes/branches';
 import orderRoutes from './routes/orders';
@@ -72,15 +73,20 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 
-// Serve static files from React build in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files
-  app.use(express.static(path.join(__dirname, '../public')));
-  
+// Serve static files from React build if present (works whether or not NODE_ENV is set)
+const publicDir = path.join(__dirname, '../public');
+if (fs.existsSync(publicDir)) {
+  console.log(`Serving static files from ${publicDir}`);
+  app.use(express.static(publicDir));
+
   // Handle React Router - send all non-API requests to index.html
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+    // If request starts with /api, let API routes handle it
+    if (req.path.startsWith('/api')) return res.status(404).end();
+    res.sendFile(path.join(publicDir, 'index.html'));
   });
+} else {
+  console.log('No static public directory found; SPA not served from this process.');
 }
 
 // Error handling middleware (must be after routes)
@@ -94,6 +100,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 const PORT = process.env.PORT || 10000;
+
+console.log(`NODE_ENV=${process.env.NODE_ENV || 'not-set'}, PORT=${PORT}`);
 
 mongoose.connect(process.env.MONGO_URI || '')
   .then(() => {
