@@ -16,8 +16,8 @@ healthCheckPath: /api/health
 branch: main
 
 # Instance settings
-plan: free  # or starter, standard, pro
-region: oregon  # or virginia, frankfurt, singapore
+plan: free # or starter, standard, pro
+region: oregon # or virginia, frankfurt, singapore
 
 # Environment variables (set these in Render dashboard)
 # NODE_ENV=production

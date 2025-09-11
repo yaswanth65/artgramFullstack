@@ -65,6 +65,7 @@ docker run -p 10000:10000 \
 ### Step 1: Prepare Your Repository
 
 1. **Commit all changes to Git:**
+
    ```bash
    git add .
    git commit -m "Add Docker configuration for production deployment"
@@ -89,30 +90,33 @@ docker run -p 10000:10000 \
 Fill in the following settings:
 
 **Basic Information:**
+
 - **Name**: `artgram-app` (or your preferred name)
 - **Region**: Choose closest to your users
 - **Branch**: `main`
 - **Root Directory**: Leave empty (uses project root)
 
 **Build & Deploy Settings:**
+
 - **Environment**: `Docker`
 - **Build Command**: Leave empty (Docker will handle this)
 - **Start Command**: Leave empty (uses Dockerfile CMD)
 
 **Instance Type:**
+
 - Choose based on your needs (Free tier available)
 
 ### Step 4: Set Environment Variables
 
 In the "Environment" section, add these variables:
 
-| Key | Value | Notes |
-|-----|-------|-------|
-| `NODE_ENV` | `production` | Required |
-| `MONGO_URI` | `mongodb+srv://...` | Your MongoDB connection string |
-| `JWT_SECRET` | `your-secure-secret` | Generate a secure random string |
-| `PORT` | `10000` | Render will set this automatically, but good to specify |
-| `FRONTEND_URL` | `https://your-app-name.onrender.com` | Optional, will be your Render URL |
+| Key            | Value                                | Notes                                                   |
+| -------------- | ------------------------------------ | ------------------------------------------------------- |
+| `NODE_ENV`     | `production`                         | Required                                                |
+| `MONGO_URI`    | `mongodb+srv://...`                  | Your MongoDB connection string                          |
+| `JWT_SECRET`   | `your-secure-secret`                 | Generate a secure random string                         |
+| `PORT`         | `10000`                              | Render will set this automatically, but good to specify |
+| `FRONTEND_URL` | `https://your-app-name.onrender.com` | Optional, will be your Render URL                       |
 
 **🔒 Security Note**: Never commit real environment variables to Git. Use Render's environment variable settings.
 
@@ -132,16 +136,19 @@ In the "Environment" section, add these variables:
 ### Common Build Issues
 
 **Issue: Frontend build fails**
+
 ```
 Solution: Check if all dependencies are listed in package.json
 ```
 
 **Issue: Backend TypeScript compilation fails**
+
 ```
 Solution: Ensure server/tsconfig.json is properly configured
 ```
 
 **Issue: Environment variables not working**
+
 ```
 Solution: Double-check variable names in Render dashboard
 ```
@@ -149,16 +156,19 @@ Solution: Double-check variable names in Render dashboard
 ### Common Runtime Issues
 
 **Issue: 404 errors for routes**
+
 ```
 Solution: Ensure React Router routes are handled by the catch-all route
 ```
 
 **Issue: API calls failing**
+
 ```
 Solution: Check CORS settings and environment variables
 ```
 
 **Issue: Database connection fails**
+
 ```
 Solution: Verify MONGO_URI and MongoDB Atlas network access
 ```
@@ -181,6 +191,7 @@ curl http://localhost:10000/api/health
 ### Health Checks
 
 The application includes:
+
 - **Health endpoint**: `/api/health`
 - **Docker health check**: Built into the container
 - **Render monitoring**: Available in dashboard
@@ -205,6 +216,7 @@ git push origin main
 ### Manual Deployments
 
 In the Render dashboard:
+
 1. Go to your web service
 2. Click "Manual Deploy" → "Deploy latest commit"
 

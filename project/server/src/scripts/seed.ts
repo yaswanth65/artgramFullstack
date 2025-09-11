@@ -32,31 +32,16 @@ const branchData = [
   }
 ];
 
-// Product categories and data
-const productCategories = [
-  'Art Supplies',
-  'Canvas & Boards',
-  'Brushes & Tools',
-  'Paints & Colors',
-  'Craft Materials',
-  'Slime Kits',
-  'Tufting Supplies',
-  'DIY Kits',
-  'Educational Materials',
-  'Gift Sets'
-];
-
+// Sample products (reduced to 10 essential items)
 const productData = [
-  // Art Supplies
   {
     name: 'Professional Acrylic Paint Set',
-    description: 'High-quality acrylic paints perfect for canvas work and art projects. Includes 24 vibrant colors in 75ml tubes.',
+    description: 'High-quality acrylic paints perfect for canvas work and art projects. Includes 24 vibrant colors.',
     price: 2499,
-    stock: 150,
+    stock: 50,
     category: 'Paints & Colors',
     media: [
-      { url: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0', type: 'image' },
-      { url: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853', type: 'image' }
+      { url: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0', type: 'image' }
     ],
     sku: 'ART-PAINT-001',
     weight: 2.5,
@@ -67,7 +52,7 @@ const productData = [
     name: 'Canvas Stretched Frame Set',
     description: 'Pre-stretched canvas frames in multiple sizes. Perfect for oil and acrylic painting.',
     price: 1899,
-    stock: 200,
+    stock: 30,
     category: 'Canvas & Boards',
     media: [
       { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
@@ -79,9 +64,9 @@ const productData = [
   },
   {
     name: 'Premium Artist Brush Set',
-    description: 'Professional brush set with natural and synthetic bristles. Includes flat, round, and detail brushes.',
+    description: 'Professional brush set with natural and synthetic bristles.',
     price: 1299,
-    stock: 180,
+    stock: 25,
     category: 'Brushes & Tools',
     media: [
       { url: 'https://images.unsplash.com/photo-1574053836461-4b6db2b4c25c', type: 'image' }
@@ -93,9 +78,9 @@ const productData = [
   },
   {
     name: 'Slime Making Kit - Deluxe',
-    description: 'Complete slime making kit with glue, activator, colors, glitters, and mixing tools. Safe and non-toxic.',
+    description: 'Complete slime making kit with glue, activator, colors, and glitters. Safe and non-toxic.',
     price: 899,
-    stock: 300,
+    stock: 40,
     category: 'Slime Kits',
     media: [
       { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
@@ -107,9 +92,9 @@ const productData = [
   },
   {
     name: 'Tufting Gun - Electric',
-    description: 'Professional electric tufting gun for carpet and rug making. Adjustable pile height.',
+    description: 'Professional electric tufting gun for carpet and rug making.',
     price: 8999,
-    stock: 50,
+    stock: 10,
     category: 'Tufting Supplies',
     media: [
       { url: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853', type: 'image' }
@@ -118,140 +103,27 @@ const productData = [
     weight: 2.8,
     dimensions: { length: 40, width: 15, height: 25 },
     tags: ['tufting', 'gun', 'electric', 'carpet', 'rug']
-  },
-  {
-    name: 'Watercolor Paint Set',
-    description: 'Professional watercolor set with 36 colors and brushes. Perfect for beginners and professionals.',
-    price: 1799,
-    stock: 120,
-    category: 'Paints & Colors',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0', type: 'image' }
-    ],
-    sku: 'ART-WATER-001',
-    weight: 1.5,
-    dimensions: { length: 35, width: 25, height: 5 },
-    tags: ['watercolor', 'paint', 'professional', 'brushes']
-  },
-  {
-    name: 'Clay Modeling Set',
-    description: 'Non-toxic clay set with modeling tools. Great for pottery and sculpture activities.',
-    price: 1199,
-    stock: 100,
-    category: 'Craft Materials',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1574053836461-4b6db2b4c25c', type: 'image' }
-    ],
-    sku: 'CRAFT-CLAY-001',
-    weight: 2.0,
-    dimensions: { length: 30, width: 20, height: 12 },
-    tags: ['clay', 'modeling', 'pottery', 'sculpture', 'tools']
-  },
-  {
-    name: 'Digital Drawing Tablet',
-    description: 'Graphics tablet for digital art and design. Compatible with major design software.',
-    price: 12999,
-    stock: 30,
-    category: 'Art Supplies',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
-    ],
-    sku: 'DIGI-TAB-001',
-    weight: 1.8,
-    dimensions: { length: 35, width: 25, height: 2 },
-    tags: ['digital', 'tablet', 'drawing', 'graphics', 'design']
-  },
-  {
-    name: 'Yarn Bundle - Multicolor',
-    description: 'Premium yarn bundle for tufting and knitting projects. 20 different colors included.',
-    price: 2899,
-    stock: 80,
-    category: 'Tufting Supplies',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853', type: 'image' }
-    ],
-    sku: 'YARN-BUNDLE-001',
-    weight: 3.5,
-    dimensions: { length: 40, width: 30, height: 20 },
-    tags: ['yarn', 'tufting', 'knitting', 'multicolor', 'premium']
-  },
-  {
-    name: 'Art Storage Organizer',
-    description: 'Multi-compartment organizer for art supplies. Portable and stackable design.',
-    price: 1599,
-    stock: 90,
-    category: 'Art Supplies',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1574053836461-4b6db2b4c25c', type: 'image' }
-    ],
-    sku: 'ART-STORAGE-001',
-    weight: 2.2,
-    dimensions: { length: 40, width: 30, height: 15 },
-    tags: ['storage', 'organizer', 'art', 'supplies', 'portable']
-  },
-  // Additional products for variety
-  {
-    name: 'Glitter Slime Kit',
-    description: 'Sparkly slime kit with premium glitters and special effects. Kid-safe formula.',
-    price: 699,
-    stock: 250,
-    category: 'Slime Kits',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
-    ],
-    sku: 'SLIME-GLITTER-001',
-    weight: 0.8,
-    dimensions: { length: 20, width: 15, height: 8 },
-    tags: ['slime', 'glitter', 'sparkly', 'kids', 'safe']
-  },
-  {
-    name: 'Tufting Frame - Large',
-    description: 'Professional tufting frame for large projects. Adjustable tension system.',
-    price: 4999,
-    stock: 25,
-    category: 'Tufting Supplies',
-    media: [
-      { url: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853', type: 'image' }
-    ],
-    sku: 'TUFT-FRAME-001',
-    weight: 8.5,
-    dimensions: { length: 100, width: 80, height: 10 },
-    tags: ['tufting', 'frame', 'large', 'professional', 'adjustable']
   }
 ];
 
-// Session types and times
+// Session types
 const sessionTypes = {
   slime: [
-    { type: 'Slime Play Session', ageGroup: '3+', price: 299 },
-    { type: 'Slime Making Workshop', ageGroup: '8+', price: 499 },
-    { type: 'Advanced Slime Techniques', ageGroup: '12+', price: 699 },
-    { type: 'Parent-Child Slime Fun', ageGroup: 'All', price: 799 }
+    { type: 'Slime Making Workshop', ageGroup: '8+', price: 499 }
   ],
   tufting: [
-    { type: 'Small Tufting Project', ageGroup: '15+', price: 1299 },
-    { type: 'Medium Tufting Workshop', ageGroup: '15+', price: 1899 },
-    { type: 'Large Tufting Masterclass', ageGroup: '18+', price: 2999 },
-    { type: 'Tufting Basics for Beginners', ageGroup: '12+', price: 999 }
+    { type: 'Tufting Basics Workshop', ageGroup: '15+', price: 1299 }
   ]
 };
 
+// Session times
 const sessionTimes = [
-  { time: '09:00', label: '9:00 AM' },
-  { time: '10:30', label: '10:30 AM' },
-  { time: '12:00', label: '12:00 PM' },
+  { time: '10:00', label: '10:00 AM' },
   { time: '14:00', label: '2:00 PM' },
-  { time: '15:30', label: '3:30 PM' },
-  { time: '17:00', label: '5:00 PM' },
-  { time: '18:30', label: '6:30 PM' }
+  { time: '16:00', label: '4:00 PM' }
 ];
 
 // Helper functions
-const getRandomDate = (start: Date, end: Date): string => {
-  const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-  return date.toISOString().split('T')[0];
-};
-
 const getRandomElement = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
@@ -260,48 +132,44 @@ const getRandomInt = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-// Generate Indian phone numbers
-const generatePhoneNumber = (): string => {
-  const prefixes = ['9', '8', '7', '6'];
-  const prefix = getRandomElement(prefixes);
-  const number = prefix + Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
-  return '+91' + number;
-};
-
-// Generate Indian addresses
-const indianCities = [
-  { city: 'Vijayawada', state: 'Andhra Pradesh', zipCodes: ['520001', '520002', '520003', '520004', '520005'] },
-  { city: 'Hyderabad', state: 'Telangana', zipCodes: ['500001', '500002', '500003', '500004', '500005'] },
-  { city: 'Bangalore', state: 'Karnataka', zipCodes: ['560001', '560002', '560003', '560004', '560005'] }
-];
-
-const streetNames = [
-  'MG Road', 'Brigade Road', 'Commercial Street', 'Gandhi Nagar', 'Jubilee Hills',
-  'Banjara Hills', 'Kondapur', 'Gachibowli', 'Hitech City', 'Banashankari',
-  'Koramangala', 'Indiranagar', 'Whitefield', 'Electronic City', 'Malleswaram'
-];
-
-const generateAddress = () => {
-  const cityData = getRandomElement(indianCities);
-  return {
-    street: `${getRandomInt(1, 999)} ${getRandomElement(streetNames)}`,
-    city: cityData.city,
-    state: cityData.state,
-    zipCode: getRandomElement(cityData.zipCodes),
-    country: 'India'
-  };
-};
-
-// Names for seeding
-const indianNames = [
-  'Arjun Sharma', 'Priya Patel', 'Rahul Kumar', 'Sneha Reddy', 'Vikram Singh',
-  'Anita Gupta', 'Ravi Chandra', 'Kavya Nair', 'Amit Agarwal', 'Deepika Joshi',
-  'Suresh Rao', 'Meera Iyer', 'Kiran Verma', 'Nisha Pillai', 'Rajesh Menon',
-  'Pooja Mishra', 'Sanjay Sinha', 'Rekha Bhatt', 'Manoj Tiwari', 'Sunita Das',
-  'Ashok Pandey', 'Geeta Saxena', 'Harish Kapoor', 'Shanti Jain', 'Dinesh Yadav',
-  'Laxmi Devi', 'Mohan Lal', 'Saroj Kumari', 'Bhushan Patil', 'Urmila Shah',
-  'Prakash Desai', 'Vandana Kulkarni', 'Sachin Joshi', 'Madhuri Shetty', 'Nitin Gowda',
-  'Pushpa Hegde', 'Raman Nambiar', 'Shobha Krishnan', 'Govind Rao', 'Kamala Devi'
+// Customer data for each branch
+const customerData = [
+  {
+    name: 'Arjun Sharma',
+    email: 'arjun.sharma@example.com',
+    phone: '+919876543210',
+    address: {
+      street: '123 MG Road',
+      city: 'Vijayawada',
+      state: 'Andhra Pradesh',
+      zipCode: '520001',
+      country: 'India'
+    }
+  },
+  {
+    name: 'Priya Reddy',
+    email: 'priya.reddy@example.com',
+    phone: '+919876543211',
+    address: {
+      street: '456 Banjara Hills',
+      city: 'Hyderabad',
+      state: 'Telangana',
+      zipCode: '500034',
+      country: 'India'
+    }
+  },
+  {
+    name: 'Rahul Kumar',
+    email: 'rahul.kumar@example.com',
+    phone: '+919876543212',
+    address: {
+      street: '789 Koramangala',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      zipCode: '560034',
+      country: 'India'
+    }
+  }
 ];
 
 async function seedDatabase() {
@@ -336,22 +204,30 @@ async function seedDatabase() {
       email: 'admin@artgram.com',
       password: hashedPassword,
       role: 'admin',
-      phone: '+919876543210',
-      address: generateAddress()
+      phone: '+919876543200',
+      address: {
+        street: 'Admin Office',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        zipCode: '500001',
+        country: 'India'
+      }
     });
     await adminUser.save();
 
     // Create branch managers
-  const managers: any[] = [];
+    const managers: any[] = [];
+    const managerNames = ['Vijay Manager', 'Hyderabad Manager', 'Bangalore Manager'];
+    
     for (let i = 0; i < branches.length; i++) {
       const manager = new User({
-        name: `${branches[i].name} Manager`,
+        name: managerNames[i],
         email: `manager${i + 1}@artgram.com`,
         password: hashedPassword,
         role: 'branch_manager',
         branchId: branches[i]._id,
-        phone: generatePhoneNumber(),
-        address: generateAddress()
+        phone: `+91987654320${i + 1}`,
+        address: customerData[i].address
       });
       await manager.save();
       managers.push(manager);
@@ -361,173 +237,118 @@ async function seedDatabase() {
     }
 
     console.log('Creating customers...');
-    // 3. Create customers (20 per branch)
-  const customers: any[] = [];
-    for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
-      for (let i = 0; i < 20; i++) {
-        const customer = new User({
-          name: getRandomElement(indianNames),
-          email: `customer${branchIndex * 20 + i + 1}@example.com`,
-          password: hashedPassword,
-          role: 'customer',
-          branchId: branches[branchIndex]._id,
-          phone: generatePhoneNumber(),
-          address: generateAddress(),
-          cart: [] // Initialize empty cart
-        });
-        await customer.save();
-        customers.push(customer);
-      }
+    // 3. Create customers (1 per branch)
+    const customers: any[] = [];
+    for (let i = 0; i < branches.length; i++) {
+      const customer = new User({
+        ...customerData[i],
+        password: hashedPassword,
+        role: 'customer',
+        branchId: branches[i]._id,
+        cart: []
+      });
+      await customer.save();
+      customers.push(customer);
     }
 
     console.log('Creating products...');
     // 4. Create products
-  const products = await Product.insertMany(productData);
+    const products = await Product.insertMany(productData);
     console.log(`Created ${products.length} products`);
 
-    // 5. Create sessions for next 30 days for each branch
-    // NOTE: Auto-creating large numbers of sessions is a dev convenience only.
-    // To avoid accidental insertion in development or CI, session seeding is
-    // opt-in via the SEED_SESSIONS environment variable. Set SEED_SESSIONS=true
-    // when you intentionally want sessions created by the seed script.
-    const shouldSeedSessions = String(process.env.SEED_SESSIONS || '').toLowerCase() === 'true';
+    console.log('Creating sessions...');
+    // 5. Create sessions for next 5 days (5 sessions per branch - total 15 sessions)
     const sessions: any[] = [];
-    if (shouldSeedSessions) {
-      console.log('Creating sessions... (SEED_SESSIONS=true)');
-      const today = new Date();
-      const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
-
-      for (let branch of branches) {
-        for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString().split('T')[0];
-          
-          // Create slime sessions (3-4 per day)
-          const slimeSessionCount = getRandomInt(3, 4);
-          for (let i = 0; i < slimeSessionCount; i++) {
-            const timeSlot = getRandomElement(sessionTimes);
-            const sessionType = getRandomElement(sessionTypes.slime);
-            const totalSeats = getRandomInt(8, 15);
-            const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.7));
-            
-            const session = new Session({
-              branchId: branch._id,
-              date: dateStr,
-              activity: 'slime',
-              time: timeSlot.time,
-              label: timeSlot.label,
-              totalSeats,
-              bookedSeats,
-              availableSeats: totalSeats - bookedSeats,
-              type: sessionType.type,
-              ageGroup: sessionType.ageGroup,
-              price: sessionType.price,
-              isActive: true,
-              createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
-              notes: `${sessionType.type} session for ${sessionType.ageGroup} age group`
-            });
-            await session.save();
-            sessions.push(session);
-          }
-          
-          // Create tufting sessions (2-3 per day)
-          const tuftingSessionCount = getRandomInt(2, 3);
-          for (let i = 0; i < tuftingSessionCount; i++) {
-            const timeSlot = getRandomElement(sessionTimes);
-            const sessionType = getRandomElement(sessionTypes.tufting);
-            const totalSeats = getRandomInt(6, 10); // Smaller groups for tufting
-            const bookedSeats = getRandomInt(0, Math.floor(totalSeats * 0.6));
-            
-            const session = new Session({
-              branchId: branch._id,
-              date: dateStr,
-              activity: 'tufting',
-              time: timeSlot.time,
-              label: timeSlot.label,
-              totalSeats,
-              bookedSeats,
-              availableSeats: totalSeats - bookedSeats,
-              type: sessionType.type,
-              ageGroup: sessionType.ageGroup,
-              price: sessionType.price,
-              isActive: true,
-              createdBy: managers.find(m => m.branchId?.toString() === branch._id.toString())?._id,
-              notes: `${sessionType.type} workshop for ${sessionType.ageGroup} age group`
-            });
-            await session.save();
-            sessions.push(session);
-          }
-        }
+    const today = new Date();
+    
+    for (let branchIndex = 0; branchIndex < branches.length; branchIndex++) {
+      const branch = branches[branchIndex];
+      const manager = managers[branchIndex];
+      
+      for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+        const sessionDate = new Date(today);
+        sessionDate.setDate(today.getDate() + dayOffset);
+        const dateStr = sessionDate.toISOString().split('T')[0];
+        
+        // Create one session per day per branch
+        const activityType = dayOffset % 2 === 0 ? 'slime' : 'tufting'; // Alternate between slime and tufting
+        const sessionType = sessionTypes[activityType][0];
+        const timeSlot = getRandomElement(sessionTimes);
+        
+        const session = new Session({
+          branchId: branch._id,
+          date: dateStr,
+          activity: activityType,
+          time: timeSlot.time,
+          label: timeSlot.label,
+          totalSeats: 10,
+          bookedSeats: 1, // Will be booked by the customer
+          availableSeats: 9,
+          type: sessionType.type,
+          ageGroup: sessionType.ageGroup,
+          price: sessionType.price,
+          isActive: true,
+          createdBy: manager._id,
+          notes: `${sessionType.type} for ${sessionType.ageGroup} age group`
+        });
+        
+        await session.save();
+        sessions.push(session);
       }
-    } else {
-      console.log('Skipping session seeding (set SEED_SESSIONS=true to enable)');
     }
 
     console.log('Creating bookings...');
-    // 6. Create bookings for sessions with booked seats
-  const bookings: any[] = [];
-    for (let session of sessions) {
-      if (session.bookedSeats > 0) {
-        // Create multiple bookings for this session
-        const bookingCount = getRandomInt(1, Math.min(3, session.bookedSeats));
-        let totalBookedSeats = 0;
-        
-        for (let i = 0; i < bookingCount && totalBookedSeats < session.bookedSeats; i++) {
-          const seatsToBook = Math.min(
-            getRandomInt(1, 3),
-            session.bookedSeats - totalBookedSeats
-          );
-          totalBookedSeats += seatsToBook;
-          
-          const customer = getRandomElement(
-            customers.filter(c => c.branchId?.toString() === session.branchId.toString())
-          );
-          
-          const booking = new Booking({
-            sessionId: session._id,
-            activity: session.activity,
-            branchId: session.branchId,
-            customerId: customer._id,
+    // 6. Create bookings - each customer books one session
+    const bookings: any[] = [];
+    for (let i = 0; i < customers.length; i++) {
+      const customer = customers[i];
+      // Find a session for this customer's branch
+      const customerSessions = sessions.filter(s => s.branchId.toString() === customer.branchId?.toString());
+      const sessionToBook = customerSessions[0]; // Book the first session
+      
+      if (sessionToBook) {
+        const booking = new Booking({
+          sessionId: sessionToBook._id,
+          activity: sessionToBook.activity,
+          branchId: sessionToBook.branchId,
+          customerId: customer._id,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          customerPhone: customer.phone,
+          date: sessionToBook.date,
+          time: sessionToBook.time,
+          seats: 1,
+          totalAmount: sessionToBook.price,
+          paymentStatus: 'completed',
+          paymentIntentId: `pi_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
+          qrCode: uuidv4(),
+          qrCodeData: JSON.stringify({
+            bookingId: 'temp_id',
+            sessionId: sessionToBook._id,
             customerName: customer.name,
-            customerEmail: customer.email,
-            customerPhone: customer.phone,
-            date: session.date,
-            time: session.time,
-            seats: seatsToBook,
-            totalAmount: (session.price || 0) * seatsToBook,
-            paymentStatus: getRandomElement(['completed', 'pending', 'completed', 'completed']), // 75% completed
-            paymentIntentId: `pi_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
-            qrCode: uuidv4(),
-            qrCodeData: JSON.stringify({
-              bookingId: 'temp_id',
-              sessionId: session._id,
-              customerName: customer.name,
-              seats: seatsToBook
-            }),
-            isVerified: Math.random() > 0.3, // 70% verified
-            verifiedAt: Math.random() > 0.3 ? new Date() : undefined,
-            verifiedBy: Math.random() > 0.3 ? managers.find(m => m.branchId?.toString() === session.branchId.toString())?._id : undefined,
-            packageType: getRandomElement(['base', 'premium', 'deluxe']),
-            specialRequests: Math.random() > 0.7 ? 'Please arrange birthday decoration' : undefined,
-            status: getRandomElement(['active', 'completed', 'active', 'active']) // 75% active
-          });
-          
-          await booking.save();
-          bookings.push(booking);
-        }
+            seats: 1
+          }),
+          isVerified: false,
+          packageType: 'base',
+          status: 'active'
+        });
+        
+        await booking.save();
+        bookings.push(booking);
       }
     }
 
     console.log('Creating orders...');
-    // 7. Create orders with products
-  const orders: any[] = [];
-    for (let i = 0; i < 100; i++) { // Create 100 orders across all branches
-      const customer = getRandomElement(customers);
-      const branch = branches.find(b => b._id.toString() === customer.branchId?.toString());
+    // 7. Create orders - each customer buys 2-3 products
+    const orders: any[] = [];
+    for (let i = 0; i < customers.length; i++) {
+      const customer = customers[i];
+      const branch = branches[i];
       
-      // Select 1-4 random products for this order
+      // Select 2-3 products for this customer
       const orderProducts = [];
-      const productCount = getRandomInt(1, 4);
-  const selectedProducts: string[] = [];
+      const productCount = getRandomInt(2, 3);
+      const selectedProducts: string[] = [];
       
       for (let j = 0; j < productCount; j++) {
         let product;
@@ -536,7 +357,7 @@ async function seedDatabase() {
         } while (selectedProducts.includes(product._id.toString()));
         
         selectedProducts.push(product._id.toString());
-        const quantity = getRandomInt(1, 3);
+        const quantity = 1; // Keep it simple with quantity 1
         
         orderProducts.push({
           productId: product._id.toString(),
@@ -551,8 +372,8 @@ async function seedDatabase() {
       const order = new Order({
         products: orderProducts,
         totalAmount,
-        branchId: branch?._id?.toString(),
-        customerId: customer._id?.toString(),
+        branchId: branch._id.toString(),
+        customerId: customer._id.toString(),
         customerName: customer.name,
         customerEmail: customer.email,
         customerPhone: customer.phone,
@@ -560,99 +381,58 @@ async function seedDatabase() {
         trackingUpdates: [
           {
             status: 'Order Placed',
-            location: branch?.location,
+            location: branch.location,
             description: 'Your order has been placed successfully',
-            createdAt: new Date(Date.now() - getRandomInt(1, 10) * 24 * 60 * 60 * 1000)
+            createdAt: new Date()
+          },
+          {
+            status: 'Processing',
+            location: branch.location,
+            description: 'Your order is being processed',
+            createdAt: new Date()
           }
         ],
-        paymentStatus: getRandomElement(['completed', 'pending', 'completed', 'completed']), // 75% completed
-        orderStatus: getRandomElement([
-          'payment_confirmed', 'processing', 'packed', 'shipped', 'in_transit', 'delivered'
-        ]),
+        paymentStatus: 'completed',
+        orderStatus: 'processing',
         paymentIntentId: `pi_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
-        trackingNumber: `TRK${Date.now()}${getRandomInt(100, 999)}`
+        trackingNumber: `TRK${Date.now()}${100 + i}`
       });
       
       await order.save();
       orders.push(order);
-      
-      // Add some tracking updates for shipped orders
-      if (['shipped', 'in_transit', 'delivered'].includes(order.orderStatus)) {
-        const updates = [
-          {
-            status: 'Packed',
-            location: branch?.location,
-            description: 'Your order has been packed and ready for shipping'
-          },
-          {
-            status: 'Shipped',
-            location: branch?.location,
-            description: 'Your order has been shipped'
-          }
-        ];
-        
-        if (order.orderStatus === 'delivered') {
-          updates.push({
-            status: 'Delivered',
-            location: customer.address?.city || 'Customer Location',
-            description: 'Your order has been delivered successfully'
-          });
-        }
-        
-        order.trackingUpdates.push(...updates);
-        await order.save();
-      }
-    }
-
-    console.log('Adding products to customer carts...');
-    // 8. Add some products to customer carts
-    for (let customer of customers.slice(0, 30)) { // Add to 30 customers' carts
-      const cartItems = [];
-      const itemCount = getRandomInt(1, 3);
-      
-      for (let i = 0; i < itemCount; i++) {
-        const product = getRandomElement(products);
-        cartItems.push({
-          productId: product._id.toString(),
-          title: product.name,
-          price: product.price,
-          qty: getRandomInt(1, 2),
-          image: product.media?.[0]?.url || ''
-        });
-      }
-      
-      customer.cart = cartItems;
-      await customer.save();
     }
 
     // Print summary
-    console.log('\n🎉 Seed data created successfully!');
+    console.log('\n🎉 Simplified seed data created successfully!');
     console.log('='.repeat(50));
     console.log(`📍 Branches: ${branches.length}`);
-    console.log(`👥 Users: ${customers.length + managers.length + 1} (1 admin, ${managers.length} managers, ${customers.length} customers)`);
+    console.log(`👥 Users: ${1 + managers.length + customers.length} (1 admin, ${managers.length} managers, ${customers.length} customers)`);
     console.log(`🛍️  Products: ${products.length}`);
-    console.log(`📅 Sessions: ${sessions.length}`);
-    console.log(`🎫 Bookings: ${bookings.length}`);
-    console.log(`📦 Orders: ${orders.length}`);
+    console.log(`📅 Sessions: ${sessions.length} (5 per branch for next 5 days)`);
+    console.log(`🎫 Bookings: ${bookings.length} (1 per customer)`);
+    console.log(`📦 Orders: ${orders.length} (1 per customer)`);
     console.log('='.repeat(50));
     
     console.log('\n📧 Login Credentials:');
     console.log('Admin: admin@artgram.com / password123');
-    console.log('Managers:');
+    console.log('\nBranch Managers:');
     managers.forEach((manager, index) => {
-      console.log(`  ${manager.email} / password123`);
+      console.log(`  ${manager.email} / password123 (${branches[index].name})`);
     });
-    console.log('Customers: customer1@example.com to customer60@example.com / password123');
+    console.log('\nCustomers:');
+    customers.forEach((customer, index) => {
+      console.log(`  ${customer.email} / password123 (${branches[index].name})`);
+    });
     
-    console.log('\n🏢 Branch Information:');
+    console.log('\n🏢 Branch Summary:');
     branches.forEach((branch, index) => {
-      const branchCustomers = customers.filter(c => c.branchId?.toString() === branch._id.toString());
       const branchSessions = sessions.filter(s => s.branchId.toString() === branch._id.toString());
       const branchBookings = bookings.filter(b => b.branchId?.toString() === branch._id.toString());
       const branchOrders = orders.filter(o => o.branchId === branch._id.toString());
       
-      console.log(`\n${branch.name} (${branch.location}):`);
-      console.log(`  👥 Customers: ${branchCustomers.length}`);
+      console.log(`\n${branch.name}:`);
+      console.log(`  📧 Manager: ${managers[index].email}`);
+      console.log(`  👤 Customer: ${customers[index].email}`);
       console.log(`  📅 Sessions: ${branchSessions.length}`);
       console.log(`  🎫 Bookings: ${branchBookings.length}`);
       console.log(`  📦 Orders: ${branchOrders.length}`);
