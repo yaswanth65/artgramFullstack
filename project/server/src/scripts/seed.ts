@@ -37,8 +37,7 @@ const productData = [
   {
     name: 'Professional Acrylic Paint Set',
     description: 'High-quality acrylic paints perfect for canvas work and art projects. Includes 24 vibrant colors.',
-    price: 2499,
-    stock: 50,
+  price: 2499,
     category: 'Paints & Colors',
     media: [
       { url: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0', type: 'image' }
@@ -51,8 +50,7 @@ const productData = [
   {
     name: 'Canvas Stretched Frame Set',
     description: 'Pre-stretched canvas frames in multiple sizes. Perfect for oil and acrylic painting.',
-    price: 1899,
-    stock: 30,
+  price: 1899,
     category: 'Canvas & Boards',
     media: [
       { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
@@ -65,8 +63,7 @@ const productData = [
   {
     name: 'Premium Artist Brush Set',
     description: 'Professional brush set with natural and synthetic bristles.',
-    price: 1299,
-    stock: 25,
+  price: 1299,
     category: 'Brushes & Tools',
     media: [
       { url: 'https://images.unsplash.com/photo-1574053836461-4b6db2b4c25c', type: 'image' }
@@ -79,8 +76,7 @@ const productData = [
   {
     name: 'Slime Making Kit - Deluxe',
     description: 'Complete slime making kit with glue, activator, colors, and glitters. Safe and non-toxic.',
-    price: 899,
-    stock: 40,
+  price: 899,
     category: 'Slime Kits',
     media: [
       { url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96', type: 'image' }
@@ -93,8 +89,7 @@ const productData = [
   {
     name: 'Tufting Gun - Electric',
     description: 'Professional electric tufting gun for carpet and rug making.',
-    price: 8999,
-    stock: 10,
+  price: 8999,
     category: 'Tufting Supplies',
     media: [
       { url: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853', type: 'image' }

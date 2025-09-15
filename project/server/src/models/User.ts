@@ -25,6 +25,8 @@ export interface IUser extends mongoose.Document {
     country?: string;
   };
   cart?: CartItem[]; // Add cart to user model
+  passwordResetCode?: string;
+  passwordResetExpires?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,7 +35,7 @@ const UserSchema = new mongoose.Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, minlength: 6 }, // Added password minimum length
-  role: { type: String, enum: ['admin','branch_manager','customer'], default: 'customer' },
+  role: { type: String, enum: ['admin', 'branch_manager', 'customer'], default: 'customer' },
   branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
   phone: { type: String },
   address: {
@@ -49,7 +51,9 @@ const UserSchema = new mongoose.Schema<IUser>({
     price: { type: Number, required: true },
     qty: { type: Number, required: true, min: 1 },
     image: { type: String }
-  }]
+  }],
+  passwordResetCode: { type: String },
+  passwordResetExpires: { type: Date }
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

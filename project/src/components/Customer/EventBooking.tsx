@@ -243,7 +243,7 @@ const EventsPage = () => {
         "Memory book",
       ],
       images: [
-        "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&h=300&fit=crop",
+        "../../../../project/Events Pics/Bady shower/IMG_6902.jpg",
         "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=500&h=300&fit=crop",
         "https://images.unsplash.com/photo-1576219313824-e2d0d7f72056?w=500&h=300&fit=crop",
       ],

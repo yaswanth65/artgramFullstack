@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../../contexts/CartContext';
-import { createRazorpayOrder, initiatePayment, RazorpayResponse } from '../../utils/razorpay';
-import { useAuth } from '../../contexts/AuthContext';
-import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../../contexts/CartContext";
+import {
+  createRazorpayOrder,
+  initiatePayment,
+  RazorpayResponse,
+} from "../../utils/razorpay";
+import { useAuth } from "../../contexts/AuthContext";
+import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 
-export default function CartPage(){
-  const { items, updateQty, removeItem, clear, totalPrice, isLoading } = useCart();
-  const [customer, setCustomer] = useState({name:'', email:'', phone:''});
-  const [address, setAddress] = useState('');
+export default function CartPage() {
+  const { items, updateQty, removeItem, clear, totalPrice, isLoading } =
+    useCart();
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
+  const [address, setAddress] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
   const [processing, setProcessing] = useState(false);
@@ -17,9 +22,9 @@ export default function CartPage(){
   useEffect(() => {
     if (user) {
       setCustomer({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || ''
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
       });
     }
   }, [user]);
@@ -33,14 +38,14 @@ export default function CartPage(){
   };
 
   const checkout = async () => {
-    if (!user) { 
-      alert('Please login to checkout'); 
-      navigate('/login');
-      return; 
+    if (!user) {
+      alert("Please login to checkout");
+      navigate("/login");
+      return;
     }
-    
+
     if (items.length === 0) {
-      alert('Your cart is empty');
+      alert("Your cart is empty");
       return;
     }
 
@@ -51,52 +56,61 @@ export default function CartPage(){
       await initiatePayment({
         amount: order.amount / 100,
         currency: order.currency,
-        name: 'Artgram',
-        description: 'Purchase from Artgram Store',
+        name: "Artgram",
+        description: "Purchase from Artgram Store",
         order_id: order.id,
-        key: 'rzp_test_default_key',
+        key: "rzp_test_default_key",
         handler: async (response: RazorpayResponse) => {
           try {
             // Save order locally as demo
-            const orders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
-            const orderId = orders.length ? Math.max(...orders.map((o:any)=>o.id)) + 1 : 1;
-            const newOrder = { 
-              id: orderId, 
-              customer: user.name, 
-              contact: user, 
-              total: amount, 
-              items: items.map(i=>({ productId: i.id, name: i.title, qty: i.qty, price: i.price })), 
-              status: 'Pending', 
+            const orders = JSON.parse(
+              localStorage.getItem("admin_orders") || "[]"
+            );
+            const orderId = orders.length
+              ? Math.max(...orders.map((o: any) => o.id)) + 1
+              : 1;
+            const newOrder = {
+              id: orderId,
+              customer: user.name,
+              contact: user,
+              total: amount,
+              items: items.map((i) => ({
+                productId: i.id,
+                name: i.title,
+                qty: i.qty,
+                price: i.price,
+              })),
+              status: "Pending",
               paymentId: response.razorpay_payment_id,
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
             };
             orders.push(newOrder);
-            localStorage.setItem('admin_orders', JSON.stringify(orders));
-            
+            localStorage.setItem("admin_orders", JSON.stringify(orders));
+
             // Clear cart
             clear();
             setProcessing(false);
-            alert('Payment successful! Order placed successfully.');
-            navigate('/dashboard');
+            alert("Payment successful! Order placed successfully.");
+            navigate("/dashboard");
           } catch (err) {
             console.error(err);
-            alert('Order save failed after payment. Please contact support.');
+            alert("Order save failed after payment. Please contact support.");
             setProcessing(false);
           }
         },
-        prefill: { 
-          name: customer.name || user.name, 
-          email: customer.email || user.email, 
-          contact: customer.phone || user?.phone || '' 
+        prefill: {
+          name: customer.name || user.name,
+          email: customer.email || user.email,
+          contact: customer.phone || user?.phone || "",
         },
-        theme: { color: '#7F55B1' },
-        modal: { 
-          ondismiss: () => setProcessing(false) 
-        }
+        theme: { color: "#7F55B1" },
+        modal: {
+          ondismiss: () => setProcessing(false),
+        },
       });
     } catch (err) {
       console.error(err);
-      alert('Payment failed to start. Please try again.');
+      alert("Payment failed to start. Please try again.");
       setProcessing(false);
     }
   };
@@ -107,10 +121,14 @@ export default function CartPage(){
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
           <div className="text-center py-12">
             <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Login Required</h2>
-            <p className="text-gray-600 mb-6">Please login to view your cart and make purchases.</p>
-            <Link 
-              to="/login" 
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Login Required
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Please login to view your cart and make purchases.
+            </p>
+            <Link
+              to="/login"
               className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
             >
               Login to Continue
@@ -145,7 +163,8 @@ export default function CartPage(){
               Your Shopping Cart
             </h1>
             <p className="mt-2 text-purple-100">
-              {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
+              {items.length} {items.length === 1 ? "item" : "items"} in your
+              cart
             </p>
           </div>
 
@@ -153,10 +172,14 @@ export default function CartPage(){
             {items.length === 0 ? (
               <div className="text-center py-16">
                 <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">Your cart is empty</h3>
-                <p className="text-gray-600 mb-8">Discover amazing products in our store!</p>
-                <Link 
-                  to="/store" 
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  Your cart is empty
+                </h3>
+                <p className="text-gray-600 mb-8">
+                  Discover amazing products in our store!
+                </p>
+                <Link
+                  to="/store"
                   className="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
                 >
                   Browse Products
@@ -167,15 +190,18 @@ export default function CartPage(){
                 {/* Cart Items */}
                 <div className="lg:col-span-2">
                   <div className="space-y-4">
-                    {items.map(item => (
-                      <div key={item.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex items-center gap-4">
                           <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             {item.image ? (
-                              <img 
-                                src={item.image} 
-                                alt={item.title} 
-                                className="w-full h-full object-cover" 
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -183,34 +209,46 @@ export default function CartPage(){
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-800 truncate">{item.title}</h3>
-                            <p className="text-gray-600">₹{item.price.toFixed(2)} each</p>
+                            <h3 className="font-semibold text-gray-800 truncate">
+                              {item.title}
+                            </h3>
+                            <p className="text-gray-600">
+                              ₹{item.price.toFixed(2)} each
+                            </p>
                           </div>
-                          
+
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => handleUpdateQty(item.id, item.qty - 1)}
+                              onClick={() =>
+                                handleUpdateQty(item.id, item.qty - 1)
+                              }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
                               disabled={processing}
                             >
                               <Minus className="w-4 h-4" />
                             </button>
-                            
-                            <span className="w-12 text-center font-semibold">{item.qty}</span>
-                            
+
+                            <span className="w-12 text-center font-semibold">
+                              {item.qty}
+                            </span>
+
                             <button
-                              onClick={() => handleUpdateQty(item.id, item.qty + 1)}
+                              onClick={() =>
+                                handleUpdateQty(item.id, item.qty + 1)
+                              }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
                               disabled={processing}
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
-                          
+
                           <div className="text-right">
-                            <p className="font-bold text-lg">₹{(item.price * item.qty).toFixed(2)}</p>
+                            <p className="font-bold text-lg">
+                              ₹{(item.price * item.qty).toFixed(2)}
+                            </p>
                             <button
                               onClick={() => removeItem(item.id)}
                               className="text-red-500 hover:text-red-700 transition-colors mt-1"
@@ -229,57 +267,71 @@ export default function CartPage(){
                 <div className="lg:col-span-1">
                   <div className="bg-gray-50 rounded-xl p-6 sticky top-6">
                     <h3 className="text-xl font-bold mb-6">Order Summary</h3>
-                    
+
                     {/* Customer Details */}
                     <div className="space-y-4 mb-6">
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        📍 Delivery Address
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Please provide your complete delivery address including
+                        house number, street, area, and landmark for accurate
+                        delivery.
+                      </p>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Full Name
                         </label>
-                        <input 
+                        <input
                           type="text"
-                          value={customer.name} 
-                          onChange={(e) => setCustomer({...customer, name: e.target.value})} 
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          value={customer.name}
+                          onChange={(e) =>
+                            setCustomer({ ...customer, name: e.target.value })
+                          }
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           disabled={processing}
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Email
                         </label>
-                        <input 
+                        <input
                           type="email"
-                          value={customer.email} 
-                          onChange={(e) => setCustomer({...customer, email: e.target.value})} 
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          value={customer.email}
+                          onChange={(e) =>
+                            setCustomer({ ...customer, email: e.target.value })
+                          }
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           disabled={processing}
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Phone
                         </label>
-                        <input 
+                        <input
                           type="tel"
-                          value={customer.phone} 
-                          onChange={(e) => setCustomer({...customer, phone: e.target.value})} 
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          value={customer.phone}
+                          onChange={(e) =>
+                            setCustomer({ ...customer, phone: e.target.value })
+                          }
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           disabled={processing}
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Delivery Address
                         </label>
-                        <textarea 
-                          value={address} 
-                          onChange={(e) => setAddress(e.target.value)} 
+                        <textarea
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
                           rows={3}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           placeholder="Enter your complete address..."
                           disabled={processing}
                         />
@@ -289,13 +341,17 @@ export default function CartPage(){
                     {/* Order Total */}
                     <div className="border-t border-gray-200 pt-4 mb-6">
                       <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold">Total Amount:</span>
-                        <span className="text-2xl font-bold text-purple-600">₹{totalPrice.toFixed(2)}</span>
+                        <span className="text-lg font-semibold">
+                          Total Amount:
+                        </span>
+                        <span className="text-2xl font-bold text-purple-600">
+                          ₹{totalPrice.toFixed(2)}
+                        </span>
                       </div>
                     </div>
 
                     {/* Checkout Button */}
-                    <button 
+                    <button
                       onClick={checkout}
                       disabled={processing || items.length === 0}
                       className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -306,7 +362,7 @@ export default function CartPage(){
                           Processing...
                         </div>
                       ) : (
-                        'Proceed to Payment'
+                        "Proceed to Payment"
                       )}
                     </button>
 

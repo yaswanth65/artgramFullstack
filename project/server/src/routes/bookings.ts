@@ -59,27 +59,24 @@ router.post('/', protect, asyncHandler(async (req, res) => {
   };
 
   if (sessionId) {
-    // New session-based booking - use atomic update to prevent race conditions
-    const session = await Session.findOneAndUpdate(
-      { 
-        _id: sessionId, 
-        isActive: true,
-        availableSeats: { $gte: seats } 
-      },
-      { 
-        $inc: { 
-          bookedSeats: seats, 
-          availableSeats: -seats 
-        } 
-      },
-      { new: true }
-    );
+    // Check if session exists and has enough seats
+    const session = await Session.findOne({ 
+      _id: sessionId, 
+      isActive: true
+    });
 
     if (!session) {
-      return res.status(400).json({ 
-        message: 'Session not found, inactive, or not enough seats available' 
-      });
+      return res.status(404).json({ message: 'Session not found or inactive' });
     }
+
+    if (session.availableSeats < seats) {
+      return res.status(400).json({ message: 'Not enough seats available' });
+    }
+
+    // Update session seat count
+    session.bookedSeats += seats;
+    session.availableSeats = Math.max(0, session.totalSeats - session.bookedSeats);
+    await session.save();
 
     bookingData = {
       ...bookingData,
@@ -126,17 +123,14 @@ router.patch('/:id/cancel', protect, asyncHandler(async (req, res) => {
   booking.status = 'cancelled';
   await booking.save();
 
-  // If booking has sessionId, update session seat count atomically
+  // If booking has sessionId, update session seat count
   if (booking.sessionId) {
-    await Session.findByIdAndUpdate(
-      booking.sessionId,
-      { 
-        $inc: { 
-          bookedSeats: -(booking.seats || 1), 
-          availableSeats: booking.seats || 1 
-        } 
-      }
-    );
+    const session = await Session.findById(booking.sessionId);
+    if (session) {
+      session.bookedSeats -= (booking.seats || 1);
+      session.availableSeats = Math.max(0, session.totalSeats - session.bookedSeats);
+      await session.save();
+    }
   }
 
   res.json({ message: 'Booking cancelled successfully', booking });

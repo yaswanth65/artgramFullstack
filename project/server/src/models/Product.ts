@@ -4,7 +4,6 @@ export interface IProduct extends mongoose.Document {
   name: string;
   description?: string;
   price: number;
-  stock: number;
   category?: string;
   // support multiple media items (images/videos)
   media?: { url: string; type: 'image' | 'video' }[];
@@ -25,7 +24,6 @@ const ProductSchema = new mongoose.Schema<IProduct>({
   name: { type: String, required: true },
   description: { type: String },
   price: { type: Number, required: true, min: 0 },
-  stock: { type: Number, required: true, min: 0 },
   category: { type: String },
   media: [{ url: { type: String }, type: { type: String, enum: ['image', 'video'], default: 'image' } }],
   isActive: { type: Boolean, default: true },

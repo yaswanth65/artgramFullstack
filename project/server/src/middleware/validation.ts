@@ -68,9 +68,7 @@ export const productValidationRules = () => {
     body('price')
       .isFloat({ min: 0 })
       .withMessage('Price must be a positive number'),
-    body('stock')
-      .isInt({ min: 0 })
-      .withMessage('Stock must be a non-negative integer'),
+    // Note: stock removed from product model — inventory tracking not supported here
     body('category')
       .optional()
       .isLength({ max: 50 })

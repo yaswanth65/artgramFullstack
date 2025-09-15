@@ -130,7 +130,6 @@ export interface Product {
   images: string[]; // derived from media on the backend (image URLs)
   media?: { url: string; type: 'image' | 'video' }[];
   category: string;
-  stock: number;
   materials: string[];
   isActive: boolean;
   // optional UI/product metadata

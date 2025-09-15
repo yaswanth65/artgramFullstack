@@ -23,7 +23,7 @@ async function verifyData() {
     // Get all collections data
     const branches = await Branch.find({});
     const users = await User.find({});
-    const products = await Product.find({});
+  const products = await Product.find({}).lean();
     const sessions = await Session.find({});
     const bookings = await Booking.find({});
     const orders = await Order.find({});
@@ -136,27 +136,35 @@ async function verifyData() {
       console.log(`${category}: ${count} products`);
     });
     
-    const totalProductValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
-    console.log(`Total inventory value: ₹${totalProductValue.toLocaleString()}`);
+    // Inventory tracking (stock) has been removed from the product model.
+    // Older code summarized total inventory value using a `stock` field; since
+    // that field is intentionally removed, skip that calculation and provide
+    // an informational message instead.
+    console.log('Total inventory value: Inventory tracking disabled (no stock field)');
 
-    // Session utilization
-    console.log('\n📈 SESSION UTILIZATION:');
-    const sessionStats = sessions.reduce((acc: any, session) => {
-      const utilization = session.totalSeats > 0 ? (session.bookedSeats / session.totalSeats) * 100 : 0;
-      acc.totalSeats += session.totalSeats;
-      acc.bookedSeats += session.bookedSeats;
-      acc.sessions += 1;
-      acc.utilizationSum += utilization;
-      return acc;
-    }, { totalSeats: 0, bookedSeats: 0, sessions: 0, utilizationSum: 0 });
+    // Session data integrity check
+    console.log('\n� SESSION DATA INTEGRITY:');
+    let corruptedSessions = 0;
+    let fixedSessions = 0;
     
-    const avgUtilization = sessionStats.sessions > 0 ? sessionStats.utilizationSum / sessionStats.sessions : 0;
-    const overallUtilization = sessionStats.totalSeats > 0 ? (sessionStats.bookedSeats / sessionStats.totalSeats) * 100 : 0;
+    for (const session of sessions) {
+      const expectedAvailable = Math.max(0, session.totalSeats - session.bookedSeats);
+      if (session.availableSeats !== expectedAvailable) {
+        console.log(`❌ Session ${session._id}: total=${session.totalSeats}, booked=${session.bookedSeats}, available=${session.availableSeats} (should be ${expectedAvailable})`);
+        corruptedSessions++;
+        
+        // Fix the corrupted data
+        session.availableSeats = expectedAvailable;
+        await session.save();
+        fixedSessions++;
+      }
+    }
     
-    console.log(`Total seats available: ${sessionStats.totalSeats}`);
-    console.log(`Total seats booked: ${sessionStats.bookedSeats}`);
-    console.log(`Overall utilization: ${overallUtilization.toFixed(2)}%`);
-    console.log(`Average session utilization: ${avgUtilization.toFixed(2)}%`);
+    if (corruptedSessions === 0) {
+      console.log('✅ All sessions have correct availableSeats');
+    } else {
+      console.log(`🔧 Fixed ${fixedSessions} corrupted sessions`);
+    }
 
     // Cart analysis
     console.log('\n🛒 SHOPPING CART ANALYSIS:');

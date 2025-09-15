@@ -1,63 +1,65 @@
-import React, { useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  X,
-  Image as ImageIcon,
-  DollarSign,
-  Archive,
-  Eye,
-  EyeOff
-} from 'lucide-react';
+import React, { useState } from "react";
+import { useData } from "../../contexts/DataContext";
+import { Plus, Edit, Trash2, Save, X, Eye, EyeOff } from "lucide-react";
 
 const ProductManagement: React.FC = () => {
-  const { 
-    products, 
-    addProduct, 
-    updateProduct, 
-    deleteProduct 
-  } = useData();
+  const { products, addProduct, updateProduct, deleteProduct } = useData();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     price: 0,
-    images: [''],
-    category: '',
-    stock: 0,
-    materials: [''],
-    isActive: true
+    images: [""],
+    category: "",
+    materials: [""],
+    isActive: true,
   });
 
-  const categories = ['Slime Kits', 'Art Supplies', 'Kids Supplies', 'Craft Materials', 'Premium Kits'];
+  const categories = [
+    "Slime Kits",
+    "Art Supplies",
+    "Kids Supplies",
+    "Craft Materials",
+    "Premium Kits",
+  ];
 
   const handleAddProduct = async () => {
     if (newProduct.name && newProduct.description && newProduct.price > 0) {
-      const filteredImages = newProduct.images.filter(img => img.trim() !== '');
-      const filteredMaterials = newProduct.materials.filter(mat => mat.trim() !== '');
-      const media = filteredImages.map((url) => ({ url, type: 'image' as const }));
+      const filteredImages = newProduct.images.filter(
+        (img) => img.trim() !== ""
+      );
+      const filteredMaterials = newProduct.materials.filter(
+        (mat) => mat.trim() !== ""
+      );
+      const media = filteredImages.map((url) => ({
+        url,
+        type: "image" as const,
+      }));
       await addProduct({
         ...newProduct,
         media,
-        images: filteredImages.length > 0 ? filteredImages : ['https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg'],
-        materials: filteredMaterials.length > 0 ? filteredMaterials : ['Basic materials']
+        images:
+          filteredImages.length > 0
+            ? filteredImages
+            : [
+                "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg",
+              ],
+        materials:
+          filteredMaterials.length > 0
+            ? filteredMaterials
+            : ["Basic materials"],
       });
-      
+
       setNewProduct({
-        name: '',
-        description: '',
+        name: "",
+        description: "",
         price: 0,
-        images: [''],
-        category: '',
-        stock: 0,
-        materials: [''],
-        isActive: true
+        images: [""],
+        category: "",
+        materials: [""],
+        isActive: true,
       });
       setShowAddModal(false);
     }
@@ -65,21 +67,40 @@ const ProductManagement: React.FC = () => {
 
   const handleUpdateProduct = async () => {
     if (editingProduct) {
-      const filteredImages = editingProduct.images.filter((img: string) => img.trim() !== '');
-      const filteredMaterials = editingProduct.materials.filter((mat: string) => mat.trim() !== '');
-      const media = filteredImages.map((url: string) => ({ url, type: 'image' as const }));
+      const filteredImages = editingProduct.images.filter(
+        (img: string) => img.trim() !== ""
+      );
+      const filteredMaterials = editingProduct.materials.filter(
+        (mat: string) => mat.trim() !== ""
+      );
+      const media = filteredImages.map((url: string) => ({
+        url,
+        type: "image" as const,
+      }));
       await updateProduct({
         ...editingProduct,
         media,
-        images: filteredImages.length > 0 ? filteredImages : ['https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg'],
-        materials: filteredMaterials.length > 0 ? filteredMaterials : ['Basic materials']
+        images:
+          filteredImages.length > 0
+            ? filteredImages
+            : [
+                "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg",
+              ],
+        materials:
+          filteredMaterials.length > 0
+            ? filteredMaterials
+            : ["Basic materials"],
       });
       setEditingProduct(null);
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this product? This action cannot be undone."
+      )
+    ) {
       await deleteProduct(id);
     }
   };
@@ -88,46 +109,52 @@ const ProductManagement: React.FC = () => {
     if (isEditing && editingProduct) {
       setEditingProduct({
         ...editingProduct,
-        images: [...editingProduct.images, '']
+        images: [...editingProduct.images, ""],
       });
     } else {
       setNewProduct({
         ...newProduct,
-        images: [...newProduct.images, '']
+        images: [...newProduct.images, ""],
       });
     }
   };
 
   const removeImageField = (index: number, isEditing = false) => {
     if (isEditing && editingProduct) {
-      const newImages = editingProduct.images.filter((_: any, i: number) => i !== index);
+      const newImages = editingProduct.images.filter(
+        (_: any, i: number) => i !== index
+      );
       setEditingProduct({
         ...editingProduct,
-        images: newImages.length > 0 ? newImages : ['']
+        images: newImages.length > 0 ? newImages : [""],
       });
     } else {
       const newImages = newProduct.images.filter((_, i) => i !== index);
       setNewProduct({
         ...newProduct,
-        images: newImages.length > 0 ? newImages : ['']
+        images: newImages.length > 0 ? newImages : [""],
       });
     }
   };
 
-  const updateImageField = (index: number, value: string, isEditing = false) => {
+  const updateImageField = (
+    index: number,
+    value: string,
+    isEditing = false
+  ) => {
     if (isEditing && editingProduct) {
       const newImages = [...editingProduct.images];
       newImages[index] = value;
       setEditingProduct({
         ...editingProduct,
-        images: newImages
+        images: newImages,
       });
     } else {
       const newImages = [...newProduct.images];
       newImages[index] = value;
       setNewProduct({
         ...newProduct,
-        images: newImages
+        images: newImages,
       });
     }
   };
@@ -136,46 +163,52 @@ const ProductManagement: React.FC = () => {
     if (isEditing && editingProduct) {
       setEditingProduct({
         ...editingProduct,
-        materials: [...editingProduct.materials, '']
+        materials: [...editingProduct.materials, ""],
       });
     } else {
       setNewProduct({
         ...newProduct,
-        materials: [...newProduct.materials, '']
+        materials: [...newProduct.materials, ""],
       });
     }
   };
 
   const removeMaterialField = (index: number, isEditing = false) => {
     if (isEditing && editingProduct) {
-      const newMaterials = editingProduct.materials.filter((_: any, i: number) => i !== index);
+      const newMaterials = editingProduct.materials.filter(
+        (_: any, i: number) => i !== index
+      );
       setEditingProduct({
         ...editingProduct,
-        materials: newMaterials.length > 0 ? newMaterials : ['']
+        materials: newMaterials.length > 0 ? newMaterials : [""],
       });
     } else {
       const newMaterials = newProduct.materials.filter((_, i) => i !== index);
       setNewProduct({
         ...newProduct,
-        materials: newMaterials.length > 0 ? newMaterials : ['']
+        materials: newMaterials.length > 0 ? newMaterials : [""],
       });
     }
   };
 
-  const updateMaterialField = (index: number, value: string, isEditing = false) => {
+  const updateMaterialField = (
+    index: number,
+    value: string,
+    isEditing = false
+  ) => {
     if (isEditing && editingProduct) {
       const newMaterials = [...editingProduct.materials];
       newMaterials[index] = value;
       setEditingProduct({
         ...editingProduct,
-        materials: newMaterials
+        materials: newMaterials,
       });
     } else {
       const newMaterials = [...newProduct.materials];
       newMaterials[index] = value;
       setNewProduct({
         ...newProduct,
-        materials: newMaterials
+        materials: newMaterials,
       });
     }
   };
@@ -185,8 +218,12 @@ const ProductManagement: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-2xl font-bold text-gray-800">Product Management</h3>
-          <p className="text-gray-600">Manage all products available nationwide</p>
+          <h3 className="text-2xl font-bold text-gray-800">
+            Product Management
+          </h3>
+          <p className="text-gray-600">
+            Manage all products available nationwide
+          </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -199,15 +236,19 @@ const ProductManagement: React.FC = () => {
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
-          <div key={product.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className="bg-white rounded-lg shadow-lg overflow-hidden"
+          >
             <div className="h-48 bg-gray-200 relative">
               <img
                 src={product.images[0]}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg';
+                  (e.target as HTMLImageElement).src =
+                    "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg";
                 }}
               />
               {product.images.length > 1 && (
@@ -229,42 +270,53 @@ const ProductManagement: React.FC = () => {
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
                   {product.category}
                 </span>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  product.stock > 10 ? 'bg-green-100 text-green-800' :
-                  product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  Stock: {product.stock}
+                <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                  Available
                 </span>
               </div>
 
               <h4 className="font-bold text-gray-800 mb-2">{product.name}</h4>
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {product.description}
+              </p>
 
               <div className="mb-3">
                 <p className="text-sm text-gray-600 mb-1">Materials:</p>
                 <div className="flex flex-wrap gap-1">
                   {product.materials.slice(0, 3).map((material, index) => (
-                    <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                    <span
+                      key={index}
+                      className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                    >
                       {material}
                     </span>
                   ))}
                   {product.materials.length > 3 && (
-                    <span className="text-gray-500 text-xs">+{product.materials.length - 3} more</span>
+                    <span className="text-gray-500 text-xs">
+                      +{product.materials.length - 3} more
+                    </span>
                   )}
                 </div>
               </div>
 
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xl font-bold text-green-600">₹{product.price}</span>
-                <span className="text-sm text-gray-600">Available Globally</span>
+                <span className="text-xl font-bold text-green-600">
+                  ₹{product.price}
+                </span>
+                <span className="text-sm text-gray-600">
+                  Available Globally
+                </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {product.isActive ? 'Active' : 'Inactive'}
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    product.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {product.isActive ? "Active" : "Inactive"}
                 </span>
                 <div className="flex space-x-2">
                   <button
@@ -291,7 +343,9 @@ const ProductManagement: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Add New Product</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                Add New Product
+              </h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -303,36 +357,53 @@ const ProductManagement: React.FC = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Name *
+                  </label>
                   <input
                     type="text"
                     value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, name: e.target.value })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="Enter product name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                  </label>
                   <select
                     value={newProduct.category}
-                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, category: e.target.value })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select Category</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description *
+                </label>
                 <textarea
                   value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Enter product description"
@@ -341,11 +412,18 @@ const ProductManagement: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (₹) *
+                  </label>
                   <input
                     type="number"
                     value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setNewProduct({
+                        ...newProduct,
+                        price: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="0"
                     min="0"
@@ -353,22 +431,14 @@ const ProductManagement: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Stock *</label>
-                  <input
-                    type="number"
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
+                {/* stock input removed - inventory not tracked in product model */}
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Product Images</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Product Images
+                  </label>
                   <button
                     onClick={() => addImageField(false)}
                     className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
@@ -383,7 +453,9 @@ const ProductManagement: React.FC = () => {
                       <input
                         type="url"
                         value={image}
-                        onChange={(e) => updateImageField(index, e.target.value, false)}
+                        onChange={(e) =>
+                          updateImageField(index, e.target.value, false)
+                        }
                         className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                         placeholder="Enter image URL"
                       />
@@ -402,7 +474,9 @@ const ProductManagement: React.FC = () => {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Materials Included</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Materials Included
+                  </label>
                   <button
                     onClick={() => addMaterialField(false)}
                     className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
@@ -417,7 +491,9 @@ const ProductManagement: React.FC = () => {
                       <input
                         type="text"
                         value={material}
-                        onChange={(e) => updateMaterialField(index, e.target.value, false)}
+                        onChange={(e) =>
+                          updateMaterialField(index, e.target.value, false)
+                        }
                         className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                         placeholder="Enter material name"
                       />
@@ -439,10 +515,15 @@ const ProductManagement: React.FC = () => {
                   type="checkbox"
                   id="isActive"
                   checked={newProduct.isActive}
-                  onChange={(e) => setNewProduct({ ...newProduct, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, isActive: e.target.checked })
+                  }
                   className="mr-2"
                 />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="isActive"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Active Product (visible to customers)
                 </label>
               </div>
@@ -483,35 +564,58 @@ const ProductManagement: React.FC = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Name *
+                  </label>
                   <input
                     type="text"
                     value={editingProduct.name}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        name: e.target.value,
+                      })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                  </label>
                   <select
                     value={editingProduct.category}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        category: e.target.value,
+                      })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select Category</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description *
+                </label>
                 <textarea
                   value={editingProduct.description}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
@@ -519,32 +623,32 @@ const ProductManagement: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (₹) *
+                  </label>
                   <input
                     type="number"
                     value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        price: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                     min="0"
                     step="0.01"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Stock *</label>
-                  <input
-                    type="number"
-                    value={editingProduct.stock}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    min="0"
-                  />
-                </div>
+                {/* stock input removed - inventory not tracked in product model */}
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Product Images</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Product Images
+                  </label>
                   <button
                     onClick={() => addImageField(true)}
                     className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
@@ -559,7 +663,9 @@ const ProductManagement: React.FC = () => {
                       <input
                         type="url"
                         value={image}
-                        onChange={(e) => updateImageField(index, e.target.value, true)}
+                        onChange={(e) =>
+                          updateImageField(index, e.target.value, true)
+                        }
                         className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                         placeholder="Enter image URL"
                       />
@@ -578,7 +684,9 @@ const ProductManagement: React.FC = () => {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Materials Included</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Materials Included
+                  </label>
                   <button
                     onClick={() => addMaterialField(true)}
                     className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
@@ -588,25 +696,29 @@ const ProductManagement: React.FC = () => {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {editingProduct.materials.map((material: string, index: number) => (
-                    <div key={index} className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={material}
-                        onChange={(e) => updateMaterialField(index, e.target.value, true)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        placeholder="Enter material name"
-                      />
-                      {editingProduct.materials.length > 1 && (
-                        <button
-                          onClick={() => removeMaterialField(index, true)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {editingProduct.materials.map(
+                    (material: string, index: number) => (
+                      <div key={index} className="flex space-x-2">
+                        <input
+                          type="text"
+                          value={material}
+                          onChange={(e) =>
+                            updateMaterialField(index, e.target.value, true)
+                          }
+                          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Enter material name"
+                        />
+                        {editingProduct.materials.length > 1 && (
+                          <button
+                            onClick={() => removeMaterialField(index, true)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -615,10 +727,18 @@ const ProductManagement: React.FC = () => {
                   type="checkbox"
                   id="editIsActive"
                   checked={editingProduct.isActive}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      isActive: e.target.checked,
+                    })
+                  }
                   className="mr-2"
                 />
-                <label htmlFor="editIsActive" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="editIsActive"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Active Product (visible to customers)
                 </label>
               </div>

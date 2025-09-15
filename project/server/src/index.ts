@@ -42,7 +42,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Rate limiting (relaxed in development to avoid 429 during local polling)
+// Rate limiting (disabled for development/testing)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === 'production' ? 300 : 2000,
@@ -52,10 +52,10 @@ const limiter = rateLimit({
 });
 app.use('/api/', process.env.NODE_ENV === 'production' ? limiter : (req, res, next) => next());
 
-// Auth specific rate limiting
+// Auth specific rate limiting (disabled for development/testing)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 5 : 1000, // Increased limit for development
   message: 'Too many authentication attempts, please try again later.',
   skipSuccessfulRequests: true,
 });
